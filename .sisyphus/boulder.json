@@ -1,0 +1,12 @@
+{
+  "active_plan": "D:\\autoway\\Project\\agent\\embedded\\EmbeddedCowork\\.sisyphus\\plans\\fix-github-codenomad-references.md",
+  "started_at": "2026-04-26T07:18:50.565Z",
+  "session_ids": [
+    "ses_2375e7e30ffe34E04ommtK3p6V"
+  ],
+  "session_origins": {
+    "ses_2375e7e30ffe34E04ommtK3p6V": "direct"
+  },
+  "plan_name": "fix-github-codenomad-references",
+  "agent": "atlas"
+}

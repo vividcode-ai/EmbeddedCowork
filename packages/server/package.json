@@ -1,0 +1,52 @@
+{
+  "name": "@vividcode/embedcowork",
+  "version": "0.14.0",
+  "description": "EmbeddedCowork Server",
+  "license": "MIT",
+  "author": {
+    "name": "Neural Nomads",
+    "email": "embedcowork@vividcode.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vividcodeAI/EmbeddedCowork.git"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "embedcowork": "dist/bin.js"
+  },
+  "scripts": {
+    "build": "npm run build:ui && npm run prepare-ui && tsc -p tsconfig.json && node ./scripts/copy-auth-pages.mjs && npm run prepare-config",
+    "build:standalone": "node ./scripts/build-standalone.mjs",
+    "build:ui": "npm run build --prefix ../ui",
+    "prepare-ui": "node ./scripts/copy-ui-dist.mjs",
+    "prepare-config": "node ./scripts/copy-opencode-config.mjs",
+    "dev": "cross-env EMBEDCOWORK_DEV=1 EMBEDCOWORK_SERVER_PASSWORD=embedcowork-dev CLI_UI_DEV_SERVER=http://localhost:3000 CLI_HTTPS=false CLI_HTTP=true tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/reply-from": "^12.6.2",
+    "@fastify/static": "^9.1.1",
+    "commander": "^12.1.0",
+    "fastify": "^5.8.5",
+    "fuzzysort": "^2.0.4",
+    "node-forge": "^1.3.3",
+    "openai": "^6.27.0",
+    "pino": "^9.4.0",
+    "undici": "^8.1.0",
+    "yaml": "^2.4.2",
+    "yauzl": "^2.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node-forge": "^1.3.14",
+    "@types/yauzl": "^2.10.0",
+    "bun": "^1.3.13",
+    "cross-env": "^7.0.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.6.3"
+  }
+}

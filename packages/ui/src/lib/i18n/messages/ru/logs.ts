@@ -1,0 +1,27 @@
+export const logMessages = {
+  "logsView.title": "Логи сервера",
+  "logsView.actions.show": "Показать логи сервера",
+  "logsView.actions.hide": "Скрыть логи сервера",
+  "logsView.envVars.title": "Переменные окружения ({count})",
+  "logsView.paused.title": "Логи сервера приостановлены",
+  "logsView.paused.description": "Включите стриминг, чтобы наблюдать за активностью сервера OpenCode.",
+  "logsView.empty.waiting": "Ожидание вывода сервера…",
+  "logsView.scrollToBottom": "Прокрутить вниз",
+
+  "infoView.logs.title": "Логи сервера",
+  "infoView.logs.actions.show": "Показать логи сервера",
+  "infoView.logs.actions.hide": "Скрыть логи сервера",
+  "infoView.logs.paused.title": "Логи сервера приостановлены",
+  "infoView.logs.paused.description": "Включите стриминг, чтобы наблюдать за активностью сервера OpenCode.",
+  "infoView.logs.empty.waiting": "Ожидание вывода сервера…",
+  "infoView.logs.scrollToBottom": "Прокрутить вниз",
+
+  "infoView.dispose.actions.dispose": "Сбросить инстанс",
+  "infoView.dispose.actions.disposing": "Сброс...",
+  "infoView.dispose.confirm.title": "Сбросить инстанс?",
+  "infoView.dispose.confirm.message": "Это очистит кэш состояния проекта для этого каталога и перезагрузит инстанс.",
+  "infoView.dispose.confirm.confirmLabel": "Сбросить",
+  "infoView.dispose.confirm.cancelLabel": "Отмена",
+  "infoView.dispose.toast.success": "Инстанс сброшен. Перезагрузка...",
+  "infoView.dispose.toast.error": "Не удалось сбросить инстанс.",
+} as const

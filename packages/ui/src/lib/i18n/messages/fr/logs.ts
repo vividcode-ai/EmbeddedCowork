@@ -1,0 +1,27 @@
+export const logMessages = {
+  "logsView.title": "Journaux du serveur",
+  "logsView.actions.show": "Afficher les journaux du serveur",
+  "logsView.actions.hide": "Masquer les journaux du serveur",
+  "logsView.envVars.title": "Variables d'environnement ({count})",
+  "logsView.paused.title": "Les journaux du serveur sont en pause",
+  "logsView.paused.description": "Activez le streaming pour suivre l'activité de votre serveur OpenCode.",
+  "logsView.empty.waiting": "En attente de la sortie du serveur...",
+  "logsView.scrollToBottom": "Aller en bas",
+
+  "infoView.logs.title": "Journaux du serveur",
+  "infoView.logs.actions.show": "Afficher les journaux du serveur",
+  "infoView.logs.actions.hide": "Masquer les journaux du serveur",
+  "infoView.logs.paused.title": "Les journaux du serveur sont en pause",
+  "infoView.logs.paused.description": "Activez le streaming pour suivre l'activité de votre serveur OpenCode.",
+  "infoView.logs.empty.waiting": "En attente de la sortie du serveur...",
+  "infoView.logs.scrollToBottom": "Aller en bas",
+
+  "infoView.dispose.actions.dispose": "Réinitialiser l'instance",
+  "infoView.dispose.actions.disposing": "Réinitialisation...",
+  "infoView.dispose.confirm.title": "Réinitialiser l'instance ?",
+  "infoView.dispose.confirm.message": "Cela efface l'état en cache pour ce répertoire et recharge l'instance.",
+  "infoView.dispose.confirm.confirmLabel": "Réinitialiser",
+  "infoView.dispose.confirm.cancelLabel": "Annuler",
+  "infoView.dispose.toast.success": "Instance réinitialisée. Rechargement...",
+  "infoView.dispose.toast.error": "Impossible de réinitialiser l'instance.",
+} as const
