@@ -1,5 +1,5 @@
 {
-  "name": "@embedcowork/ui-host-worker",
+  "name": "@embeddedcowork/ui-host-worker",
   "private": true,
   "license": "MIT",
   "type": "module",

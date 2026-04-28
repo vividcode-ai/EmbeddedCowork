@@ -6,7 +6,7 @@ export const folderSelectionMessages = {
 
   "folderSelection.links.github": "GitHub de EmbeddedCowork",
   "folderSelection.links.githubStars": "Estrellas de GitHub de EmbeddedCowork",
-  "folderSelection.links.discord": "Discord de EmbeddedCowork",
+  "folderSelection.links.feishu": "Lark",
 
   "folderSelection.empty.title": "No hay carpetas recientes",
   "folderSelection.empty.description": "Busca una carpeta para comenzar",

@@ -1,18 +1,18 @@
 {
-"name": "@vividcode/embedcowork-electron-app",
-  "version": "0.14.0",
+  "name": "@vividcodeAI/embeddedcowork-electron-app",
+  "version": "0.0.1",
   "description": "EmbeddedCowork - AI coding assistant",
   "author": {
-    "name": "Neural Nomads",
-    "email": "vividcode@hotmail.ai"
+    "name": "zhangsheng",
+    "email": "vividcode@hotmail.com"
   },
   "type": "module",
   "main": "dist/main/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vividcodeAI/EmbeddedCowork.git"
+    "url": "https://github.com/vividcode-ai/EmbeddedCowork.git"
   },
-  "homepage": "https://github.com/vividcodeAI/EmbeddedCowork",
+  "homepage": "https://github.com/vividcode-ai/EmbeddedCowork",
   "scripts": {
     "dev": "npm run dev:info",
     "dev:info": "cross-env CLI_LOG_LEVEL=info electron-vite dev",
@@ -61,7 +61,7 @@
     "vite-plugin-solid": "^2.10.0"
   },
   "build": {
-    "appId": "ai.vividcode.embedcowork.client",
+    "appId": "ai.vividcode.embeddedcowork.client",
     "productName": "EmbeddedCowork",
     "directories": {
       "output": "release",

@@ -1,15 +1,20 @@
 {
-  "name": "@vividcode/embedcowork",
-  "version": "0.14.0",
+  "name": "@vividcodeai/embeddedcowork",
+  "version": "0.0.1",
   "description": "EmbeddedCowork Server",
   "license": "MIT",
   "author": {
-    "name": "Neural Nomads",
-    "email": "embedcowork@vividcode.ai"
+    "name": "vividcodeAI",
+    "email": "vividcode@hotmail.com"
+  },
+  "publishConfig": {
+    "access": "public",      
+    "provenance": true,     
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vividcodeAI/EmbeddedCowork.git"
+    "url": "https://github.com/vividcode-ai/EmbeddedCowork.git"
   },
   "type": "module",
   "main": "dist/index.js",

@@ -44,7 +44,7 @@
   **What to do**:
   - name: `@neuralnomads/embedcowork-electron-app` → `@vividcode/embedcowork-electron-app`
   - dependencies: `@neuralnomads/embedcowork` → `@vividcode/embedcowork`
-  - appId: `ai.neuralnomads.embedcowork.client` → `ai.vividcode.embedcowork.client`
+  - appId: `ai.neuralnomads.embedcowork.client` → `ai.vividcode.embeddedcowork.client`
 
   **Acceptance Criteria**:
   - [x] 文件中无 @neuralnomads 字符串

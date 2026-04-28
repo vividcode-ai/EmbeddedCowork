@@ -13,9 +13,9 @@ on:
         default: dev
         type: string
       package_name:
-        description: "Package name to publish (e.g. @vividcode/embedcowork-dev)"
+        description: "Package name to publish (e.g. @vividcodeai/embeddedcowork)"
         required: false
-        default: "@vividcode/embedcowork"
+        default: "@vividcodeai/embeddedcowork"
         type: string
   workflow_call:
     inputs:
@@ -33,7 +33,7 @@ on:
       package_name:
         required: false
         type: string
-        default: "@vividcode/embedcowork"
+        default: "@vividcodeai/embeddedcowork"
     secrets:
       NPM_TOKEN:
         required: false

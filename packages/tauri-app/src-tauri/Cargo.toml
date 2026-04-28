@@ -1,5 +1,5 @@
 [package]
-name = "codenomad-tauri"
+name = "embeddedcowork-tauri"
 version = "0.14.0"
 edition = "2021"
 license = "MIT"

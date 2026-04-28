@@ -1,0 +1,9 @@
+[Desktop Entry]
+Categories=
+Exec=embeddedcowork-tauri
+StartupWMClass=embeddedcowork-tauri
+Icon=embeddedcowork-tauri
+Name=EmbeddedCowork
+NoDisplay=true
+Terminal=false
+Type=Application

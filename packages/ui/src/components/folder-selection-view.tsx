@@ -8,7 +8,7 @@ import Kbd from "./kbd"
 import { openNativeFolderDialog, supportsNativeDialogsInCurrentWindow } from "../lib/native/native-functions"
 import { useFolderDrop } from "../lib/hooks/use-folder-drop"
 import VersionPill from "./version-pill"
-import { DiscordSymbolIcon, GitHubMarkIcon } from "./brand-icons"
+import { FeishuIcon, GitHubMarkIcon } from "./brand-icons"
 import { githubStars } from "../stores/github-stars"
 import { formatCompactCount } from "../lib/formatters"
 import { useI18n, type Locale } from "../lib/i18n"
@@ -19,9 +19,9 @@ import { serverApi } from "../lib/api-client"
 import { canOpenRemoteWindows, isTauriHost } from "../lib/runtime-env"
 import { openRemoteServerWindow } from "../lib/native/remote-window"
 
-const codeNomadLogo = new URL("../images/EmbeddedCowork-Icon.png", import.meta.url).href
+const embeddedCoworkLoag = new URL("../images/EmbeddedCowork-Icon.png", import.meta.url).href
 const GITHUB_URL = "https://github.com/vividcode-ai/EmbeddedCowork"
-const DISCORD_URL = "https://discord.com/channels/1391832426048651334/1458412028325793887/1464701235683917945"
+const Feishu_URL = "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=5c8uf71e-5ad6-4d0e-9bff-6be85f48aba8"
 
 type HomeTab = "local" | "servers"
 
@@ -564,9 +564,9 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
           </div>
           <div class="mb-6 text-center shrink-0">
             <div class="mb-3 flex justify-center">
-              <img src={codeNomadLogo} alt={t("folderSelection.logoAlt")} class="h-32 w-auto sm:h-48" loading="lazy" />
+              <img src={embeddedCoworkLoag} alt={t("folderSelection.logoAlt")} class="h-32 w-auto sm:h-48" loading="lazy" />
             </div>
-            <h1 class="mb-2 text-3xl font-semibold text-primary">EmbeddedCowork</h1>
+            <h1 class="mb-2 text-3xl font-semibold text-primary">Embedded Cowork</h1>
             <div class="mt-3 flex justify-center gap-2">
               <a
                 href={GITHUB_URL}
@@ -600,18 +600,18 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                 </Show>
               </a>
               <a
-                href={DISCORD_URL}
+                href={Feishu_URL}
                 target="_blank"
                 rel="noreferrer"
                 class="selector-button selector-button-secondary w-auto p-2 inline-flex items-center justify-center"
-                aria-label={t("folderSelection.links.discord")}
-                title={t("folderSelection.links.discord")}
+                aria-label={t("folderSelection.links.feishu")}
+                title={t("folderSelection.links.feishu")}
                 onClick={(event) => {
                   event.preventDefault()
-                  void openExternalUrl(DISCORD_URL, "folder-selection")
+                  void openExternalUrl(Feishu_URL, "folder-selection")
                 }}
               >
-                <DiscordSymbolIcon class="w-4 h-4" />
+                <FeishuIcon class="w-4 h-4" />
               </a>
             </div>
             <p class="mt-3 text-base text-secondary">{t("folderSelection.tagline")}</p>

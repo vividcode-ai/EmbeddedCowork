@@ -6,7 +6,7 @@ export const folderSelectionMessages = {
 
   "folderSelection.links.github": "EmbeddedCowork GitHub",
   "folderSelection.links.githubStars": "כוכבי EmbeddedCowork ב-GitHub",
-  "folderSelection.links.discord": "EmbeddedCowork Discord",
+  "folderSelection.links.feishu": "Lark",
 
   "folderSelection.empty.title": "אין תיקיות אחרונות",
   "folderSelection.empty.description": "עיין בתיקייה כדי להתחיל",

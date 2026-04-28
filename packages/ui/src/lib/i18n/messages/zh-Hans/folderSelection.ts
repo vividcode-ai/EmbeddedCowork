@@ -6,7 +6,7 @@ export const folderSelectionMessages = {
 
   "folderSelection.links.github": "EmbeddedCowork 的 GitHub",
   "folderSelection.links.githubStars": "EmbeddedCowork GitHub Star 数",
-  "folderSelection.links.discord": "EmbeddedCowork 的 Discord",
+  "folderSelection.links.feishu": "飞书",
 
   "folderSelection.empty.title": "没有最近的文件夹",
   "folderSelection.empty.description": "浏览并选择文件夹以开始使用",

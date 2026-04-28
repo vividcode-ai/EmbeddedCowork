@@ -6,7 +6,7 @@ export const folderSelectionMessages = {
 
   "folderSelection.links.github": "EmbeddedCowork の GitHub",
   "folderSelection.links.githubStars": "EmbeddedCowork の GitHub スター",
-  "folderSelection.links.discord": "EmbeddedCowork の Discord",
+  "folderSelection.links.feishu": "Lark",
 
   "folderSelection.empty.title": "最近使ったフォルダはありません",
   "folderSelection.empty.description": "フォルダを選択して開始",

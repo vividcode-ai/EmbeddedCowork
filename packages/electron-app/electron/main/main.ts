@@ -1,4 +1,4 @@
-import { app, BrowserView, BrowserWindow, nativeImage, session, shell } from "electron"
+import { app, BrowserView, BrowserWindow, Menu, nativeImage, session, shell } from "electron"
 import http from "node:http"
 import https from "node:https"
 import { existsSync, mkdirSync } from "fs"
@@ -268,8 +268,8 @@ function createWindow() {
   const iconPath = getIconPath()
 
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: 800,
+    height: 600,
     minWidth: 800,
     minHeight: 600,
     backgroundColor,
@@ -300,7 +300,7 @@ function createWindow() {
     window.webContents.openDevTools({ mode: "detach" })
   }
 
-  createApplicationMenu(window)
+  Menu.setApplicationMenu(null)
   setupCliIPC(window, cliManager)
 
   window.on("closed", () => {
@@ -404,7 +404,10 @@ function finalizeCliSwap(url: string) {
   currentCliUrl = url
   setWindowAllowedOrigin(window, url)
   pendingCliUrl = null
-  window.loadURL(url).catch((error) => console.error("[cli] failed to load CLI view:", error))
+  window.loadURL(url).then(() => {
+    window.maximize()
+    createApplicationMenu(window)
+  }).catch((error) => console.error("[cli] failed to load CLI view:", error))
 }
 
 function buildRemoteWindowTitle(name: string, baseUrl: string) {
@@ -615,7 +618,7 @@ app.whenReady().then(() => {
   // Required for Windows notifications / taskbar grouping.
   // Keep in sync with desktop app identifier.
   try {
-    app.setAppUserModelId("ai.neuralnomads.embedcowork.client")
+    app.setAppUserModelId("ai.vividcode.embeddedcowork.client")
   } catch {
     // ignore
   }

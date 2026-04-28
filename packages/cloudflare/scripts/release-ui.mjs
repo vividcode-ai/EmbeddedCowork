@@ -32,7 +32,7 @@ if (!fs.existsSync(uiBuildDir)) {
   process.exit(1)
 }
 
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "codenomad-ui-release-"))
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "embedcowork-ui-release-"))
 const zipPath = path.join(tmpDir, `ui-${uiVersion}.zip`)
 
 try {

@@ -12,7 +12,7 @@ const publicDir = path.join(cliRoot, "public")
 const authPagesSourceDir = path.join(distDir, "server", "routes", "auth-pages")
 const authPagesTargetDir = path.join(distDir, "auth-pages")
 const explicitTarget = process.env.CODENOMAD_STANDALONE_TARGET?.trim()
-const outputName = (explicitTarget?.includes("windows") || process.platform === "win32") ? "embedcowork-server.exe" : "embedcowork-server"
+const outputName = (explicitTarget?.includes("windows") || process.platform === "win32") ? "embeddedcowork-server.exe" : "embeddedcowork-server"
 const outputPath = path.join(distDir, outputName)
 const packageJsonPath = path.join(cliRoot, "package.json")
 

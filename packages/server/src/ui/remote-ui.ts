@@ -42,7 +42,7 @@ export interface RemoteUiOptions {
   logger: Logger
 }
 
-const DEFAULT_MANIFEST_URL = "https://ui.embedcowork.neuralnomads.ai/version.json"
+const DEFAULT_MANIFEST_URL = "https://ui.embedcowork.vividcode.ai/version.json"
 
 const MANIFEST_TIMEOUT_MS = 5_000
 const ZIP_TIMEOUT_MS = 30_000

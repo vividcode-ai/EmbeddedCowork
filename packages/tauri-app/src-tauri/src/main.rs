@@ -40,11 +40,11 @@ const DEFAULT_ZOOM_LEVEL: f64 = 1.0;
 const ZOOM_STEP: f64 = 0.1;
 const MIN_ZOOM_LEVEL: f64 = 0.2;
 const MAX_ZOOM_LEVEL: f64 = 5.0;
-const LOCAL_WINDOW_CONTEXT_SCRIPT: &str = "window.__CODENOMAD_WINDOW_CONTEXT__ = 'local';";
-const REMOTE_WINDOW_CONTEXT_SCRIPT: &str = "window.__CODENOMAD_WINDOW_CONTEXT__ = 'remote';";
+const LOCAL_WINDOW_CONTEXT_SCRIPT: &str = "window.__EMBEDDEDCOWORK_WINDOW_CONTEXT__ = 'local';";
+const REMOTE_WINDOW_CONTEXT_SCRIPT: &str = "window.__EMBEDDEDCOWORK_WINDOW_CONTEXT__ = 'remote';";
 
 #[cfg(windows)]
-const WINDOWS_APP_USER_MODEL_ID: &str = "ai.neuralnomads.codenomad.client";
+const WINDOWS_APP_USER_MODEL_ID: &str = "ai.vividcode.embeddedcowork.client";
 
 pub struct AppState {
     pub manager: CliProcessManager,
@@ -155,9 +155,9 @@ fn wake_lock_start(
         .display(config.display)
         .idle(config.idle)
         .sleep(config.sleep)
-        .reason("CodeNomad active session")
-        .app_name("CodeNomad")
-        .app_reverse_domain("ai.neuralnomads.codenomad.client");
+        .reason("EmbeddedCowork active session")
+        .app_name("EmbeddedCowork")
+        .app_reverse_domain("ai.vividcode.embeddedcowork.client");
 
     let wake_lock = builder.create().map_err(|err| err.to_string())?;
     let mut state_lock = state.wake_lock.lock().map_err(|err| err.to_string())?;
@@ -349,7 +349,7 @@ fn needs_local_certificate_install() -> Result<bool, String> {
             format!("Failed to load the local HTTPS certificate for the remote proxy window: {err}")
         })?;
         return cert_manager::needs_trust_in_store(&local_cert.ca_cert_der).map_err(|err| {
-            format!("Failed to inspect the local CodeNomad certificate trust state: {err}")
+            format!("Failed to inspect the local EmbeddedCowork certificate trust state: {err}")
         });
     }
 
@@ -373,7 +373,7 @@ async fn open_remote_window(app: AppHandle, payload: RemoteWindowPayload) -> Res
             })?;
             if let Err(err) = cert_manager::trust_cert_in_store(&local_cert.ca_cert_der) {
                 return Err(format!(
-                    "Failed to trust the local CodeNomad CA certificate. Accept the certificate installation prompt and try again: {err}"
+                    "Failed to trust the local EmbeddedCowork CA certificate. Accept the certificate installation prompt and try again: {err}"
                 ));
             }
         }
@@ -449,7 +449,7 @@ fn force_reload_main_window(app_handle: &AppHandle) {
                 let existing_pairs: Vec<(String, String)> = url
                     .query_pairs()
                     .into_owned()
-                    .filter(|(key, _)| key != "__codenomad_force_reload")
+                    .filter(|(key, _)| key != "__embeddedcowork_force_reload")
                     .collect();
 
                 {
@@ -458,7 +458,7 @@ fn force_reload_main_window(app_handle: &AppHandle) {
                     for (key, value) in existing_pairs {
                         pairs.append_pair(&key, &value);
                     }
-                    pairs.append_pair("__codenomad_force_reload", &reload_token);
+                    pairs.append_pair("__embeddedcowork_force_reload", &reload_token);
                 }
 
                 let _ = window.navigate(url);
@@ -754,14 +754,14 @@ fn build_menu(app: &AppHandle) -> tauri::Result<()> {
 
     // App menu (macOS only)
     if is_mac {
-        let app_menu = SubmenuBuilder::new(app, "CodeNomad")
-            .text("about", "About CodeNomad")
+        let app_menu = SubmenuBuilder::new(app, "EmbeddedCowork")
+            .text("about", "About EmbeddedCowork")
             .separator()
-            .text("hide", "Hide CodeNomad")
+            .text("hide", "Hide EmbeddedCowork")
             .text("hide_others", "Hide Others")
             .text("show_all", "Show All")
             .separator()
-            .text("quit", "Quit CodeNomad")
+            .text("quit", "Quit EmbeddedCowork")
             .build()?;
         submenus.push(app_menu);
     }

@@ -5,6 +5,7 @@ import { render } from "solid-js/web"
 import iconUrl from "../../images/EmbeddedCowork-Icon.png"
 import { tGlobal } from "../../lib/i18n"
 import { runtimeEnv, isTauriHost } from "../../lib/runtime-env"
+import { preloadLocaleMessages } from "../../lib/i18n"
 import "../../index.css"
 import "./loading.css"
 
@@ -58,7 +59,12 @@ function LoadingApp() {
 
   onMount(() => {
     annotateDocument()
-    setPhraseKey(pickPhraseKey())
+    void preloadLocaleMessages().then(() => setPhraseKey(pickPhraseKey()))
+
+    const phraseInterval = setInterval(() => {
+      setPhraseKey(pickPhraseKey(phraseKey()))
+    }, 3000)
+
     const unsubscribers: Array<() => void> = []
 
     async function bootstrapTauri() {
@@ -108,6 +114,7 @@ function LoadingApp() {
     }
 
     onCleanup(() => {
+      clearInterval(phraseInterval)
       unsubscribers.forEach((unsubscribe) => {
         try {
           unsubscribe()
@@ -122,7 +129,7 @@ function LoadingApp() {
     <div class="loading-wrapper" role="status" aria-live="polite">
       <img src={iconUrl} alt={tGlobal("loadingScreen.logoAlt")} class="loading-logo" width="180" height="180" />
       <div class="loading-heading">
-        <h1 class="loading-title">EmbeddedCowork</h1>
+        <h1 class="loading-title">Embedded Cowork</h1>
         <Show when={statusKey()}>
           {(key) => <p class="loading-status">{tGlobal(key())}</p>}
         </Show>

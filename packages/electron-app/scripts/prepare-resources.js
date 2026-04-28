@@ -16,7 +16,7 @@ const npmNodeExecPath = process.env.npm_node_execpath
 
 const serverSources = ["dist", "public", "node_modules", "package.json"]
 const serverDepsMarker = join(serverRoot, "node_modules", "fastify", "package.json")
-const standaloneMarker = join(serverRoot, "dist", process.platform === "win32" ? "embedcowork-server.exe" : "embedcowork-server")
+const standaloneMarker = join(serverRoot, "dist", process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server")
 
 function log(message) {
   console.log(`[prepare-resources] ${message}`)
@@ -34,7 +34,7 @@ function ensureStandaloneServerBuild() {
   log("building standalone server executable")
   const result = spawnSync(
     "npm",
-    ["run", "build:standalone", "--workspace", "@vividcode/embedcowork"],
+    ["run", "build:standalone", "--workspace", "@vividcodeAI/embeddedcowork"],
     {
       cwd: workspaceRoot,
       stdio: "inherit",

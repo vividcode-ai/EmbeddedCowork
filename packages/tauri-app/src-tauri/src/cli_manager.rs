@@ -140,7 +140,7 @@ fn launch_cwd() -> Option<PathBuf> {
     std::env::current_dir().ok()
 }
 
-const SESSION_COOKIE_NAME_PREFIX: &str = "codenomad_session";
+const SESSION_COOKIE_NAME_PREFIX: &str = "embeddedcowork_session";
 
 const CLI_STOP_GRACE_SECS: u64 = 30;
 #[cfg(windows)]
@@ -301,7 +301,7 @@ fn generate_auth_cookie_name() -> String {
     format!("{SESSION_COOKIE_NAME_PREFIX}_{pid}_{timestamp}")
 }
 
-const DEFAULT_CONFIG_PATH: &str = "~/.config/codenomad/config.json";
+const DEFAULT_CONFIG_PATH: &str = "~/.config/embeddedcowork/config.json";
 
 #[derive(Debug, Deserialize)]
 struct PreferencesConfig {
@@ -640,7 +640,7 @@ impl CliProcessManager {
             && which::which(&resolution.node_binary).is_err()
         {
             return Err(anyhow::anyhow!(
-                "Node binary '{}' not found. CodeNomad development mode requires Node.js installed on the system, or set NODE_BINARY to a valid runtime path.",
+                "Node binary '{}' not found. EmbeddedCowork development mode requires Node.js installed on the system, or set NODE_BINARY to a valid runtime path.",
                 resolution.node_binary
             ));
         }
@@ -943,7 +943,7 @@ impl CliProcessManager {
                             let mut locked = status.lock();
                             if locked.error.is_none() {
                                 locked.error = Some(format!(
-                                    "Node binary '{}' not found in the desktop shell environment. CodeNomad development mode requires Node.js installed on the system, or set NODE_BINARY to a valid runtime path.",
+                                    "Node binary '{}' not found in the desktop shell environment. EmbeddedCowork development mode requires Node.js installed on the system, or set NODE_BINARY to a valid runtime path.",
                                     node_binary.trim()
                                 ));
                             }
@@ -1097,7 +1097,7 @@ impl CliEntry {
         }
 
         Err(anyhow::anyhow!(
-            "Unable to locate the packaged CodeNomad standalone server. Please rebuild the desktop bundle."
+            "Unable to locate the packaged EmbeddedCowork standalone server. Please rebuild the desktop bundle."
         ))
     }
 
@@ -1229,9 +1229,9 @@ fn resolve_dev_entry(_app: &AppHandle) -> Option<String> {
 
 fn resolve_standalone_entry(_app: &AppHandle) -> Option<String> {
     let executable_name = if cfg!(windows) {
-        "codenomad-server.exe"
+        "embeddedcowork-server.exe"
     } else {
-        "codenomad-server"
+        "embeddedcowork-server"
     };
     let base = workspace_root();
     let mut candidates = vec![base
@@ -1252,7 +1252,7 @@ fn resolve_standalone_entry(_app: &AppHandle) -> Option<String> {
                     .join(executable_name),
             ));
 
-            let linux_resource_roots = [dir.join("../lib/CodeNomad"), dir.join("../lib/codenomad")];
+            let linux_resource_roots = [dir.join("../lib/embeddedcowork"), dir.join("../lib/embeddedcowork")];
             for root in linux_resource_roots {
                 candidates.push(Some(root.join("server/dist").join(executable_name)));
                 candidates.push(Some(

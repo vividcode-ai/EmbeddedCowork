@@ -47,7 +47,7 @@ Download the latest installer for your platform from [Releases](https://github.c
 Run as a local server and access via browser. Perfect for remote development.
 
 ```bash
-npx @vividcode/embedcowork --launch
+npx @vividcode/embeddedcowork --launch
 ```
 
 See [Server Documentation](packages/server/README.md) for flags, TLS, auth, and remote access.
@@ -57,7 +57,7 @@ See [Server Documentation](packages/server/README.md) for flags, TLS, auth, and 
 Bleeding-edge builds from the `dev` branch:
 
 ```bash
-npx @vividcode/embedcowork-dev --launch
+npx @vividcode/embeddedcowork-dev --launch
 ```
 
 ---
@@ -137,7 +137,7 @@ EmbeddedCowork is a monorepo built with:
 ### Quick Start
 
 ```bash
-git clone https://github.com/VividCodeAI/EmbeddedCowork.git
+git clone https://github.com/vividcode-ai/EmbeddedCowork.git
 cd EmbeddedCowork
 npm install
 npm run dev
@@ -165,7 +165,7 @@ On Intel Macs, also check **System Settings → Privacy & Security** on first la
 WebKitGTK DMA-BUF/GBM issue. Run with:
 
 ```bash
-WEBKIT_DISABLE_DMABUF_RENDERER=1 embedcowork
+WEBKIT_DISABLE_DMABUF_RENDERER=1 embeddedcowork
 ```
 
 See full workaround in the original README.
@@ -175,7 +175,7 @@ See full workaround in the original README.
 
 ## Community
 
-[![Star History](https://api.star-history.com/svg?repos=VividCodeAI/EmbeddedCowork&type=Date)](https://star-history.com/#VividCodeAI/EmbeddedCowork&Date)
+[![Star History](https://api.star-history.com/svg?repos=vividcode-ai/EmbeddedCowork&type=Date)](https://star-history.com/#vividcode-ai/EmbeddedCowork&Date)
 
 ---
 
@@ -185,4 +185,4 @@ See full workaround in the original README.
 - [opencode](https://github.com/anomalyco/opencode) - AI Agent
 
 
-**Built with ♥ by [VividCode](https://github.com/VividCodeAI)** · [MIT License](LICENSE)
+**Built with ♥ by [VividCode](https://github.com/vividcode-ai)** · [MIT License](LICENSE)

@@ -14,6 +14,7 @@ const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm"
 function runStep(args, label) {
   const result = spawnSync(npmCommand, args, {
     stdio: "inherit",
+     shell: process.platform === "win32",
   })
 
   if (result.error) {

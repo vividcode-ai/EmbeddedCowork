@@ -1,6 +1,6 @@
 {
-  "name": "embedded-cowork",
-  "version": "0.14.0",
+  "name": "Embedded-Cowork",
+  "version": "0.0.1",
   "private": true,
   "description": "EmbeddedCowork monorepo workspace",
   "license": "MIT",
@@ -13,15 +13,15 @@
     ]
   },
   "scripts": {
-    "dev": "npm run dev --workspace @vividcode/embedcowork-electron-app",
-    "dev:electron": "npm run dev --workspace @vividcode/embedcowork-electron-app",
-    "dev:tauri": "npm run dev --workspace @embedcowork/tauri-app",
-    "build": "npm run build --workspace @vividcode/embedcowork-electron-app",
-    "build:tauri": "npm run build --workspace @embedcowork/tauri-app",
-    "build:ui": "npm run build --workspace @embedcowork/ui",
-    "build:mac-x64": "npm run build:mac-x64 --workspace @vividcode/embedcowork-electron-app",
-    "build:binaries": "npm run build:binaries --workspace @vividcode/embedcowork-electron-app",
-    "typecheck": "npm run typecheck --workspace @embedcowork/ui && npm run typecheck --workspace @vividcode/embedcowork-electron-app",
+    "dev": "npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "dev:electron": "npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "dev:tauri": "npm run dev --workspace @embeddedcowork/tauri-app",
+    "build": "npm run build --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "build:tauri": "npm run build --workspace @embeddedcowork/tauri-app",
+    "build:ui": "npm run build --workspace @embeddedcowork/ui",
+    "build:mac-x64": "npm run build:mac-x64 --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "build:binaries": "npm run build:binaries --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "typecheck": "npm run typecheck --workspace @embeddedcowork/ui && npm run typecheck --workspace @vividcodeAI/embeddedcowork-electron-app",
     "bumpVersion": "node ./scripts/bump-version.js"
   },
   "dependencies": {
