@@ -2,7 +2,7 @@
 
 ## The AI Coding Cockpit for OpenCode
 
-EmbeddedCowork transforms CodeNomad/OpenCode from a terminal tool into a **premium desktop workspace** — built for developers who live inside AI coding sessions for hours and need control, speed, and clarity.
+EmbeddedCowork transforms OpenCode from a terminal tool into a **premium desktop workspace** — built for developers who live inside AI coding sessions for hours and need control, speed, and clarity.
 
 > OpenCode gives you the engine. EmbeddedCowork gives you the cockpit.
 
@@ -47,7 +47,7 @@ Download the latest installer for your platform from [Releases](https://github.c
 Run as a local server and access via browser. Perfect for remote development.
 
 ```bash
-npx @vividcode/embeddedcowork --launch
+npx @vividcodeai/embeddedcowork --launch
 ```
 
 See [Server Documentation](packages/server/README.md) for flags, TLS, auth, and remote access.
@@ -57,7 +57,7 @@ See [Server Documentation](packages/server/README.md) for flags, TLS, auth, and 
 Bleeding-edge builds from the `dev` branch:
 
 ```bash
-npx @vividcode/embeddedcowork-dev --launch
+npx @vividcodeai/embeddedcowork-dev --launch
 ```
 
 ---
@@ -181,8 +181,7 @@ See full workaround in the original README.
 
 感谢以下开源项目：
 
-- [CodeNomad](https://github.com/NeuralNomadsAI/CodeNomad) -跨平台桌面版本 
-- [opencode](https://github.com/anomalyco/opencode) - AI Agent
+- [CodeNomad](https://github.com/NeuralNomadsAI/CodeNomad) [opencode](https://github.com/anomalyco/opencode) 
 
 
-**Built with ♥ by [VividCode](https://github.com/vividcode-ai)** · [MIT License](LICENSE)
+**Built with ♥ by [VividCodeAI](https://github.com/vividcode-ai)** · [MIT License](LICENSE)

@@ -9,7 +9,7 @@
   },
   "publishConfig": {
     "access": "public",      
-    "provenance": true,     
+    "provenance": false,     
     "registry": "https://registry.npmjs.org/"
   },
   "repository": {
@@ -19,7 +19,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "embedcowork": "dist/bin.js"
+    "embeddedCowork": "dist/bin.js"
   },
   "scripts": {
     "build": "npm run build:ui && npm run prepare-ui && tsc -p tsconfig.json && node ./scripts/copy-auth-pages.mjs && npm run prepare-config",
