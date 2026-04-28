@@ -12,6 +12,6 @@ out/
 # Local runtime artifacts
 .codenomad/
 .embedcowork/
-./sisyphus
+.sisyphus
 .tmp/
 packages/cloudflare/.wrangler/
