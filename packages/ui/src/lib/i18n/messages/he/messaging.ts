@@ -128,7 +128,7 @@ export const messagingMessages = {
   "expandButton.toggleAriaLabel": "שנה גובה תיבת הקלט",
 
   "promptInput.placeholder.shell": "הפעל פקודת מעטפת (Esc ליציאה)...",
-  "promptInput.placeholder.default": "הקלד הודעה, @file, @agent, או הדבק תמונות וטקסט...",
+  "promptInput.placeholder.default": "הקלד הודעה, @file, @agent, ↑↓ להיסטוריה, / לפקודות, או הדבק תמונות וטקסט...",
   "promptInput.hints.shell.exit": "לצאת ממצב מעטפת",
   "promptInput.hints.shell.enable": "מצב מעטפת",
   "promptInput.hints.commands": "פקודות",

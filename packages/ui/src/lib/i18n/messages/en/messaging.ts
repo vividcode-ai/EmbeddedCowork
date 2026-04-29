@@ -128,7 +128,7 @@ export const messagingMessages = {
   "expandButton.toggleAriaLabel": "Toggle chat input height",
 
   "promptInput.placeholder.shell": "Run a shell command (Esc to exit)...",
-  "promptInput.placeholder.default": "Type your message, @file, @agent, or paste images and text...",
+  "promptInput.placeholder.default": "Type your message, @file, @agent, ↑↓ for history, / for commands, or paste images and text...",
   "promptInput.hints.shell.exit": "to exit shell mode",
   "promptInput.hints.shell.enable": "Shell mode",
   "promptInput.hints.commands": "Commands",
