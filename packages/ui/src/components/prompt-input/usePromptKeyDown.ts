@@ -1,11 +1,6 @@
 import type { Accessor } from "solid-js"
 import type { Attachment } from "../../types/attachment"
-import type { PromptMode } from "./types"
-import {
-  createImagePlaceholderRegex,
-  createMentionRegex,
-  createPastedPlaceholderRegex,
-} from "./attachmentPlaceholders"
+import type { ExpandState, PromptMode } from "./types"
 
 export type UsePromptKeyDownOptions = {
   getTextarea: () => HTMLTextAreaElement | null
@@ -30,6 +25,9 @@ export type UsePromptKeyDownOptions = {
 
   selectPreviousHistory: (force?: boolean) => boolean
   selectNextHistory: (force?: boolean) => boolean
+
+  expandState: Accessor<ExpandState>
+  onToggleExpand: (next: ExpandState) => void
 }
 
 export function usePromptKeyDown(options: UsePromptKeyDownOptions) {
@@ -58,6 +56,14 @@ export function usePromptKeyDown(options: UsePromptKeyDownOptions) {
     const currentText = options.prompt()
     const cursorAtBufferStart = textarea.selectionStart === 0 && textarea.selectionEnd === 0
     const isShellMode = options.mode() === "shell"
+
+    // Ctrl/Cmd + ArrowUp → toggle expand state
+    if ((e.metaKey || e.ctrlKey) && e.key === "ArrowUp") {
+      e.preventDefault()
+      const next = options.expandState() === "normal" ? "expanded" : "normal"
+      options.onToggleExpand(next)
+      return
+    }
 
     if (!isShellMode && e.key === "!" && cursorAtBufferStart && currentText.length === 0 && !textarea.disabled) {
       e.preventDefault()

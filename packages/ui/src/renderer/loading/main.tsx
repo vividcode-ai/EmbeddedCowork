@@ -139,11 +139,6 @@ function LoadingApp() {
           <div class="spinner" aria-hidden="true" />
           <span>{tGlobal(phraseKey())}</span>
         </div>
-        <div class="phrase-controls">
-          <button type="button" onClick={changePhrase}>
-            {tGlobal("loadingScreen.actions.showAnother")}
-          </button>
-        </div>
         {error() && <div class="loading-error">{error()}</div>}
       </div>
     </div>

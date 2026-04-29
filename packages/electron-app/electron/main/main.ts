@@ -1,4 +1,4 @@
-import { app, BrowserView, BrowserWindow, Menu, nativeImage, session, shell } from "electron"
+import { app, BrowserWindow, Menu, nativeImage, session, shell } from "electron"
 import http from "node:http"
 import https from "node:https"
 import { existsSync, mkdirSync } from "fs"
@@ -40,12 +40,11 @@ function configureDevStoragePaths() {
 configureDevStoragePaths()
 
 const cliManager = new CliProcessManager()
+let loadingWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let currentCliUrl: string | null = null
 let pendingCliUrl: string | null = null
 let pendingBootstrapToken: string | null = null
-let showingLoadingScreen = false
-let preloadingView: BrowserView | null = null
 const remoteWindowOrigins = new Map<number, Set<string>>()
 const insecureWindowOrigins = new Map<number, Set<string>>()
 
@@ -244,27 +243,39 @@ function getPreloadPath() {
   return join(mainDirname, "../preload/index.js")
 }
 
-function destroyPreloadingView(target?: BrowserView | null) {
-  const view = target ?? preloadingView
-  if (!view) {
-    return
-  }
+function createLoadingWindow() {
+  const iconPath = getIconPath()
 
-  try {
-    const contents = view.webContents as any
-    contents?.destroy?.()
-  } catch (error) {
-    console.warn("[cli] failed to destroy preloading view", error)
-  }
+  loadingWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    center: true,
+    icon: iconPath,
+    show: false,
+    alwaysOnTop: true,
+    webPreferences: {
+      preload: getPreloadPath(),
+      contextIsolation: true,
+      nodeIntegration: false,
+      spellcheck: !isMac,
+    },
+  })
 
-  if (!target || view === preloadingView) {
-    preloadingView = null
-  }
+  loadLoadingScreen(loadingWindow)
+  loadingWindow.once("ready-to-show", () => {
+    loadingWindow?.show()
+  })
+
+  loadingWindow.on("closed", () => {
+    loadingWindow = null
+  })
 }
 
-function createWindow() {
-  const prefersDark = true
-  const backgroundColor = prefersDark ? "#1a1a1a" : "#ffffff"
+function createMainWindow() {
+  const backgroundColor = "#1a1a1a"
   const iconPath = getIconPath()
 
   mainWindow = new BrowserWindow({
@@ -274,6 +285,7 @@ function createWindow() {
     minHeight: 600,
     backgroundColor,
     icon: iconPath,
+    show: false,
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,
@@ -291,10 +303,8 @@ function createWindow() {
     window.webContents.session.setSpellCheckerEnabled(false)
   }
 
-  showingLoadingScreen = true
   currentCliUrl = null
   clearWindowAllowedOrigin(window)
-  const loadingReady = loadLoadingScreen(window)
 
   if (process.env.NODE_ENV === "development") {
     window.webContents.openDevTools({ mode: "detach" })
@@ -304,32 +314,20 @@ function createWindow() {
   setupCliIPC(window, cliManager)
 
   window.on("closed", () => {
-    destroyPreloadingView()
     clearWindowAllowedOrigin(window)
     clearWindowInsecureOrigin(window)
     mainWindow = null
     currentCliUrl = null
     pendingCliUrl = null
-    showingLoadingScreen = false
   })
-
-  return loadingReady
 }
 
 function showLoadingScreen(force = false) {
-  if (!mainWindow || mainWindow.isDestroyed()) {
+  if (!loadingWindow || loadingWindow.isDestroyed()) {
     return
   }
 
-  if (showingLoadingScreen && !force) {
-    return
-  }
-
-  destroyPreloadingView()
-  showingLoadingScreen = true
-  currentCliUrl = null
-  pendingCliUrl = null
-  loadLoadingScreen(mainWindow)
+  loadLoadingScreen(loadingWindow)
 }
 
 function isBootstrapTokenUrl(url: string): boolean {
@@ -347,66 +345,37 @@ function startCliPreload(url: string) {
     return
   }
 
-  if (currentCliUrl === url && !showingLoadingScreen) {
+  if (currentCliUrl === url) {
     return
   }
 
   pendingCliUrl = url
-  destroyPreloadingView()
+  showLoadingScreen(true)
 
-  if (!showingLoadingScreen) {
-    showLoadingScreen(true)
-  }
-
-  // Important: /auth/token#... is one-time. Preloading + swapping would load it twice,
-  // consuming the token in the hidden view and then failing in the main window.
-  if (isBootstrapTokenUrl(url)) {
-    finalizeCliSwap(url)
-    return
-  }
-
-  const view = new BrowserView({
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: !isMac,
-    },
-  })
-
-  preloadingView = view
-
-  view.webContents.once("did-finish-load", () => {
-    if (preloadingView !== view) {
-      destroyPreloadingView(view)
-      return
-    }
-    finalizeCliSwap(url)
-  })
-
-  view.webContents.loadURL(url).catch((error) => {
-    console.error("[cli] failed to preload CLI view:", error)
-    if (preloadingView === view) {
-      destroyPreloadingView(view)
-    }
-  })
+  finalizeCliSwap(url)
 }
 
 function finalizeCliSwap(url: string) {
-  destroyPreloadingView()
-
   if (!mainWindow || mainWindow.isDestroyed()) {
     pendingCliUrl = url
     return
   }
 
-  const window = mainWindow
-  showingLoadingScreen = false
+  if (currentCliUrl === url) {
+    return
+  }
+
   currentCliUrl = url
-  setWindowAllowedOrigin(window, url)
+  setWindowAllowedOrigin(mainWindow, url)
   pendingCliUrl = null
-  window.loadURL(url).then(() => {
-    window.maximize()
-    createApplicationMenu(window)
+
+  mainWindow.loadURL(url).then(() => {
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+      loadingWindow.destroy()
+      loadingWindow = null
+    }
+    mainWindow?.maximize()
+    createApplicationMenu(mainWindow!)
   }).catch((error) => console.error("[cli] failed to load CLI view:", error))
 }
 
@@ -615,15 +584,14 @@ if (isMac) {
 }
 
 app.whenReady().then(() => {
-  // Required for Windows notifications / taskbar grouping.
-  // Keep in sync with desktop app identifier.
   try {
     app.setAppUserModelId("ai.vividcode.embeddedcowork.client")
   } catch {
     // ignore
   }
 
-  const loadingReady = createWindow()
+  createLoadingWindow()
+  createMainWindow()
   ;(mainWindow as BrowserWindow & { __embedcoworkOpenRemoteWindow?: typeof openRemoteWindow }).__embedcoworkOpenRemoteWindow = openRemoteWindow
 
   if (isMac) {
@@ -641,11 +609,9 @@ app.whenReady().then(() => {
     }
   }
 
-  void loadingReady.finally(() => {
-    setTimeout(() => {
-      void startCli()
-    }, 0)
-  })
+  setTimeout(() => {
+    void startCli()
+  }, 0)
 
   app.on("certificate-error", (event, _webContents, url, error, _certificate, callback) => {
     if (isInsecureOriginAllowed(url)) {
@@ -658,8 +624,11 @@ app.whenReady().then(() => {
   })
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createMainWindow()
+    }
+    if (!loadingWindow || loadingWindow.isDestroyed()) {
+      createLoadingWindow()
     }
   })
 })

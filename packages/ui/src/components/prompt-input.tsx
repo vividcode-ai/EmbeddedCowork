@@ -1,6 +1,5 @@
 import { Suspense, createEffect, createSignal, lazy, on, onCleanup, Show } from "solid-js"
-import { ArrowBigUp, ArrowBigDown, Loader2, Mic, Volume2, X } from "lucide-solid"
-import ExpandButton from "./expand-button"
+import { Loader2, Mic, Volume2 } from "lucide-solid"
 import { clearAttachments, removeAttachment } from "../stores/attachments"
 import { resolvePastedPlaceholders } from "../lib/prompt-placeholders"
 import { createPastedPlaceholderRegex, pastedDisplayCounterRegex } from "./prompt-input/attachmentPlaceholders"
@@ -18,6 +17,7 @@ import { usePromptState } from "./prompt-input/usePromptState"
 import { usePromptAttachments } from "./prompt-input/usePromptAttachments"
 import { usePromptPicker } from "./prompt-input/usePromptPicker"
 import { usePromptKeyDown } from "./prompt-input/usePromptKeyDown"
+import { usePromptResize } from "./prompt-input/usePromptResize"
 import { usePromptVoiceInput } from "./prompt-input/usePromptVoiceInput"
 import {
   canUseConversationMode,
@@ -86,7 +86,6 @@ export default function PromptInput(props: PromptInputProps) {
     historyIndex,
     recordHistoryEntry,
     clearHistoryDraft,
-    resetHistoryNavigation,
     selectPreviousHistory,
     selectNextHistory,
   } = promptState
@@ -362,19 +361,6 @@ export default function PromptInput(props: PromptInputProps) {
     textareaRef?.focus()
   }
 
-  function handleClearPrompt() {
-    clearPrompt()
-    clearHistoryDraft()
-    resetHistoryNavigation()
-    setShowPicker(false)
-    setPickerMode("mention")
-    setAtPosition(null)
-    setSearchQuery("")
-    setIgnoredAtPositions(new Set<number>())
-    syncAttachmentCounters("")
-    textareaRef?.focus()
-  }
-
   function insertBlockContent(block: string) {
     const textarea = textareaRef
     const current = prompt()
@@ -435,18 +421,12 @@ export default function PromptInput(props: PromptInputProps) {
 
   const canStop = () => Boolean(props.isSessionBusy && props.onAbortSession)
 
-  const hasHistory = () => history().length > 0
-  const canHistoryGoPrevious = () => hasHistory() && (historyIndex() === -1 || historyIndex() < history().length - 1)
-  const canHistoryGoNext = () => historyIndex() >= 0
-
   const canSend = () => {
     if (props.disabled) return false
     const hasText = prompt().trim().length > 0
     if (mode() === "shell") return hasText
     return hasText || attachments().length > 0
   }
-
-  const canClearPrompt = () => prompt().length > 0
 
   const shellHint = () =>
     mode() === "shell"
@@ -474,6 +454,8 @@ export default function PromptInput(props: PromptInputProps) {
       selectPreviousHistory({ force, isPickerOpen: showPicker(), getTextarea: () => textareaRef ?? null }),
     selectNextHistory: (force) =>
       selectNextHistory({ force, isPickerOpen: showPicker(), getTextarea: () => textareaRef ?? null }),
+    expandState,
+    onToggleExpand: handleExpandToggle,
   })
 
   const shouldShowOverlay = () => prompt().length === 0
@@ -495,6 +477,12 @@ export default function PromptInput(props: PromptInputProps) {
       ? t("promptInput.conversationMode.disable.title")
       : t("promptInput.conversationMode.enable.title")
 
+  const { isResizing, onResizeHandlePointerDown } = usePromptResize({
+    getTextarea: () => textareaRef ?? null,
+    minHeight: 56,
+    maxHeight: 400,
+  })
+
   const instance = () => getActiveInstance()
 
   let voiceButtonPressed = false
@@ -502,7 +490,6 @@ export default function PromptInput(props: PromptInputProps) {
   const beginVoicePress = (event?: PointerEvent | KeyboardEvent) => {
     if (voiceButtonPressed || props.disabled || voiceInput.isTranscribing() || !voiceInput.canUseVoiceInput()) return
     voiceButtonPressed = true
-    // Treat a mic press as barge-in: stop any active assistant speech before listening.
     clearConversationPlaybackForInstance(props.instanceId)
 
     if (event instanceof PointerEvent) {
@@ -528,7 +515,7 @@ export default function PromptInput(props: PromptInputProps) {
   return (
     <div class="prompt-input-container">
       <div
-        class={`prompt-input-wrapper relative ${isDragging() ? "border-2" : ""}`}
+        class={`prompt-input-wrapper relative ${isDragging() ? "border-2" : ""} ${isResizing() ? "is-resizing" : ""}`}
         style={
           isDragging()
             ? "border-color: var(--accent-primary); background-color: rgba(0, 102, 255, 0.05);"
@@ -538,6 +525,12 @@ export default function PromptInput(props: PromptInputProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        <div
+          class="prompt-resize-handle"
+          style="grid-column: 1 / -1;"
+          onPointerDown={onResizeHandlePointerDown}
+          aria-label="Resize prompt input"
+        />
         <Show when={showPicker() && instance()}>
           <Suspense fallback={null}>
             <LazyUnifiedPicker
@@ -565,7 +558,7 @@ export default function PromptInput(props: PromptInputProps) {
             <div class={`prompt-input-field ${expandState() === "expanded" ? "is-expanded" : ""}`}>
               <textarea
                 ref={textareaRef}
-                class={`prompt-input ${mode() === "shell" ? "shell-mode" : ""} ${expandState() === "expanded" ? "is-expanded" : ""}`}
+                class={`prompt-input ${mode() === "shell" ? "shell-mode" : ""} ${expandState() === "expanded" ? "is-expanded" : ""} ${isResizing() ? "is-resizing" : ""}`}
                 dir="auto"
                 placeholder={getPlaceholder()}
                 value={prompt()}
@@ -690,54 +683,6 @@ export default function PromptInput(props: PromptInputProps) {
                   title={conversationModeButtonTitle()}
                 >
                   <Volume2 class="h-4 w-4" aria-hidden="true" />
-                </button>
-              </Show>
-              <button
-                type="button"
-                class="prompt-clear-button"
-                onClick={handleClearPrompt}
-                disabled={!canClearPrompt()}
-                aria-label={t("promptInput.clear.ariaLabel")}
-                title={t("promptInput.clear.title")}
-              >
-                <X class="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-            <div class="prompt-nav-column prompt-nav-column-right">
-              <ExpandButton
-                expandState={expandState}
-                onToggleExpand={handleExpandToggle}
-              />
-              <Show when={hasHistory()}>
-                <button
-                  type="button"
-                  class="prompt-history-button"
-                  onClick={() =>
-                    selectPreviousHistory({
-                      force: true,
-                      isPickerOpen: showPicker(),
-                      getTextarea: () => textareaRef,
-                    })
-                  }
-                  disabled={!canHistoryGoPrevious()}
-                  aria-label={t("promptInput.history.previousAriaLabel")}
-                >
-                  <ArrowBigUp class="h-5 w-5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  class="prompt-history-button"
-                  onClick={() =>
-                    selectNextHistory({
-                      force: true,
-                      isPickerOpen: showPicker(),
-                      getTextarea: () => textareaRef,
-                    })
-                  }
-                  disabled={!canHistoryGoNext()}
-                  aria-label={t("promptInput.history.nextAriaLabel")}
-                >
-                  <ArrowBigDown class="h-5 w-5" aria-hidden="true" />
                 </button>
               </Show>
             </div>

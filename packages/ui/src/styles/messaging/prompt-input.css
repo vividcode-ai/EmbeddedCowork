@@ -2,11 +2,13 @@
   @apply flex flex-col border-t;
   border-color: var(--border-base);
   background-color: var(--surface-base);
+  margin-bottom: 10px;
 }
 
 .prompt-input-wrapper {
   @apply grid items-stretch;
   grid-template-columns: minmax(0, 1fr) 72px 64px;
+  grid-template-rows: auto 1fr;
   gap: 0;
   padding: 0;
 }
@@ -93,7 +95,7 @@
   color: var(--text-primary);
 }
 
-/* Navigation buttons container (expand, prev, next). */
+/* Navigation buttons container. */
 .prompt-nav-buttons {
   display: flex;
   flex-direction: row;
@@ -117,90 +119,6 @@
 
 .prompt-nav-column-right {
   min-width: 1.75rem;
-}
-
-.prompt-expand-button,
-.prompt-history-button,
-.prompt-clear-button {
-  @apply w-7 h-7 flex items-center justify-center rounded-md;
-  color: var(--text-muted);
-  background-color: var(--control-ghost-bg);
-  transition: background-color 0.15s ease, color 0.15s ease;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.prompt-expand-button:hover:not(:disabled),
-.prompt-history-button:hover:not(:disabled),
-.prompt-clear-button:hover:not(:disabled) {
-  background-color: var(--surface-secondary);
-  color: var(--text-primary);
-}
-
-.prompt-expand-button:active:not(:disabled) {
-  background-color: var(--accent-primary);
-  color: var(--text-inverted);
-  transform: scale(0.95);
-}
-
-.prompt-expand-button:disabled,
-.prompt-history-button:disabled,
-.prompt-clear-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.prompt-overlay-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.prompt-overlay-warning {
-  color: var(--status-warning);
-  font-weight: 500;
-}
-
-.prompt-overlay-shell-active {
-  color: var(--status-success);
-  font-weight: 600;
-}
-
-.prompt-overlay-muted {
-  color: var(--text-muted);
-}
-
-.prompt-input.shell-mode {
-  border-color: var(--status-success);
-  box-shadow: inset 0 0 0 1px var(--status-success-ring);
-}
-
-.prompt-input:focus {
-  border-color: var(--accent-primary);
-}
-
-.prompt-input.shell-mode:focus {
-  border-color: var(--status-success);
-  box-shadow: inset 0 0 0 1px var(--status-success-ring);
-}
-
-.prompt-input:disabled {
-  @apply opacity-60 cursor-not-allowed;
-}
-
-/* In RTL: override dir="auto" which defaults to LTR on empty textarea */
-[dir="rtl"] .prompt-input {
-  direction: rtl;
-}
-
-.prompt-input::placeholder {
-  color: var(--text-muted);
-}
-
-.stop-button {
-  @apply w-10 h-10 rounded-md border-none cursor-pointer flex items-center justify-center transition-all flex-shrink-0;
-  background-color: var(--button-danger-bg, rgba(239, 68, 68, 0.85));
-  color: var(--button-danger-text, var(--text-inverted, #ffffff));
 }
 
 .prompt-voice-button {
@@ -268,6 +186,59 @@
   font-weight: 600;
   line-height: 1;
   color: currentColor;
+}
+
+.prompt-overlay-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.prompt-overlay-warning {
+  color: var(--status-warning);
+  font-weight: 500;
+}
+
+.prompt-overlay-shell-active {
+  color: var(--status-success);
+  font-weight: 600;
+}
+
+.prompt-overlay-muted {
+  color: var(--text-muted);
+}
+
+.prompt-input.shell-mode {
+  border-color: var(--status-success);
+  box-shadow: inset 0 0 0 1px var(--status-success-ring);
+}
+
+.prompt-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.prompt-input.shell-mode:focus {
+  border-color: var(--status-success);
+  box-shadow: inset 0 0 0 1px var(--status-success-ring);
+}
+
+.prompt-input:disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+
+/* In RTL: override dir="auto" which defaults to LTR on empty textarea */
+[dir="rtl"] .prompt-input {
+  direction: rtl;
+}
+
+.prompt-input::placeholder {
+  color: var(--text-muted);
+}
+
+.stop-button {
+  @apply w-10 h-10 rounded-md border-none cursor-pointer flex items-center justify-center transition-all flex-shrink-0;
+  background-color: var(--button-danger-bg, rgba(239, 68, 68, 0.85));
+  color: var(--button-danger-text, var(--text-inverted, #ffffff));
 }
 
 .stop-button:hover:not(:disabled) {
@@ -441,4 +412,42 @@
     gap: 0;
     padding: 0;
   }
+}
+
+/* Resize handle - drag upward to enlarge input */
+.prompt-resize-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 6px;
+  cursor: ns-resize;
+  background: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.prompt-resize-handle::after {
+  content: "";
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--text-muted);
+  opacity: 0.3;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.prompt-resize-handle:hover::after,
+.prompt-resize-handle:active::after {
+  background-color: var(--accent-primary);
+  opacity: 0.6;
+}
+
+.prompt-input-wrapper.is-resizing {
+  cursor: ns-resize;
+}
+
+.prompt-input.is-resizing {
+  overflow-y: auto;
 }
