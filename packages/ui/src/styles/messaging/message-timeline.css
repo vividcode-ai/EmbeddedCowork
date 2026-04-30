@@ -12,13 +12,8 @@
 }
 
 .message-layout--with-timeline {
-  grid-template-columns: minmax(0, 1fr) 64px;
-}
-
-@media (max-width: 720px) {
-  .message-layout--with-timeline {
-    grid-template-columns: minmax(0, 1fr) 40px;
-  }
+  grid-template-columns: minmax(0, 1fr);
+  padding-inline-end: 5px;
 }
 
 .message-stream-shell {
@@ -35,19 +30,12 @@
  }
  
  .message-timeline-sidebar {
-  width: 64px;
+  width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: visible;
  }
-
-
-@media (max-width: 720px) {
-  .message-timeline-sidebar {
-    width: 40px;
-  }
-}
 
 .message-timeline {
   --message-timeline-segment-gap: 0.35rem;
@@ -237,13 +225,13 @@
 
 .message-timeline-container {
   position: absolute;
-  inset-inline-end: calc(64px + 8px);
+  inset-inline-end: 15px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 100;
   display: flex;
   flex-direction: column;
-  background: var(--surface-base);
+  background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
   box-shadow: none;
@@ -251,17 +239,18 @@
   min-width: 24px;
   max-height: calc(5 * 2rem + 8px);
   overflow: visible;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .message-timeline-container:hover {
+  background: var(--surface-base);
   border-color: var(--border-base);
   box-shadow: var(--panel-shadow);
 }
 
 @media (max-width: 720px) {
   .message-timeline-container {
-    inset-inline-end: calc(40px + 8px);
+    inset-inline-end: 15px;
   }
 }
 
