@@ -598,7 +598,7 @@ export default function PromptInput(props: PromptInputProps) {
                   autoCapitalize="off"
                   autocomplete="off"
                 />            
-                <div class={`flex-none prompt-input-overlay keyboard-hints ${mode() === "shell" ? "shell-mode" : ""}`}>
+                <div class={`flex-none prompt-input-overlay ${mode() === "shell" ? "shell-mode" : ""}`}>
                   <div class="flex items-center gap-2 flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
                       <Show
