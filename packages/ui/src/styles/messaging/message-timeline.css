@@ -15,24 +15,9 @@
   grid-template-columns: minmax(0, 1fr) 64px;
 }
 
-.message-layout--with-timeline::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  inset-inline-end: 64px;
-  width: 1px;
-  background-color: var(--border-muted);
-  pointer-events: none;
-}
-
 @media (max-width: 720px) {
   .message-layout--with-timeline {
     grid-template-columns: minmax(0, 1fr) 40px;
-  }
-
-  .message-layout--with-timeline::after {
-    inset-inline-end: 40px;
   }
 }
 
@@ -54,8 +39,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  position: relative;
-  z-index: 100;
+  overflow: visible;
  }
 
 
@@ -71,12 +55,10 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 0.25rem;
+  padding: 0;
   overflow-y: auto;
   overflow-x: visible;
-  border-radius: 8px;
-  background-color: var(--surface-base);
-  box-shadow: var(--panel-shadow);
+  scrollbar-width: none;
 }
 
 .message-timeline--selection-active {
@@ -84,35 +66,56 @@
 }
 
 .message-timeline::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Show scrollbar when container is hovered */
+.message-timeline-container:hover .message-timeline {
+  scrollbar-width: thin;
+}
+
+.message-timeline-container:hover .message-timeline::-webkit-scrollbar {
   width: 5px;
 }
 
-.message-timeline::-webkit-scrollbar-thumb {
+.message-timeline-container:hover .message-timeline::-webkit-scrollbar-thumb {
   background-color: var(--border-muted);
   border-radius: 9999px;
 }
 
 .message-timeline-segment {
   width: 100%;
-  min-height: 1.5rem;
-  border-radius: 0;
-  border: 1px solid var(--border-base);
-  background-color: var(--surface-secondary);
+  min-height: 1.25rem;
+  border: none;
+  background: none;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-primary);
-  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
+  padding: 2px 0;
+  margin: 0;
+  color: var(--text-muted);
+  cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
   -webkit-touch-callout: none;
+  font-size: 0;
+  outline: none;
+}
+
+/* Horizontal line */
+.message-timeline-segment::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background-color: currentColor;
+  opacity: 0.35;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
 }
 
 .message-timeline-item {
@@ -127,148 +130,72 @@
 }
 
 .message-timeline-segment[data-delete-hover="true"]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--status-error-bg);
-  border-radius: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Ensure delete hover is visible even on the active segment styling. */
-.message-timeline-segment[data-delete-hover="true"],
-.message-timeline-segment[data-delete-hover="true"]:hover,
-.message-timeline-segment[data-delete-hover="true"]:focus-visible,
-.message-timeline-segment-active[data-delete-hover="true"],
-.message-timeline-segment-active[data-delete-hover="true"]:hover,
-.message-timeline-segment-active[data-delete-hover="true"]:focus-visible {
-  /* Let the ::before overlay provide the highlight (matches stream behavior). */
-  background-color: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.message-timeline-label {
-  position: relative;
-  z-index: 3;
+  background-color: var(--status-error) !important;
+  opacity: 1 !important;
 }
 
 .message-timeline-segment.message-timeline-segment-hidden {
   display: none !important;
 }
 
+/* Active */
+.message-timeline-segment-active::before {
+  opacity: 1;
+}
+
 .message-timeline-segment-active {
-  border-color: color-mix(in oklab, var(--timeline-segment-active-bg) 92%, var(--timeline-segment-active-text));
-  background-color: var(--timeline-segment-active-bg);
   color: var(--timeline-segment-active-text);
-  font-weight: 700;
-  box-shadow: var(--timeline-segment-active-ring);
 }
 
-.message-timeline-segment:hover,
-.message-timeline-segment:focus-visible {
-  background-color: var(--surface-hover);
-  color: var(--accent-primary);
-  outline: none;
-  transform: translateY(-1px);
+/* Hover */
+.message-timeline-segment:hover::before,
+.message-timeline-segment:focus-visible::before {
+  opacity: 0.7;
 }
 
-.message-timeline-segment-active,
-.message-timeline-segment-active:hover,
-.message-timeline-segment-active:focus-visible {
-  background-color: var(--timeline-segment-active-bg);
-  color: var(--timeline-segment-active-text);
-  transform: none;
-  box-shadow: var(--timeline-segment-active-ring);
+.message-timeline-segment-active:hover::before {
+  opacity: 1;
 }
 
-.message-timeline-segment:focus-visible {
-  box-shadow: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--accent-primary);
-}
-
-.message-timeline-user {
-  border-color: var(--message-user-border);
-  background-color: var(--message-user-bg);
-}
-
-.message-timeline-assistant {
-  border-color: var(--message-assistant-border);
-  background-color: var(--message-assistant-bg);
-}
-
-.message-timeline-tool {
-  border-color: var(--message-tool-border);
-  background-color: var(--surface-secondary);
-}
+/* Type colors */
+.message-timeline-user { color: var(--message-user-border); }
+.message-timeline-assistant { color: var(--message-assistant-border); }
+.message-timeline-tool { color: var(--message-tool-border); }
 
 .message-timeline-segment.message-timeline-segment-permission {
-  border-color: var(--session-status-permission-fg);
-  background-color: var(--session-status-permission-bg);
   color: var(--session-status-permission-fg);
 }
 
-.message-timeline-segment.message-timeline-segment-permission:hover,
-.message-timeline-segment.message-timeline-segment-permission:focus-visible {
-  background-color: var(--session-status-permission-bg);
-  color: var(--session-status-permission-fg);
-  border-color: var(--session-status-permission-fg);
-  transform: translateY(-1px);
-}
-
-.message-timeline-segment-active.message-timeline-segment-permission,
-.message-timeline-segment-active.message-timeline-segment-permission:hover,
-.message-timeline-segment-active.message-timeline-segment-permission:focus-visible {
-  background-color: var(--session-status-permission-bg) !important;
-  border-color: var(--session-status-permission-fg) !important;
-  color: var(--session-status-permission-fg) !important;
-  transform: none;
-  box-shadow: var(--timeline-segment-active-ring);
+.message-timeline-segment-permission::before {
+  opacity: 0.7;
 }
 
 .message-timeline-compaction-auto {
-  border-color: var(--session-status-compacting-fg);
-  background-color: var(--surface-secondary);
+  color: var(--session-status-compacting-fg);
 }
 
 .message-timeline-compaction-manual {
-  border-color: var(--message-user-border);
-  background-color: var(--message-user-bg);
+  color: var(--message-user-border);
 }
 
-.message-timeline-segment-active {
-  background-color: var(--timeline-segment-active-bg) !important;
-  border-color: color-mix(in oklab, var(--timeline-segment-active-bg) 92%, var(--timeline-segment-active-text)) !important;
-  color: var(--timeline-segment-active-text) !important;
-  font-weight: 700;
-  box-shadow: var(--timeline-segment-active-ring);
-}
-
+/* Hide labels — replaced by ::before line */
 .message-timeline-label {
-  pointer-events: none;
-}
-
-.message-timeline-label-full {
-  display: none;
-}
-
-.message-timeline-label-short {
-  display: inline-flex;
-  line-height: 1;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .message-timeline-icon {
-  width: 1rem;
-  height: 1rem;
+  display: none;
 }
 
+/* --- Tooltip (unchanged) --- */
 .message-timeline-tooltip {
   position: fixed;
   z-index: 1000;
-  /* Allow interacting with the preview (copy/delete/etc). */
   pointer-events: auto;
 }
 
@@ -290,55 +217,52 @@
 /* --- Selection & Histogram Ribs --- */
 
 .message-timeline-segment-selected {
-  border-color: var(--accent-primary) !important;
-  background-color: color-mix(in oklab, var(--accent-primary) 25%, var(--surface-base)) !important;
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent-primary) 50%, transparent) inset !important;
   color: var(--accent-primary) !important;
 }
 
-/* When a whole message is selected for deletion (via stream checkbox),
-   reflect that on all timeline segments for that message. */
+.message-timeline-segment-selected::before {
+  opacity: 1;
+}
+
 .message-timeline-segment-delete-selected {
-  border-color: color-mix(in oklab, var(--status-error) 55%, transparent) !important;
-  background-color: color-mix(in oklab, var(--status-error) 18%, var(--surface-base)) !important;
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--status-error) 35%, transparent) inset !important;
   color: var(--status-error) !important;
 }
 
-.message-timeline-segment-delete-selected:hover,
-.message-timeline-segment-delete-selected:focus-visible {
-  background-color: color-mix(in oklab, var(--status-error) 24%, var(--surface-base)) !important;
-  color: var(--status-error) !important;
-  transform: none;
+.message-timeline-segment-delete-selected::before {
+  background-color: var(--status-error);
+  opacity: 1;
 }
 
-.message-timeline-segment-selected:hover,
-.message-timeline-segment-selected:focus-visible {
-  background-color: color-mix(in oklab, var(--accent-primary) 35%, var(--surface-base)) !important;
-  color: var(--accent-primary) !important;
-  transform: none;
-}
-
-/* --- Group indicators: tools belong to the same message as their assistant --- */
-
-/* Tool segments that are part of a group get a left accent border. */
-.message-timeline-group-child {
-  border-inline-start: 3px solid color-mix(in oklab, var(--accent-primary) 35%, transparent);
-}
-
-/* The assistant "parent" at the bottom of a tool group gets the same border. */
-.message-timeline-group-parent {
-  border-inline-start: 3px solid color-mix(in oklab, var(--accent-primary) 35%, transparent);
-}
-
-/* Spacing is rendered by the measured item wrapper so virtua can account for it. */
+/* --- Group indicators --- */
 
 .message-timeline-container {
-  position: relative;
-  flex: 1 1 auto;
+  position: absolute;
+  inset-inline-end: calc(64px + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  background: var(--surface-base);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 4px 0;
+  min-width: 24px;
+  max-height: calc(5 * 2rem + 8px);
+  overflow: visible;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-timeline-container:hover {
+  border-color: var(--border-base);
+  box-shadow: var(--panel-shadow);
+}
+
+@media (max-width: 720px) {
+  .message-timeline-container {
+    inset-inline-end: calc(40px + 8px);
+  }
 }
 
 .message-timeline-xray-overlay {

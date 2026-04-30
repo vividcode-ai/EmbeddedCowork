@@ -143,7 +143,7 @@ export const settingsMessages = {
   "settings.behavior.toolInputsVisibility.title": "工具输入可见性",
   "settings.behavior.toolInputsVisibility.subtitle": "设置工具调用输入参数的默认可见性。",
   "settings.behavior.usageMetrics.title": "令牌用量指标",
-  "settings.behavior.usageMetrics.subtitle": "显示或隐藏助手消息的令牌与成本统计。",
+  "settings.behavior.usageMetrics.subtitle": "显示或隐藏AI消息的令牌与成本统计。",
   "settings.behavior.autoCleanup.title": "自动清理空会话",
   "settings.behavior.autoCleanup.subtitle": "创建新会话时自动清理空会话。",
   "settings.behavior.promptVoiceInput.title": "Prompt voice input",

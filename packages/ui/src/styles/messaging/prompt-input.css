@@ -1,5 +1,5 @@
 .prompt-input-container {
-  @apply flex flex-col border-t;
+  @apply flex flex-col;
   border-color: var(--border-base);
   background-color: var(--surface-base);
   margin-bottom: 10px;
@@ -23,6 +23,8 @@
 .prompt-input-field {
   position: relative;
   width: 100%;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .prompt-input {
@@ -35,7 +37,6 @@
   caret-color: var(--text-primary);
   border-color: var(--border-base);
   line-height: var(--line-height-normal);
-  border-radius: 0;
   padding-bottom: 3rem;
   min-height: 100%;
 }

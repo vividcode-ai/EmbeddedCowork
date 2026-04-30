@@ -135,7 +135,7 @@ export const commandMessages = {
   "commands.toolInputsVisibility.keywords": "工具, 输入, 参数, 可见性, 隐藏, 显示, 展开, 折叠, tool, inputs, arguments, visibility, hide, show, expand, collapse",
 
   "commands.tokenUsageDisplay.label": "Token 使用显示 · {state}",
-  "commands.tokenUsageDisplay.description": "显示或隐藏助手消息的 token 和费用统计",
+  "commands.tokenUsageDisplay.description": "显示或隐藏AI消息的 token 和费用统计",
   "commands.tokenUsageDisplay.keywords": "token, usage, cost, stats, 令牌, 用量, 费用, 统计",
 
   "commands.autoCleanupBlankSessions.label": "自动清理空白会话 · {state}",
