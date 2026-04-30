@@ -28,6 +28,7 @@ export type UsePromptKeyDownOptions = {
 
   expandState: Accessor<ExpandState>
   onToggleExpand: (next: ExpandState) => void
+  onAutoGrow?: () => void
 }
 
 export function usePromptKeyDown(options: UsePromptKeyDownOptions) {
@@ -40,6 +41,7 @@ export function usePromptKeyDown(options: UsePromptKeyDownOptions) {
     const nextCursor = start + 1
 
     options.setPrompt(nextValue)
+    options.onAutoGrow?.()
 
     setTimeout(() => {
       const nextTextarea = options.getTextarea()
@@ -279,6 +281,53 @@ export function usePromptKeyDown(options: UsePromptKeyDownOptions) {
           options.closePicker()
         }
         options.onSend()
+        return
+      }
+    }
+
+    if (e.key === "PageUp") {
+      if (currentText.length === 0) {
+        e.preventDefault()
+        const handled = options.selectPreviousHistory(true)
+        if (handled) return
+      } else {
+        e.preventDefault()
+        const pos = textarea.selectionStart
+        const textBefore = currentText.substring(0, pos)
+        const lineStart = textBefore.lastIndexOf("\n") + 1
+        if (lineStart === 0) return
+        const col = pos - lineStart
+        const textBeforeLine = currentText.substring(0, lineStart - 1)
+        const prevLineStart = textBeforeLine.lastIndexOf("\n") + 1
+        const prevLine = currentText.substring(prevLineStart, lineStart - 1)
+        const targetCol = Math.min(col, prevLine.length)
+        textarea.setSelectionRange(prevLineStart + targetCol, prevLineStart + targetCol)
+        return
+      }
+    }
+
+    if (e.key === "PageDown") {
+      if (currentText.length === 0) {
+        e.preventDefault()
+        const handled = options.selectNextHistory(true)
+        if (handled) return
+      } else {
+        e.preventDefault()
+        const pos = textarea.selectionStart
+        const textBefore = currentText.substring(0, pos)
+        const lineStart = textBefore.lastIndexOf("\n") + 1
+        const col = pos - lineStart
+        const afterLineStart = currentText.substring(lineStart)
+        const currentLineNewline = afterLineStart.indexOf("\n")
+        const lineEndPos = currentLineNewline >= 0 ? lineStart + currentLineNewline : currentText.length
+        const nextLineStart = lineEndPos + 1
+        if (nextLineStart >= currentText.length) return
+        const afterNextLine = currentText.substring(nextLineStart)
+        const nextLineNewline = afterNextLine.indexOf("\n")
+        const nextLineEnd = nextLineNewline >= 0 ? nextLineStart + nextLineNewline : currentText.length
+        const nextLine = currentText.substring(nextLineStart, nextLineEnd)
+        const targetCol = Math.min(col, nextLine.length)
+        textarea.setSelectionRange(nextLineStart + targetCol, nextLineStart + targetCol)
         return
       }
     }

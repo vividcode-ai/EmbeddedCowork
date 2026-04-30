@@ -480,6 +480,7 @@ export default function PromptInput(props: PromptInputProps) {
       selectNextHistory({ force, isPickerOpen: showPicker(), getTextarea: () => textareaRef ?? null }),
     expandState,
     onToggleExpand: handleExpandToggle,
+    onAutoGrow: autoGrowTextarea,
   })
 
   const shouldShowOverlay = () => prompt().length === 0
