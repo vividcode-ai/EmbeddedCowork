@@ -64,6 +64,13 @@ export default function PromptInput(props: PromptInputProps) {
   const SELECTION_INSERT_MAX_LENGTH = 2000
   let textareaRef: HTMLTextAreaElement | undefined
 
+  function autoGrowTextarea() {
+    const el = textareaRef
+    if (!el) return
+    el.style.height = "auto"
+    el.style.height = el.scrollHeight + "px"
+  }
+
   const getPlaceholder = () => {
     if (mode() === "shell") {
       return t("promptInput.placeholder.shell")
@@ -298,6 +305,7 @@ export default function PromptInput(props: PromptInputProps) {
     const refreshHistory = () => recordHistoryEntry(historyEntry)
 
     setExpandState("normal")
+    if (textareaRef) textareaRef.style.height = ""
     clearPrompt()
     clearHistoryDraft()
     setMode("normal")
@@ -357,7 +365,9 @@ export default function PromptInput(props: PromptInputProps) {
 
   function handleExpandToggle(nextState: "normal" | "expanded") {
     setExpandState(nextState)
-    // Keep focus on textarea
+    if (nextState === "normal" && textareaRef) {
+      textareaRef.style.height = ""
+    }
     textareaRef?.focus()
   }
 
@@ -426,6 +436,20 @@ export default function PromptInput(props: PromptInputProps) {
     const hasText = prompt().trim().length > 0
     if (mode() === "shell") return hasText
     return hasText || attachments().length > 0
+  }
+
+  const mergedButtonState = () => {
+    if (canStop()) return "stop"
+    if (canSend()) return "send"
+    return "idle"
+  }
+
+  const handleMergedClick = () => {
+    if (canStop()) {
+      void handleAbort()
+    } else if (canSend()) {
+      void handleSend()
+    }
   }
 
   const shellHint = () =>
@@ -527,7 +551,6 @@ export default function PromptInput(props: PromptInputProps) {
       >
         <div
           class="prompt-resize-handle"
-          style="grid-column: 1 / -1;"
           onPointerDown={onResizeHandlePointerDown}
           aria-label="Resize prompt input"
         />
@@ -554,155 +577,145 @@ export default function PromptInput(props: PromptInputProps) {
 
         <div class="flex flex-1 flex-col">
           <div class={`prompt-input-field-container ${expandState() === "expanded" ? "is-expanded" : ""}`}>
-
             <div class={`prompt-input-field ${expandState() === "expanded" ? "is-expanded" : ""}`}>
-              <textarea
-                ref={textareaRef}
-                class={`prompt-input ${mode() === "shell" ? "shell-mode" : ""} ${expandState() === "expanded" ? "is-expanded" : ""} ${isResizing() ? "is-resizing" : ""}`}
-                dir="auto"
-                placeholder={getPlaceholder()}
-                value={prompt()}
-                onInput={handleInput}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                disabled={props.disabled}
-                rows={expandState() === "expanded" ? (props.compactLayout ? 10 : 15) : 3}
-                spellcheck={false}
-                autocorrect="off"
-                autoCapitalize="off"
-                autocomplete="off"
-              />            
-                <div class={`prompt-input-overlay keyboard-hints ${mode() === "shell" ? "shell-mode" : ""}`}>
-                  <Show
-                    when={props.escapeInDebounce}
-                    fallback={
-                      <>
-                        <Show when={attachments().length > 0}>
-                          <span class="prompt-overlay-text prompt-overlay-muted">{t("promptInput.overlay.attachments", { count: attachments().length })}</span>
-                        </Show>
-                        <span class="prompt-overlay-text">
-                          • <Kbd>{shellHint().key}</Kbd> {shellHint().text}
-                        </span>
-                        <Show when={mode() !== "shell"}>
-                          <span class="prompt-overlay-text">
-                            • <Kbd>{commandHint().key}</Kbd> {commandHint().text}
+               <div class={`flex flex-col relative prompt-input ${mode() === "shell" ? "shell-mode" : ""} ${expandState() === "expanded" ? "is-expanded" : ""} ${isResizing() ? "is-resizing" : ""}`}>
+                <textarea
+                  ref={textareaRef}
+                  class="prompt-input-textarea"
+                  dir="auto"
+                  placeholder={getPlaceholder()}
+                  value={prompt()}
+                  onInput={(e) => { handleInput(e); autoGrowTextarea() }}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  disabled={props.disabled}
+                  rows={expandState() === "expanded" ? (props.compactLayout ? 10 : 15) : 3}
+                  spellcheck={false}
+                  autocorrect="off"
+                  autoCapitalize="off"
+                  autocomplete="off"
+                />            
+                <div class={`flex-none prompt-input-overlay keyboard-hints ${mode() === "shell" ? "shell-mode" : ""}`}>
+                  <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <Show
+                        when={props.escapeInDebounce}
+                        fallback={
+                          <>
+                            <Show when={attachments().length > 0}>
+                              <span class="prompt-overlay-text prompt-overlay-muted">{t("promptInput.overlay.attachments", { count: attachments().length })}</span>
+                            </Show>
+                            <span class="prompt-overlay-text">
+                              <Kbd>{shellHint().key}</Kbd> {shellHint().text}
+                            </span>
+                            <Show when={mode() !== "shell"}>
+                              <span class="prompt-overlay-text">
+                                • <Kbd>{commandHint().key}</Kbd> {commandHint().text}
+                              </span>
+                            </Show>
+                            <Show when={mode() === "shell"}>
+                              <span class="prompt-overlay-shell-active">{t("promptInput.overlay.shellModeActive")}</span>
+                            </Show>
+                          </>
+                        }
+                      >
+                        <>
+                          <span class="prompt-overlay-text prompt-overlay-warning">
+                            {t("promptInput.overlay.press")} <Kbd>Esc</Kbd> {t("promptInput.overlay.againToAbort")}
                           </span>
-                        </Show>
-                        <Show when={mode() === "shell"}>
-                          <span class="prompt-overlay-shell-active">{t("promptInput.overlay.shellModeActive")}</span>
-                        </Show>
-                      </>
-                    }
-                  >
-                    <>
-                      <span class="prompt-overlay-text prompt-overlay-warning">
-                        {t("promptInput.overlay.press")} <Kbd>Esc</Kbd> {t("promptInput.overlay.againToAbort")}
-                      </span>
-                      <Show when={mode() === "shell"}>
-                        <span class="prompt-overlay-shell-active">{t("promptInput.overlay.shellModeActive")}</span>
+                          <Show when={mode() === "shell"}>
+                            <span class="prompt-overlay-shell-active">{t("promptInput.overlay.shellModeActive")}</span>
+                          </Show>
+                        </>
                       </Show>
-                    </>
-                  </Show>
+                    </div>
+                    <Show when={showVoiceInput()}>
+                      <button
+                        type="button"
+                        class={`prompt-voice-button prompt-nav-voice-button pointer-events-auto ${voiceInput.isRecording() ? "is-recording" : ""}`}
+                        onPointerDown={(event) => {
+                          event.preventDefault()
+                          beginVoicePress(event)
+                        }}
+                        onPointerUp={(event) => {
+                          event.preventDefault()
+                          endVoicePress()
+                        }}
+                        onPointerCancel={() => endVoicePress()}
+                        onLostPointerCapture={() => endVoicePress()}
+                        onKeyDown={(event) => {
+                          if (event.repeat) return
+                          if (event.key !== " " && event.key !== "Enter") return
+                          event.preventDefault()
+                          beginVoicePress(event)
+                        }}
+                        onKeyUp={(event) => {
+                          if (event.key !== " " && event.key !== "Enter") return
+                          event.preventDefault()
+                          endVoicePress()
+                        }}
+                        onBlur={() => endVoicePress()}
+                        disabled={!voiceInput.isRecording() && (props.disabled || voiceInput.isTranscribing() || !voiceInput.canUseVoiceInput())}
+                        aria-label={voiceInput.buttonTitle()}
+                        title={voiceInput.buttonTitle()}
+                      >
+                        <Show
+                          when={voiceInput.isRecording()}
+                          fallback={
+                            <Show when={voiceInput.isTranscribing()} fallback={<Mic class="h-4 w-4" aria-hidden="true" />}>
+                              <Loader2 class="h-4 w-4 animate-spin" aria-hidden="true" />
+                            </Show>
+                          }
+                        >
+                          <Mic class="h-4 w-4" aria-hidden="true" />
+                        </Show>
+                      </button>
+                    </Show>
+                    <Show when={showConversationToggle()}>
+                      <button
+                        type="button"
+                        class={`prompt-voice-button prompt-nav-voice-button prompt-conversation-button pointer-events-auto ${conversationModeEnabled() ? "is-active" : ""}`}
+                        onClick={() => toggleConversationMode(props.instanceId)}
+                        disabled={!conversationModeEnabled() && !canToggleConversationMode()}
+                        aria-pressed={conversationModeEnabled()}
+                        aria-label={conversationModeButtonTitle()}
+                        title={conversationModeButtonTitle()}
+                      >
+                        <Volume2 class="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </Show>
+                  </div>
+                  <div class="flex-none">
+                    <button
+                      type="button"
+                      class={`merged-action-button pointer-events-auto ${mergedButtonState() === "stop" ? "is-stop" : ""} ${mergedButtonState() === "send" ? "is-send" : ""} ${mergedButtonState() === "idle" ? "is-idle" : ""}`}
+                      onClick={handleMergedClick}
+                      disabled={mergedButtonState() === "idle"}
+                      aria-label={mergedButtonState() === "stop" ? t("promptInput.stopSession.ariaLabel") : t("promptInput.send.ariaLabel")}
+                    >
+                      <Show when={mergedButtonState() === "stop"}>
+                        <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <rect x="4" y="4" width="12" height="12" rx="2" />
+                        </svg>
+                      </Show>
+                      <Show when={mergedButtonState() !== "stop"}>
+                        <Show when={mode() === "shell"} fallback={<span class="text-xs">▶</span>}>
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 8l5 4-5 4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h6" />
+                          </svg>
+                        </Show>
+                      </Show>
+                    </button>
+                  </div>
                 </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="prompt-input-actions">
-          <div class="prompt-nav-buttons">
-            <div class="prompt-nav-column prompt-nav-column-left">
-              <Show when={showVoiceInput()}>
-                <button
-                  type="button"
-                  class={`prompt-voice-button prompt-nav-voice-button ${voiceInput.isRecording() ? "is-recording" : ""}`}
-                  onPointerDown={(event) => {
-                    event.preventDefault()
-                    beginVoicePress(event)
-                  }}
-                  onPointerUp={(event) => {
-                    event.preventDefault()
-                    endVoicePress()
-                  }}
-                  onPointerCancel={() => endVoicePress()}
-                  onLostPointerCapture={() => endVoicePress()}
-                  onKeyDown={(event) => {
-                    if (event.repeat) return
-                    if (event.key !== " " && event.key !== "Enter") return
-                    event.preventDefault()
-                    beginVoicePress(event)
-                  }}
-                  onKeyUp={(event) => {
-                    if (event.key !== " " && event.key !== "Enter") return
-                    event.preventDefault()
-                    endVoicePress()
-                  }}
-                  onBlur={() => endVoicePress()}
-                  disabled={!voiceInput.isRecording() && (props.disabled || voiceInput.isTranscribing() || !voiceInput.canUseVoiceInput())}
-                  aria-label={voiceInput.buttonTitle()}
-                  title={voiceInput.buttonTitle()}
-                >
-                  <Show
-                    when={voiceInput.isRecording()}
-                    fallback={
-                      <Show when={voiceInput.isTranscribing()} fallback={<Mic class="h-4 w-4" aria-hidden="true" />}>
-                        <Loader2 class="h-4 w-4 animate-spin" aria-hidden="true" />
-                      </Show>
-                    }
-                  >
-                    <Mic class="h-4 w-4" aria-hidden="true" />
-                  </Show>
-                </button>
-              </Show>
-              <Show when={showConversationToggle()}>
-                <button
-                  type="button"
-                  class={`prompt-voice-button prompt-nav-voice-button prompt-conversation-button ${conversationModeEnabled() ? "is-active" : ""}`}
-                  onClick={() => toggleConversationMode(props.instanceId)}
-                  disabled={!conversationModeEnabled() && !canToggleConversationMode()}
-                  aria-pressed={conversationModeEnabled()}
-                  aria-label={conversationModeButtonTitle()}
-                  title={conversationModeButtonTitle()}
-                >
-                  <Volume2 class="h-4 w-4" aria-hidden="true" />
-                </button>
-              </Show>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-input-primary-actions">
-          <button
-            type="button"
-            class="stop-button"
-            onClick={handleAbort}
-            disabled={!canStop()}
-            aria-label={t("promptInput.stopSession.ariaLabel")}
-            title={t("promptInput.stopSession.title")}
-          >
-            <svg class="stop-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <rect x="4" y="4" width="12" height="12" rx="2" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            class={`send-button ${mode() === "shell" ? "shell-mode" : ""}`}
-            onClick={handleSend}
-            disabled={!canSend()}
-            aria-label={t("promptInput.send.ariaLabel")}
-          >
-            <Show
-              when={mode() === "shell"}
-              fallback={<span class="send-icon">▶</span>}
-            >
-              <svg class="shell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 8l5 4-5 4" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h6" />
-              </svg>
-            </Show>
-          </button>
-        </div>
       </div>
     </div>
   )

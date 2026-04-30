@@ -14,6 +14,7 @@
   },
   "homepage": "https://github.com/vividcode-ai/EmbeddedCowork",
   "scripts": {
+    "predev": "node scripts/clear-dev-cache.js",
     "dev": "npm run dev:info",
     "dev:info": "cross-env CLI_LOG_LEVEL=info electron-vite dev",
     "dev:debug": "cross-env CLI_LOG_LEVEL=debug electron-vite dev",

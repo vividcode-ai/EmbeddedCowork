@@ -32,6 +32,8 @@ function configureDevStoragePaths() {
 
     app.setPath("userData", userDataPath)
     app.setPath("sessionData", sessionDataPath)
+
+    app.commandLine.appendSwitch("disk-cache-size", String(50 * 1024 * 1024))
   } catch (error) {
     console.warn("[cli] failed to configure dev storage paths", error)
   }
@@ -255,7 +257,7 @@ function createLoadingWindow() {
     center: true,
     icon: iconPath,
     show: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,
