@@ -35,6 +35,7 @@ import { serverApi } from "../../../../lib/api-client"
 import { showConfirmDialog } from "../../../../stores/alerts"
 import { showToastNotification } from "../../../../lib/notifications"
 import { useGlobalPointerDrag } from "../useGlobalPointerDrag"
+import { useScrollbarFade } from "../../../../lib/hooks/use-scrollbar-fade"
 import { useGitChanges } from "./useGitChanges"
 import {
   RIGHT_PANEL_CHANGES_DIFF_CONTEXT_MODE_KEY,
@@ -148,8 +149,8 @@ const RightPanel: Component<RightPanelProps> = (props) => {
   const [gitChangesListTouched, setGitChangesListTouched] = createSignal(false)
   const [gitStagedOpen, setGitStagedOpen] = createSignal(true)
   const [gitUnstagedOpen, setGitUnstagedOpen] = createSignal(true)
-  const [isTabScrollHovered, setIsTabScrollHovered] = createSignal(false)
-  let tabScrollHideTimer: ReturnType<typeof setTimeout> | undefined
+  let tabScrollEl: HTMLDivElement | undefined
+  const { isHovered: isTabScrollHovered, handleMouseEnter: handleTabScrollMouseEnter, handleMouseLeave: handleTabScrollMouseLeave } = useScrollbarFade(() => tabScrollEl)
 
   const listLayoutKey = createMemo(() => (props.isPhoneLayout() ? "phone" : "nonphone"))
 
@@ -369,19 +370,6 @@ const RightPanel: Component<RightPanelProps> = (props) => {
 
   onCleanup(() => {
     stopSplitResize()
-  })
-
-  const handleTabScrollMouseEnter = () => {
-    if (tabScrollHideTimer !== undefined) clearTimeout(tabScrollHideTimer)
-    setIsTabScrollHovered(true)
-  }
-
-  const handleTabScrollMouseLeave = () => {
-    tabScrollHideTimer = setTimeout(() => setIsTabScrollHovered(false), 500)
-  }
-
-  onCleanup(() => {
-    if (tabScrollHideTimer !== undefined) clearTimeout(tabScrollHideTimer)
   })
 
   const worktreeSlugForViewer = createMemo(() => {
@@ -833,6 +821,7 @@ const RightPanel: Component<RightPanelProps> = (props) => {
         classList={{ "right-panel--scroll-hover": isTabScrollHovered() }}
         onMouseEnter={handleTabScrollMouseEnter}
         onMouseLeave={handleTabScrollMouseLeave}
+        ref={tabScrollEl}
       >
         <Show when={rightPanelTab() === "changes"}>
           <Suspense fallback={<RightPanelTabFallback />}>

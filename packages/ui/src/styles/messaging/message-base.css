@@ -98,6 +98,13 @@
 
 .message-action-group {
   @apply flex items-center gap-0;
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+}
+
+.message-item-base:hover .message-action-group {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
 }
 
 .message-action-button {
@@ -388,6 +395,16 @@
   @apply mt-4;
 }
 
+.message-step-finish .message-action-button {
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+}
+
+.message-step-finish:hover .message-action-button {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
+}
+
 .message-reasoning-card {
   --reasoning-border-color: var(--border-strong, var(--border-base));
   background-color: var(--message-assistant-bg);
@@ -435,6 +452,16 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.6rem 0.25rem 0;
+}
+
+.message-reasoning-actions .message-action-button {
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+}
+
+.message-reasoning-card:hover .message-reasoning-actions .message-action-button {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
 }
 
 .message-reasoning-toggle:hover {

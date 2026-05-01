@@ -10,6 +10,7 @@ import { getSessionInfo } from "../stores/sessions"
 import { messageStoreBus } from "../stores/message-v2/bus"
 import { useI18n } from "../lib/i18n"
 import { useScrollCache } from "../lib/hooks/use-scroll-cache"
+import { useScrollbarFade } from "../lib/hooks/use-scrollbar-fade"
 import { copyToClipboard } from "../lib/clipboard"
 import { showToastNotification } from "../lib/notifications"
 import { showAlertDialog } from "../stores/alerts"
@@ -146,9 +147,6 @@ export default function MessageSection(props: MessageSectionProps) {
   const [isDeleteMenuOpen, setIsDeleteMenuOpen] = createSignal(false)
   let deleteMenuRef: HTMLDivElement | undefined
   let deleteMenuButtonRef: HTMLButtonElement | undefined
-
-  const [isStreamHovered, setIsStreamHovered] = createSignal(false)
-  let streamHideTimer: ReturnType<typeof setTimeout> | undefined
 
   // Deletion is only allowed for messages/tool parts that occur AFTER the most
   // recent compaction. Compaction effectively resets the stored context; deleting
@@ -596,6 +594,8 @@ export default function MessageSection(props: MessageSectionProps) {
   const [listApi, setListApi] = createSignal<VirtualFollowListApi | null>(null)
   const [listState, setListState] = createSignal<VirtualFollowListState | null>(null)
   const scrollButtonsCount = createMemo(() => listState()?.scrollButtonsCount() ?? 0)
+  let msgContainerEl: HTMLDivElement | undefined
+  const { isHovered: isStreamHovered, handleMouseEnter: handleStreamMouseEnter, handleMouseLeave: handleStreamMouseLeave } = useScrollbarFade(() => msgContainerEl)
 
   const [streamElement, setStreamElement] = createSignal<HTMLDivElement | undefined>()
   const [streamShellElement, setStreamShellElement] = createSignal<HTMLDivElement | undefined>()
@@ -756,15 +756,6 @@ export default function MessageSection(props: MessageSectionProps) {
     const maxLeft = Math.max(shell.clientWidth - 260, 8)
     const relativeLeft = Math.min(Math.max(anchorRect.left - shellRect.left, 8), maxLeft)
     setQuoteSelection({ text: limited, top: relativeTop, left: relativeLeft })
-  }
-
-  const handleStreamMouseEnter = () => {
-    if (streamHideTimer !== undefined) clearTimeout(streamHideTimer)
-    setIsStreamHovered(true)
-  }
-
-  const handleStreamMouseLeave = () => {
-    streamHideTimer = setTimeout(() => setIsStreamHovered(false), 500)
   }
 
   function handleStreamMouseUp() {
@@ -1070,7 +1061,6 @@ export default function MessageSection(props: MessageSectionProps) {
   onCleanup(() => {
     clearPendingTimelinePartUpdateFrame()
     clearQuoteSelection()
-    if (streamHideTimer !== undefined) clearTimeout(streamHideTimer)
   })
 
   return (
@@ -1079,6 +1069,7 @@ export default function MessageSection(props: MessageSectionProps) {
       classList={{ "message-stream-container--hover": isStreamHovered() }}
       onMouseEnter={handleStreamMouseEnter}
       onMouseLeave={handleStreamMouseLeave}
+      ref={msgContainerEl}
       data-instance-id={props.instanceId}
       data-session-id={props.sessionId}
       data-stream-active={isActive() ? "true" : "false"}

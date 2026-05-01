@@ -69,16 +69,12 @@
 }
 
 .panel-list::-webkit-scrollbar-thumb {
-  background-color: transparent;
+  background-color: var(--sb-thumb-color, transparent);
   border-radius: 9999px;
 }
 
 .panel--scroll-hover .panel-list {
   scrollbar-color: var(--border-muted) transparent;
-}
-
-.panel--scroll-hover .panel-list::-webkit-scrollbar-thumb {
-  background-color: var(--border-muted);
 }
 
 .panel-list--fill {

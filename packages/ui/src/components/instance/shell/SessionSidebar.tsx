@@ -1,4 +1,4 @@
-import { Show, createSignal, onCleanup, type Accessor, type Component } from "solid-js"
+import { Show, type Accessor, type Component } from "solid-js"
 import type { SessionThread } from "../../../stores/session-state"
 import type { Session } from "../../../types/session"
 import { keyboardRegistry, type KeyboardShortcut } from "../../../lib/keyboard-registry"
@@ -17,6 +17,7 @@ import WorktreeSelector from "../../worktree-selector"
 import AgentSelector from "../../agent-selector"
 import ModelSelector from "../../model-selector"
 import ThinkingSelector from "../../thinking-selector"
+import { useScrollbarFade } from "../../../lib/hooks/use-scrollbar-fade"
 import { getLogger } from "../../../lib/logger"
 
 const log = getLogger("session")
@@ -48,21 +49,8 @@ interface SessionSidebarProps {
 }
 
 const SessionSidebar: Component<SessionSidebarProps> = (props) => {
-  const [isHovered, setIsHovered] = createSignal(false)
-  let hideTimer: ReturnType<typeof setTimeout> | undefined
-
-  const handleMouseEnter = () => {
-    if (hideTimer !== undefined) clearTimeout(hideTimer)
-    setIsHovered(true)
-  }
-
-  const handleMouseLeave = () => {
-    hideTimer = setTimeout(() => setIsHovered(false), 500)
-  }
-
-  onCleanup(() => {
-    if (hideTimer !== undefined) clearTimeout(hideTimer)
-  })
+  let rootEl: HTMLDivElement | undefined
+  const { isHovered, handleMouseEnter, handleMouseLeave } = useScrollbarFade(() => rootEl)
 
   return (
     <div
@@ -70,7 +58,7 @@ const SessionSidebar: Component<SessionSidebarProps> = (props) => {
       classList={{ "session-sidebar--scroll-hover": isHovered() }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      ref={props.setContentEl}
+      ref={(el) => { rootEl = el; props.setContentEl(el) }}
     >
       <div class="flex flex-col gap-2 px-4 py-3 border-b border-base">
         <div class="flex items-center justify-between gap-2">

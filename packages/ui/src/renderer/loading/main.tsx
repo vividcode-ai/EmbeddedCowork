@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core"
-import { listen } from "@tauri-apps/api/event"
 import { Show, createSignal, onCleanup, onMount } from "solid-js"
 import { render } from "solid-js/web"
 import iconUrl from "../../images/EmbeddedCowork-Icon.png"
@@ -69,6 +67,10 @@ function LoadingApp() {
 
     async function bootstrapTauri() {
       try {
+        const [{ listen }, { invoke }] = await Promise.all([
+          import("@tauri-apps/api/event"),
+          import("@tauri-apps/api/core"),
+        ])
         const readyUnlisten = await listen("cli:ready", (event) => {
           const payload = (event?.payload as CliStatus) || {}
           setError(null)

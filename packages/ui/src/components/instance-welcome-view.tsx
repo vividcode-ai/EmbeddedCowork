@@ -10,6 +10,7 @@ import { keyboardRegistry, type KeyboardShortcut } from "../lib/keyboard-registr
 import { isMac } from "../lib/keyboard-utils"
 import { showToastNotification } from "../lib/notifications"
 import { useI18n } from "../lib/i18n"
+import { useScrollbarFade } from "../lib/hooks/use-scrollbar-fade"
 import { getLogger } from "../lib/logger"
 const log = getLogger("actions")
 
@@ -30,8 +31,8 @@ const InstanceWelcomeView: Component<InstanceWelcomeViewProps> = (props) => {
   )
   const [renameTarget, setRenameTarget] = createSignal<{ id: string; title: string; label: string } | null>(null)
   const [isRenaming, setIsRenaming] = createSignal(false)
-  const [isPanelHovered, setIsPanelHovered] = createSignal(false)
-  let panelHideTimer: ReturnType<typeof setTimeout> | undefined
+  let panelEl: HTMLDivElement | undefined
+  const { isHovered: isPanelHovered, handleMouseEnter: handlePanelMouseEnter, handleMouseLeave: handlePanelMouseLeave } = useScrollbarFade(() => panelEl)
 
   const parentSessions = () => getParentSessions(props.instance.id)
   const isFetchingSessions = createMemo(() => Boolean(loading().fetchingSessions.get(props.instance.id)))
@@ -220,19 +221,6 @@ const InstanceWelcomeView: Component<InstanceWelcomeViewProps> = (props) => {
     handleMediaChange(mediaQuery.matches)
   })
 
-  const handlePanelMouseEnter = () => {
-    if (panelHideTimer !== undefined) clearTimeout(panelHideTimer)
-    setIsPanelHovered(true)
-  }
-
-  const handlePanelMouseLeave = () => {
-    panelHideTimer = setTimeout(() => setIsPanelHovered(false), 500)
-  }
-
-  onCleanup(() => {
-    if (panelHideTimer !== undefined) clearTimeout(panelHideTimer)
-  })
-
   function formatRelativeTime(timestamp: number): string {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
     const minutes = Math.floor(seconds / 60)
@@ -349,6 +337,7 @@ const InstanceWelcomeView: Component<InstanceWelcomeViewProps> = (props) => {
               classList={{ "panel--scroll-hover": isPanelHovered() }}
               onMouseEnter={handlePanelMouseEnter}
               onMouseLeave={handlePanelMouseLeave}
+              ref={panelEl}
             >
               <div class="panel-header">
                 <div class="flex flex-row flex-wrap items-center gap-2 justify-between">

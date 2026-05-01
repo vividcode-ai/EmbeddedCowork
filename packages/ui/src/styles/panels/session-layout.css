@@ -227,16 +227,12 @@ session-sidebar-controls .selector-trigger-primary {
 }
 
 .session-list::-webkit-scrollbar-thumb {
-  background-color: transparent;
+  background-color: var(--sb-thumb-color, transparent);
   border-radius: 9999px;
 }
 
 .session-sidebar--scroll-hover .session-list {
   scrollbar-color: var(--border-muted) transparent;
-}
-
-.session-sidebar--scroll-hover .session-list::-webkit-scrollbar-thumb {
-  background-color: var(--border-muted);
 }
 
 .session-list-item {
@@ -334,6 +330,15 @@ session-sidebar-controls .selector-trigger-primary {
 
 .session-item-actions {
   @apply flex items-center gap-1;
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+  pointer-events: none;
+}
+
+.session-list-item:hover .session-item-actions {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
+  pointer-events: auto;
 }
 
 .session-item-active {

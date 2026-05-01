@@ -125,6 +125,8 @@
   padding: 0 0.5rem;
   border-radius: 0;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
 }
 
 .tool-call-header-input {
@@ -135,6 +137,8 @@
   padding: 0 0.5rem;
   border-radius: 0;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
 }
 
 .tool-call-header-copy:hover {
@@ -946,4 +950,20 @@
 .dropdown-diff-removed {
   @apply text-xs;
   color: var(--status-error);
+}
+
+.delete-hover-scope:hover .tool-call-header-copy,
+.delete-hover-scope:hover .tool-call-header-input {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
+}
+
+.delete-hover-scope .tool-call-header-button {
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+}
+
+.delete-hover-scope:hover .tool-call-header-button {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
 }

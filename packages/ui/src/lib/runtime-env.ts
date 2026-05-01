@@ -54,7 +54,7 @@ function detectHost(): HostRuntime {
     return "web"
   }
 
-  const explicitHost = window.__EMBEDCOWORK_RUNTIME_HOST__
+  const explicitHost = window.__EMBEDDEDCOWORK_RUNTIME_HOST__
   if (explicitHost) {
     return explicitHost
   }

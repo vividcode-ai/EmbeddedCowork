@@ -724,8 +724,21 @@
 }
 
 .session-changes-scroll::-webkit-scrollbar-thumb {
-  background-color: transparent;
+  background-color: var(--sb-thumb-color, transparent);
   border-radius: 9999px;
+}
+
+.status-tab-container--scroll-hover .session-changes-scroll {
+  scrollbar-color: var(--border-muted) transparent;
+}
+
+.right-panel-tab-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb-color, transparent);
+  border-radius: 9999px;
+}
+
+.right-panel--scroll-hover.right-panel-tab-scroll {
+  scrollbar-color: var(--border-muted) transparent;
 }
 
 .status-tab-container--scroll-hover .session-changes-scroll {
