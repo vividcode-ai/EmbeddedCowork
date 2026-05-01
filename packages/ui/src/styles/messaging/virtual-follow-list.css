@@ -25,8 +25,31 @@
   /* Prevent browser scroll anchoring fighting our virtualization compensation. */
   overflow-anchor: none;
   
-  /* Scrollbar styling */
+  /* Scrollbar styling — fixed width, no jitter */
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.message-stream::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-stream::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-stream::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+.message-stream-container:hover .message-stream {
+  scrollbar-color: var(--border-muted) transparent;
+}
+
+.message-stream-container:hover .message-stream::-webkit-scrollbar-thumb {
+  background-color: var(--border-muted);
 }
 
 .virtual-follow-list-overlay {
