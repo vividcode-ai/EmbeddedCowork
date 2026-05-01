@@ -709,6 +709,33 @@
   background-color: var(--surface-secondary);
 }
 
+.session-changes-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.session-changes-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.session-changes-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.session-changes-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+.status-tab-container--scroll-hover .session-changes-scroll {
+  scrollbar-color: var(--border-muted) transparent;
+}
+
+.status-tab-container--scroll-hover .session-changes-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border-muted);
+}
+
 /* Accordion improvements for right panel */
 .right-panel-accordion {
   @apply flex flex-col;

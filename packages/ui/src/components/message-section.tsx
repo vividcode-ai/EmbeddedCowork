@@ -147,6 +147,9 @@ export default function MessageSection(props: MessageSectionProps) {
   let deleteMenuRef: HTMLDivElement | undefined
   let deleteMenuButtonRef: HTMLButtonElement | undefined
 
+  const [isStreamHovered, setIsStreamHovered] = createSignal(false)
+  let streamHideTimer: ReturnType<typeof setTimeout> | undefined
+
   // Deletion is only allowed for messages/tool parts that occur AFTER the most
   // recent compaction. Compaction effectively resets the stored context; deleting
   // earlier items would not reliably reflect what the model sees.
@@ -755,6 +758,15 @@ export default function MessageSection(props: MessageSectionProps) {
     setQuoteSelection({ text: limited, top: relativeTop, left: relativeLeft })
   }
 
+  const handleStreamMouseEnter = () => {
+    if (streamHideTimer !== undefined) clearTimeout(streamHideTimer)
+    setIsStreamHovered(true)
+  }
+
+  const handleStreamMouseLeave = () => {
+    streamHideTimer = setTimeout(() => setIsStreamHovered(false), 500)
+  }
+
   function handleStreamMouseUp() {
     updateQuoteSelectionFromSelection()
   }
@@ -1058,11 +1070,15 @@ export default function MessageSection(props: MessageSectionProps) {
   onCleanup(() => {
     clearPendingTimelinePartUpdateFrame()
     clearQuoteSelection()
+    if (streamHideTimer !== undefined) clearTimeout(streamHideTimer)
   })
 
   return (
     <div
       class="message-stream-container"
+      classList={{ "message-stream-container--hover": isStreamHovered() }}
+      onMouseEnter={handleStreamMouseEnter}
+      onMouseLeave={handleStreamMouseLeave}
       data-instance-id={props.instanceId}
       data-session-id={props.sessionId}
       data-stream-active={isActive() ? "true" : "false"}

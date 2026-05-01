@@ -44,11 +44,11 @@
   border-radius: 9999px;
 }
 
-.message-stream-container:hover .message-stream {
+.message-stream-container--hover .message-stream {
   scrollbar-color: var(--border-muted) transparent;
 }
 
-.message-stream-container:hover .message-stream::-webkit-scrollbar-thumb {
+.message-stream-container--hover .message-stream::-webkit-scrollbar-thumb {
   background-color: var(--border-muted);
 }
 

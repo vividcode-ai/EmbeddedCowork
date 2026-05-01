@@ -55,6 +55,30 @@
 .panel-list {
   @apply max-h-[400px] overflow-y-auto w-full min-w-0;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.panel-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-list::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+.panel--scroll-hover .panel-list {
+  scrollbar-color: var(--border-muted) transparent;
+}
+
+.panel--scroll-hover .panel-list::-webkit-scrollbar-thumb {
+  background-color: var(--border-muted);
 }
 
 .panel-list--fill {

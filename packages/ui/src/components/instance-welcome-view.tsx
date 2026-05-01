@@ -30,6 +30,8 @@ const InstanceWelcomeView: Component<InstanceWelcomeViewProps> = (props) => {
   )
   const [renameTarget, setRenameTarget] = createSignal<{ id: string; title: string; label: string } | null>(null)
   const [isRenaming, setIsRenaming] = createSignal(false)
+  const [isPanelHovered, setIsPanelHovered] = createSignal(false)
+  let panelHideTimer: ReturnType<typeof setTimeout> | undefined
 
   const parentSessions = () => getParentSessions(props.instance.id)
   const isFetchingSessions = createMemo(() => Boolean(loading().fetchingSessions.get(props.instance.id)))
@@ -218,6 +220,19 @@ const InstanceWelcomeView: Component<InstanceWelcomeViewProps> = (props) => {
     handleMediaChange(mediaQuery.matches)
   })
 
+  const handlePanelMouseEnter = () => {
+    if (panelHideTimer !== undefined) clearTimeout(panelHideTimer)
+    setIsPanelHovered(true)
+  }
+
+  const handlePanelMouseLeave = () => {
+    panelHideTimer = setTimeout(() => setIsPanelHovered(false), 500)
+  }
+
+  onCleanup(() => {
+    if (panelHideTimer !== undefined) clearTimeout(panelHideTimer)
+  })
+
   function formatRelativeTime(timestamp: number): string {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
     const minutes = Math.floor(seconds / 60)
@@ -329,7 +344,12 @@ const InstanceWelcomeView: Component<InstanceWelcomeViewProps> = (props) => {
               </Show>
             }
           >
-            <div class="panel flex flex-col flex-1 min-h-0">
+            <div
+              class="panel flex flex-col flex-1 min-h-0"
+              classList={{ "panel--scroll-hover": isPanelHovered() }}
+              onMouseEnter={handlePanelMouseEnter}
+              onMouseLeave={handlePanelMouseLeave}
+            >
               <div class="panel-header">
                 <div class="flex flex-row flex-wrap items-center gap-2 justify-between">
                   <div>

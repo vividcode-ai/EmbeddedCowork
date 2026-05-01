@@ -1,4 +1,4 @@
-import { For, Show, type Accessor, type Component } from "solid-js"
+import { For, Show, createSignal, onCleanup, type Accessor, type Component } from "solid-js"
 import type { ToolState } from "@opencode-ai/sdk/v2"
 import { Accordion } from "@kobalte/core"
 import { Tooltip } from "@kobalte/core/tooltip"
@@ -39,6 +39,22 @@ interface StatusTabProps {
 }
 
 const StatusTab: Component<StatusTabProps> = (props) => {
+  const [isChangesHovered, setIsChangesHovered] = createSignal(false)
+  let changesHideTimer: ReturnType<typeof setTimeout> | undefined
+
+  const handleChangesMouseEnter = () => {
+    if (changesHideTimer !== undefined) clearTimeout(changesHideTimer)
+    setIsChangesHovered(true)
+  }
+
+  const handleChangesMouseLeave = () => {
+    changesHideTimer = setTimeout(() => setIsChangesHovered(false), 500)
+  }
+
+  onCleanup(() => {
+    if (changesHideTimer !== undefined) clearTimeout(changesHideTimer)
+  })
+
   const isSectionExpanded = (id: string) => props.expandedItems().includes(id)
 
   const renderYoloModeSection = () => {
@@ -117,7 +133,11 @@ const StatusTab: Component<StatusTabProps> = (props) => {
           </span>
         </div>
 
-        <div class="rounded-md border border-base bg-surface-secondary p-2 max-h-[40vh] overflow-y-auto">
+        <div
+          class="session-changes-scroll rounded-md border border-base bg-surface-secondary p-2 max-h-[40vh] overflow-y-auto"
+          onMouseEnter={handleChangesMouseEnter}
+          onMouseLeave={handleChangesMouseLeave}
+        >
           <div class="flex flex-col">
             <For each={sorted}>
               {(item) => (
@@ -319,7 +339,7 @@ const StatusTab: Component<StatusTabProps> = (props) => {
   ]
 
   return (
-    <div class="status-tab-container">
+    <div class="status-tab-container" classList={{ "status-tab-container--scroll-hover": isChangesHovered() }}>
       <Show when={props.activeSession()}>
         {(activeSession) => (
           <ContextUsagePanel instanceId={props.instanceId} sessionId={activeSession().id} class="status-tab-context-panel" />

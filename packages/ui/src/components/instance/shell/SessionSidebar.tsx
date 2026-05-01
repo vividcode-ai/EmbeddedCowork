@@ -1,4 +1,4 @@
-import { Show, type Accessor, type Component } from "solid-js"
+import { Show, createSignal, onCleanup, type Accessor, type Component } from "solid-js"
 import type { SessionThread } from "../../../stores/session-state"
 import type { Session } from "../../../types/session"
 import { keyboardRegistry, type KeyboardShortcut } from "../../../lib/keyboard-registry"
@@ -47,8 +47,31 @@ interface SessionSidebarProps {
   setContentEl: (el: HTMLElement | null) => void
 }
 
-const SessionSidebar: Component<SessionSidebarProps> = (props) => (
-    <div class="flex flex-col h-full min-h-0" ref={props.setContentEl}>
+const SessionSidebar: Component<SessionSidebarProps> = (props) => {
+  const [isHovered, setIsHovered] = createSignal(false)
+  let hideTimer: ReturnType<typeof setTimeout> | undefined
+
+  const handleMouseEnter = () => {
+    if (hideTimer !== undefined) clearTimeout(hideTimer)
+    setIsHovered(true)
+  }
+
+  const handleMouseLeave = () => {
+    hideTimer = setTimeout(() => setIsHovered(false), 500)
+  }
+
+  onCleanup(() => {
+    if (hideTimer !== undefined) clearTimeout(hideTimer)
+  })
+
+  return (
+    <div
+      class="flex flex-col h-full min-h-0"
+      classList={{ "session-sidebar--scroll-hover": isHovered() }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      ref={props.setContentEl}
+    >
       <div class="flex flex-col gap-2 px-4 py-3 border-b border-base">
         <div class="flex items-center justify-between gap-2">
           <span class="session-sidebar-title text-sm font-semibold uppercase text-primary">
@@ -181,5 +204,6 @@ const SessionSidebar: Component<SessionSidebarProps> = (props) => (
       </div>
     </div>
   )
+}
 
 export default SessionSidebar
