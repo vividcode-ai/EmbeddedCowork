@@ -148,6 +148,8 @@ const RightPanel: Component<RightPanelProps> = (props) => {
   const [gitChangesListTouched, setGitChangesListTouched] = createSignal(false)
   const [gitStagedOpen, setGitStagedOpen] = createSignal(true)
   const [gitUnstagedOpen, setGitUnstagedOpen] = createSignal(true)
+  const [isTabScrollHovered, setIsTabScrollHovered] = createSignal(false)
+  let tabScrollHideTimer: ReturnType<typeof setTimeout> | undefined
 
   const listLayoutKey = createMemo(() => (props.isPhoneLayout() ? "phone" : "nonphone"))
 
@@ -367,6 +369,19 @@ const RightPanel: Component<RightPanelProps> = (props) => {
 
   onCleanup(() => {
     stopSplitResize()
+  })
+
+  const handleTabScrollMouseEnter = () => {
+    if (tabScrollHideTimer !== undefined) clearTimeout(tabScrollHideTimer)
+    setIsTabScrollHovered(true)
+  }
+
+  const handleTabScrollMouseLeave = () => {
+    tabScrollHideTimer = setTimeout(() => setIsTabScrollHovered(false), 500)
+  }
+
+  onCleanup(() => {
+    if (tabScrollHideTimer !== undefined) clearTimeout(tabScrollHideTimer)
   })
 
   const worktreeSlugForViewer = createMemo(() => {
@@ -813,7 +828,12 @@ const RightPanel: Component<RightPanelProps> = (props) => {
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto">
+      <div
+        class="right-panel-tab-scroll flex-1 overflow-y-auto"
+        classList={{ "right-panel--scroll-hover": isTabScrollHovered() }}
+        onMouseEnter={handleTabScrollMouseEnter}
+        onMouseLeave={handleTabScrollMouseLeave}
+      >
         <Show when={rightPanelTab() === "changes"}>
           <Suspense fallback={<RightPanelTabFallback />}>
             <LazyChangesTab
