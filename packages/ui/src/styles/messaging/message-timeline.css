@@ -13,7 +13,7 @@
 
 .message-layout--with-timeline {
   grid-template-columns: minmax(0, 1fr);
-  padding-inline-end: 8px;
+  padding-inline-end: 0;
 }
 
 .message-stream-shell {
@@ -250,7 +250,7 @@
 
 @media (max-width: 720px) {
   .message-timeline-container {
-    inset-inline-end: 15px;
+  inset-inline-end: 0;
   }
 }
 

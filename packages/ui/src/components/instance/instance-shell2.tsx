@@ -212,7 +212,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     }
 
     if (!didLoadRightWidth) {
-      setRightDrawerWidth(clampRightWidth(window.innerWidth * 0.35))
+      setRightDrawerWidth(clampRightWidth(window.innerWidth * 0.25))
     }
 
     setRightDrawerWidthInitialized(true)
