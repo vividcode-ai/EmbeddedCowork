@@ -5,7 +5,7 @@ const { spawnSync } = require("child_process")
 const versionArgs = process.argv.slice(2)
 
 if (versionArgs.length === 0) {
-  console.error("[bumpVersion] missing version argument (example: npm run bumpVersion -- patch)")
+  console.error("[bumpVersion] missing version argument (example: npm run bumpVersion patch/minor/-major)")
   process.exit(1)
 }
 
@@ -38,4 +38,6 @@ runStep(
   "npm version"
 )
 
-runStep(["run", "sync:version", "--workspace", "@embedcowork/tauri-app"], "tauri version sync")
+runStep(["run", "sync:version", "--workspace", "@embeddedcowork/tauri-app"], "tauri version sync")
+
+//

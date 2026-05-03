@@ -41,11 +41,11 @@ function syncCargoLock(version) {
   }
 
   const current = fs.readFileSync(cargoLockPath, "utf8")
-  const packageVersionPattern = /(\[\[package\]\]\r?\nname = "embedcowork-tauri"\r?\nversion = ")([^"]+)(")/
+  const packageVersionPattern = /(\[\[package\]\]\r?\nname = "embeddedcowork-tauri"\r?\nversion = ")([^"]+)(")/
   const match = current.match(packageVersionPattern)
 
   if (!match) {
-    throw new Error("Unable to find embedcowork-tauri version in packages/tauri-app/Cargo.lock")
+    throw new Error("Unable to find embeddedcowork-tauri version in packages/tauri-app/Cargo.lock")
   }
 
   if (match[2] === version) {

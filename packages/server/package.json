@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "EmbeddedCowork Server",
   "license": "MIT",
   "author": {
@@ -8,8 +8,8 @@
     "email": "vividcode@hotmail.com"
   },
   "publishConfig": {
-    "access": "public",      
-    "provenance": false,     
+    "access": "public",
+    "provenance": false,
     "registry": "https://registry.npmjs.org/"
   },
   "repository": {
