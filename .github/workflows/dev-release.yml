@@ -73,7 +73,7 @@ jobs:
     with:
       ref: ${{ needs.gate.outputs.dev_sha }}
       version_suffix: ${{ needs.gate.outputs.version_suffix }}
-      npm_package_name: "@vividcode/embedcowork-dev"
+      npm_package_name: "@vividcodeai/embeddedcowork-dev"
       dist_tag: latest
       prerelease: true
       release_ui: false

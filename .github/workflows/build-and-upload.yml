@@ -99,7 +99,7 @@ jobs:
         run: npm install @rollup/rollup-darwin-x64 --no-save
 
       - name: Build macOS binaries (Electron)
-        run: npm run build:mac --workspace @vividcode/embedcowork-electron-app
+        run: npm run build:mac --workspace @vividcodeAI/embeddedcowork-electron-app
 
       - name: Ad-hoc sign Electron macOS app bundles (seal resources)
         shell: bash
@@ -257,7 +257,7 @@ jobs:
         run: npm install @rollup/rollup-win32-x64-msvc --no-save
 
       - name: Build Windows binaries (Electron)
-        run: npm run build:win --workspace @vividcode/embedcowork-electron-app
+        run: npm run build:win --workspace @vividcodeAI/embeddedcowork-electron-app
 
       - name: Upload release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
@@ -306,7 +306,7 @@ jobs:
         run: npm install @rollup/rollup-linux-x64-gnu --no-save
 
       - name: Build Linux binaries (Electron)
-        run: npm run build:linux --workspace @vividcode/embedcowork-electron-app
+        run: npm run build:linux --workspace @vividcodeAI/embeddedcowork-electron-app
 
       - name: Upload release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
@@ -837,7 +837,7 @@ jobs:
         run: npm install @rollup/rollup-linux-x64-gnu --no-save
 
       - name: Build Linux RPM binaries
-        run: npm run build:linux-rpm --workspace @vividcode/embedcowork-electron-app
+        run: npm run build:linux-rpm --workspace @vividcodeAI/embeddedcowork-electron-app
 
       - name: Upload RPM release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
