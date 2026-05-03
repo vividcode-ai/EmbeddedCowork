@@ -40,8 +40,9 @@ import SessionSidebar from "./shell/SessionSidebar"
 import { useSessionSidebarRequests } from "./shell/useSessionSidebarRequests"
 import RightPanel from "./shell/right-panel/RightPanel"
 import { useDrawerChrome } from "./shell/useDrawerChrome"
+import { loading } from "../../stores/sessions"
 import { getRetrySeconds, getSessionRetry, getSessionStatus } from "../../stores/session-status"
-import { Maximize2, ShieldAlert } from "lucide-solid"
+import { Loader2, Maximize2, ShieldAlert } from "lucide-solid"
 import type { PromptInputApi } from "../prompt-input/types"
 
 import type { LayoutMode } from "./shell/types"
@@ -879,47 +880,69 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
           <Show
             when={showingInfoView()}
             fallback={
-              <Show
-                when={cachedSessionIds().length > 0 && activeSessionIdForInstance()}
-                fallback={
+              <Show when={loading().fetchingSessions.get(props.instance.id) || !props.instance.client} fallback={
+                <Show when={allInstanceSessions().size > 0} fallback={
                   <div class="flex items-center justify-center h-full">
-                    <div class="text-center text-gray-500 dark:text-gray-400">
-                      <p class="mb-2">{t("instanceShell.empty.title")}</p>
-                      <p class="text-sm">{t("instanceShell.empty.description")}</p>
+                    <div class="text-center">
+                      <svg class="w-12 h-12 mx-auto text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <p class="mt-4 text-sm font-medium text-primary">{t("instanceShell.empty.noSessionsTitle")}</p>
+                      <p class="mt-1 text-sm text-muted">{t("instanceShell.empty.noSessionsDescription")}</p>
+                      <button type="button" class="button-primary mt-4" onClick={() => props.onNewSession()}>
+                        {t("instanceShell.empty.createButton")}
+                      </button>
                     </div>
                   </div>
-                }
-              >
-                <For each={cachedSessionIds()}>
-                  {(sessionId) => {
-                    const isActive = () => Boolean(props.isActiveInstance) && activeSessionIdForInstance() === sessionId
-                    return (
-                      <div
-                        class="session-cache-pane flex flex-col flex-1 min-h-0"
-                        style={{ display: isActive() ? "flex" : "none" }}
-                        data-session-id={sessionId}
-                        data-instance-id={props.instance.id}
-                        data-session-active={isActive() ? "true" : "false"}
-                        aria-hidden={!isActive()}
-                      >
-                        <SessionView
-                          sessionId={sessionId}
-                          activeSessions={activeSessions()}
-                          instanceId={props.instance.id}
-                          instanceFolder={props.instance.folder}
-                          escapeInDebounce={props.escapeInDebounce}
-                          isPhoneLayout={isPhoneLayout()}
-                          compactPromptLayout={compactPromptLayout()}
-                          registerSessionPromptApi={registerSessionPromptApi}
-                          showSidebarToggle={showEmbeddedSidebarToggle()}
-                          onSidebarToggle={() => setLeftOpen(true)}
-                          forceCompactStatusLayout={showEmbeddedSidebarToggle()}
-                          isActive={isActive()}
-                        />
+                }>
+                  <Show when={activeSessionIdForInstance()} fallback={
+                    <div class="flex items-center justify-center h-full">
+                      <div class="text-center text-gray-500 dark:text-gray-400">
+                        <p class="mb-2">{t("instanceShell.empty.title")}</p>
+                        <p class="text-sm">{t("instanceShell.empty.description")}</p>
                       </div>
-                    )
-                  }}
-                </For>
+                    </div>
+                  }>
+                    <For each={cachedSessionIds()}>
+                      {(sessionId) => {
+                        const isActive = () => Boolean(props.isActiveInstance) && activeSessionIdForInstance() === sessionId
+                        return (
+                          <div
+                            class="session-cache-pane flex flex-col flex-1 min-h-0"
+                            style={{ display: isActive() ? "flex" : "none" }}
+                            data-session-id={sessionId}
+                            data-instance-id={props.instance.id}
+                            data-session-active={isActive() ? "true" : "false"}
+                            aria-hidden={!isActive()}
+                          >
+                            <SessionView
+                              sessionId={sessionId}
+                              activeSessions={activeSessions()}
+                              instanceId={props.instance.id}
+                              instanceFolder={props.instance.folder}
+                              escapeInDebounce={props.escapeInDebounce}
+                              isPhoneLayout={isPhoneLayout()}
+                              compactPromptLayout={compactPromptLayout()}
+                              registerSessionPromptApi={registerSessionPromptApi}
+                              showSidebarToggle={showEmbeddedSidebarToggle()}
+                              onSidebarToggle={() => setLeftOpen(true)}
+                              forceCompactStatusLayout={showEmbeddedSidebarToggle()}
+                              isActive={isActive()}
+                            />
+                          </div>
+                        )
+                      }}
+                    </For>
+                  </Show>
+                </Show>
+              }>
+                <div class="flex items-center justify-center h-full">
+                  <div class="text-center">
+                    <Loader2 class="w-12 h-12 mx-auto animate-spin text-muted" />
+                    <p class="mt-4 text-sm font-medium text-primary">{t("instanceWelcome.loading.title")}</p>
+                    <p class="mt-1 text-sm text-muted">{t("instanceWelcome.loading.description")}</p>
+                  </div>
+                </div>
               </Show>
             }
           >

@@ -496,34 +496,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "codenomad-tauri"
-version = "0.14.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "dirs 5.0.1",
- "keepawake",
- "libc",
- "parking_lot",
- "regex",
- "reqwest 0.12.28",
- "rustls",
- "serde",
- "serde_json",
- "serde_yaml",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "url",
- "webkit2gtk",
- "which",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "combine"
 version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1009,6 +981,34 @@ name = "embed_plist"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ef6b89e5b37196644d8796de5268852ff179b44e96276cf4290264843743bb7"
+
+[[package]]
+name = "embeddedcowork-tauri"
+version = "0.0.2"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "dirs 5.0.1",
+ "keepawake",
+ "libc",
+ "parking_lot",
+ "regex",
+ "reqwest 0.12.28",
+ "rustls",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "url",
+ "webkit2gtk",
+ "which",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "encoding_rs"

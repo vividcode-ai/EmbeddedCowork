@@ -86,6 +86,9 @@ export const instanceMessages = {
 
   "instanceShell.empty.title": "未选择会话",
   "instanceShell.empty.description": "选择会话以查看消息",
+  "instanceShell.empty.noSessionsTitle": "暂无会话",
+  "instanceShell.empty.noSessionsDescription": "创建一个新会话以开始工作",
+  "instanceShell.empty.createButton": "创建会话",
 
   "instanceShell.rightPanel.title": "状态面板",
   "instanceShell.rightPanel.tabs.changes": "更改",

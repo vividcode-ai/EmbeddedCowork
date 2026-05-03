@@ -86,6 +86,9 @@ export const instanceMessages = {
 
   "instanceShell.empty.title": "No session selected",
   "instanceShell.empty.description": "Select a session to view messages",
+  "instanceShell.empty.noSessionsTitle": "No Sessions Yet",
+  "instanceShell.empty.noSessionsDescription": "Create a new session to start working",
+  "instanceShell.empty.createButton": "Create Session",
 
   "instanceShell.rightPanel.title": "Status Panel",
   "instanceShell.rightPanel.tabs.changes": "Session Changes",

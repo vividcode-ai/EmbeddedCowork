@@ -13,9 +13,14 @@ import { serverEvents } from "../lib/server-events"
 import type { WorkspaceDescriptor, WorkspaceEventPayload, WorkspaceLogEntry } from "../../../server/src/api-types"
 import { ensureInstanceConfigLoaded } from "./instance-config"
 import {
+  activeSessionId,
   fetchSessions,
   fetchAgents,
   fetchProviders,
+  getSessionThreads,
+  sessions,
+  setActiveParentSession,
+  setLoading,
   clearInstanceDraftPrompts,
 } from "./sessions"
 import {
@@ -246,6 +251,12 @@ async function syncPendingQuestions(instanceId: string): Promise<void> {
 
 async function hydrateInstanceData(instanceId: string, options?: { force?: boolean }) {
   try {
+    setLoading((prev) => {
+      const next = { ...prev }
+      next.fetchingSessions.set(instanceId, true)
+      return next
+    })
+
     if (options?.force) {
       await reloadWorktrees(instanceId)
       await reloadWorktreeMap(instanceId)
@@ -254,6 +265,16 @@ async function hydrateInstanceData(instanceId: string, options?: { force?: boole
       await ensureWorktreeMapLoaded(instanceId)
     }
     await fetchSessions(instanceId)
+
+    // Auto-select the most recently updated parent session on first entry
+    const instanceSessions = sessions().get(instanceId)
+    if (instanceSessions && instanceSessions.size > 0 && !activeSessionId().get(instanceId)) {
+      const threads = getSessionThreads(instanceId)
+      if (threads.length > 0) {
+        setActiveParentSession(instanceId, threads[0].parent.id)
+      }
+    }
+
     await fetchAgents(instanceId)
     await fetchProviders(instanceId)
     await ensureInstanceConfigLoaded(instanceId)

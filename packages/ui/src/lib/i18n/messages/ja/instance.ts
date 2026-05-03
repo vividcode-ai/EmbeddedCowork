@@ -86,6 +86,9 @@ export const instanceMessages = {
 
   "instanceShell.empty.title": "セッションが選択されていません",
   "instanceShell.empty.description": "メッセージを表示するにはセッションを選択してください",
+  "instanceShell.empty.noSessionsTitle": "セッションがありません",
+  "instanceShell.empty.noSessionsDescription": "新しいセッションを作成して開始してください",
+  "instanceShell.empty.createButton": "セッションを作成",
 
   "instanceShell.rightPanel.title": "ステータスパネル",
   "instanceShell.rightPanel.tabs.changes": "変更",

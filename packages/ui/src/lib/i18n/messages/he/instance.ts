@@ -86,6 +86,9 @@ export const instanceMessages = {
 
   "instanceShell.empty.title": "לא נבחר סשן",
   "instanceShell.empty.description": "בחר סשן לצפייה בהודעות",
+  "instanceShell.empty.noSessionsTitle": "אין סשנים עדיין",
+  "instanceShell.empty.noSessionsDescription": "צור סשן חדש כדי להתחיל לעבוד",
+  "instanceShell.empty.createButton": "צור סשן",
 
   "instanceShell.rightPanel.title": "לוח סטטוס",
   "instanceShell.rightPanel.tabs.changes": "שינויי סשן",
