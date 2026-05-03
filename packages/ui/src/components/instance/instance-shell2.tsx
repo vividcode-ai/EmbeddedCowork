@@ -22,7 +22,6 @@ import { keyboardRegistry, type KeyboardShortcut } from "../../lib/keyboard-regi
 
 import { isOpen as isCommandPaletteOpen, hideCommandPalette, showCommandPalette } from "../../stores/command-palette"
 import Kbd from "../kbd"
-import InstanceWelcomeView from "../instance-welcome-view"
 import InfoView from "../info-view"
 import CommandPalette from "../command-palette"
 import PermissionNotificationBanner from "../permission-notification-banner"
@@ -684,8 +683,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     )
   }
 
-  const hasSessions = createMemo(() => activeSessions().size > 0)
-
   const showingInfoView = createMemo(() => activeSessionIdForInstance() === "info")
 
   const sessionLayout = (
@@ -943,9 +940,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
         class="instance-shell2 flex flex-col flex-1 min-h-0"
         data-instance-id={props.instance.id}
       >
-        <Show when={hasSessions()} fallback={<InstanceWelcomeView instance={props.instance} />}>
-          {sessionLayout}
-        </Show>
+        {sessionLayout}
       </div>
 
       <CommandPalette

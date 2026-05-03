@@ -485,6 +485,56 @@ session-sidebar-controls .selector-trigger-primary {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+/* Working — 星光主题 emoji 循环 (仅 AppBar) */
+.session-toolbar .status-indicator.session-status.session-working .status-dot {
+  background-color: transparent;
+  animation: none;
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.session-toolbar .status-indicator.session-status.session-working .status-dot::before {
+  content: '🌟';
+  animation: workingEmoji 2.4s steps(1) infinite;
+}
+
+@keyframes workingEmoji {
+  0%   { content: '🌟'; }
+  25%  { content: '✨'; }
+  50%  { content: '⭐'; }
+  75%  { content: '💫'; }
+}
+
+/* Compacting — 魔法/能量主题 emoji 循环 (仅 AppBar) */
+.session-toolbar .status-indicator.session-status.session-compacting .status-dot {
+  background-color: transparent;
+  animation: none;
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.session-toolbar .status-indicator.session-status.session-compacting .status-dot::before {
+  content: '🔮';
+  animation: compactingEmoji 2.4s steps(1) infinite;
+}
+
+@keyframes compactingEmoji {
+  0%   { content: '🔮'; }
+  25%  { content: '✨'; }
+  50%  { content: '⚡'; }
+  75%  { content: '💫'; }
+}
+
 .status-indicator.session-status.session-working.session-status-list {
   background-color: var(--session-status-working-bg);
 }

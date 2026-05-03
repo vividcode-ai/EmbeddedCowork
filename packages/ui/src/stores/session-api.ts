@@ -5,6 +5,7 @@ import type { FileDiff } from "@opencode-ai/sdk/v2/client"
 import { instances } from "./instances"
 import { preferences, setAgentModelPreference } from "./preferences"
 import {
+  activeParentSessionId,
   activeSessionId,
   agents,
   clearSessionDraftPrompt,
@@ -13,6 +14,7 @@ import {
   messagesLoaded,
   pruneDraftPrompts,
   providers,
+  setActiveParentSessionId,
   setActiveSessionId,
   setAgents,
   setMessagesLoaded,
@@ -490,6 +492,14 @@ async function deleteSession(instanceId: string, sessionId: string): Promise<voi
 
     if (activeSessionId().get(instanceId) === sessionId) {
       setActiveSessionId((prev) => {
+        const next = new Map(prev)
+        next.delete(instanceId)
+        return next
+      })
+    }
+
+    if (activeParentSessionId().get(instanceId) === sessionId) {
+      setActiveParentSessionId((prev) => {
         const next = new Map(prev)
         next.delete(instanceId)
         return next

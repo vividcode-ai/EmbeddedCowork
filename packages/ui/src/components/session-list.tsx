@@ -10,6 +10,7 @@ import { showToastNotification } from "../lib/notifications"
 import { useI18n } from "../lib/i18n"
 import { showConfirmDialog } from "../stores/alerts"
 import {
+  activeParentSessionId,
   deleteSession,
   ensureSessionParentExpanded,
   getVisibleSessionIds,
@@ -126,6 +127,13 @@ const SessionList: Component<SessionListProps> = (props) => {
     const deleting = loading().deletingSession.get(props.instanceId)
     return deleting ? deleting.has(sessionId) : false
   }
+
+  const isSessionActive = (instanceId: string, sessionId: string): boolean => {
+    const session = sessionStateSessions().get(instanceId)?.get(sessionId)
+    if (!session) return false
+    if (session.pendingPermission || session.pendingQuestion) return true
+    return session.status === "working" || session.status === "compacting"
+  }
  
 
   const selectSession = (sessionId: string) => {
@@ -171,36 +179,18 @@ const SessionList: Component<SessionListProps> = (props) => {
     )
     if (!confirmed) return
 
-    const shouldSelectFallback = props.activeSessionId === sessionId
+    const shouldSelectFallback =
+      props.activeSessionId === sessionId ||
+      activeParentSessionId().get(props.instanceId) === sessionId
+
     let fallbackSessionId: string | undefined
 
     if (shouldSelectFallback) {
-      const visible = getVisibleSessionIds(props.instanceId)
-      const currentIndex = visible.indexOf(sessionId)
-      const remaining = visible.filter((id) => id !== sessionId)
+      const remaining = getVisibleSessionIds(props.instanceId).filter((id) => id !== sessionId)
 
       if (remaining.length > 0) {
-        if (currentIndex !== -1) {
-          for (let i = currentIndex; i < visible.length; i++) {
-            const candidate = visible[i]
-            if (candidate && candidate !== sessionId) {
-              fallbackSessionId = candidate
-              break
-            }
-          }
-
-          if (!fallbackSessionId) {
-            for (let i = currentIndex - 1; i >= 0; i--) {
-              const candidate = visible[i]
-              if (candidate && candidate !== sessionId) {
-                fallbackSessionId = candidate
-                break
-              }
-            }
-          }
-        }
-
-        fallbackSessionId ??= remaining[0]
+        fallbackSessionId =
+          remaining.find((id) => isSessionActive(props.instanceId, id)) ?? remaining[0]
       }
     }
 
@@ -329,27 +319,16 @@ const SessionList: Component<SessionListProps> = (props) => {
 
     const deletedSet = new Set(selected)
     const currentActiveId = props.activeSessionId
+    const currentParentId = activeParentSessionId().get(props.instanceId)
 
     let fallbackSessionId: string | undefined
-    if (currentActiveId && deletedSet.has(currentActiveId)) {
-      const ordered = getAllSessionIdsInOrder(props.threads)
-      const currentIndex = ordered.indexOf(currentActiveId)
+    const activeDeleted = (currentActiveId && deletedSet.has(currentActiveId)) ||
+      (currentParentId && deletedSet.has(currentParentId))
 
-      for (let i = Math.max(0, currentIndex); i < ordered.length; i++) {
-        const candidate = ordered[i]
-        if (candidate && !deletedSet.has(candidate)) {
-          fallbackSessionId = candidate
-          break
-        }
-      }
-      if (!fallbackSessionId) {
-        for (let i = currentIndex - 1; i >= 0; i--) {
-          const candidate = ordered[i]
-          if (candidate && !deletedSet.has(candidate)) {
-            fallbackSessionId = candidate
-            break
-          }
-        }
+    if (activeDeleted) {
+      const remaining = getAllSessionIdsInOrder(props.threads).filter((id) => !deletedSet.has(id))
+      if (remaining.length > 0) {
+        fallbackSessionId = remaining.find((id) => isSessionActive(props.instanceId, id)) ?? remaining[0]
       }
     }
 
