@@ -214,4 +214,13 @@ export const instanceMessages = {
   "opencodeBinarySelector.validation.alreadyValidating": "Validation déjà en cours",
   "opencodeBinarySelector.display.systemPath": "{name} (PATH système)",
   "opencodeBinarySelector.versionLabel": "v{version}",
+  "instanceShell.gitChanges.noSessionSelected": "Sélectionnez une session pour voir les changements Git.",
+  "instanceShell.filesShell.hideFiles": "Masquer les fichiers",
+  "instanceShell.filesShell.showFiles": "Afficher les fichiers",
+  "instanceShell.diff.hideUnchanged": "Masquer les régions inchangées",
+  "instanceShell.diff.showFull": "Afficher le fichier complet",
+  "instanceShell.diff.switchToSplit": "Passer en vue scindée",
+  "instanceShell.diff.switchToUnified": "Passer en vue unifiée",
+  "instanceShell.diff.enableWordWrap": "Activer le retour à la ligne",
+  "instanceShell.diff.disableWordWrap": "Désactiver le retour à la ligne",
 } as const

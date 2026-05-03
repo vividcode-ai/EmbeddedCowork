@@ -2,16 +2,16 @@ export const toolCallMessages = {
   "toolCall.pending.waitingToRun": "En attente d'exécution...",
   "toolCall.error.label": "Erreur :",
 
-  "toolCall.header.copyTitle": "Copy tool call title",
-  "toolCall.header.copyAriaLabel": "Copy tool call title",
+  "toolCall.header.copyTitle": "Copier le titre de l'appel d'outil",
+  "toolCall.header.copyAriaLabel": "Copier le titre de l'appel d'outil",
 
-  "toolCall.header.showInputTitle": "Show Tool Arguments",
-  "toolCall.header.showInputAriaLabel": "Show Tool Arguments",
-  "toolCall.header.hideInputTitle": "Hide Tool Arguments",
-  "toolCall.header.hideInputAriaLabel": "Hide Tool Arguments",
+  "toolCall.header.showInputTitle": "Afficher les arguments de l'outil",
+  "toolCall.header.showInputAriaLabel": "Afficher les arguments de l'outil",
+  "toolCall.header.hideInputTitle": "Masquer les arguments de l'outil",
+  "toolCall.header.hideInputAriaLabel": "Masquer les arguments de l'outil",
 
-  "toolCall.io.input": "Tool Input",
-  "toolCall.io.output": "Tool Output",
+  "toolCall.io.input": "Entrée de l'outil",
+  "toolCall.io.output": "Sortie de l'outil",
 
   "toolCall.diff.label": "Diff",
   "toolCall.diff.label.withPath": "Diff · {path}",

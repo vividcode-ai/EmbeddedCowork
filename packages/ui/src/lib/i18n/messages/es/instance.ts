@@ -195,8 +195,8 @@ export const instanceMessages = {
   "instanceShell.worktree.delete.error.copyFailure": "No se pudo copiar el error de eliminacion",
 
   "versionPill.appWithVersion": "App {version}",
-  "versionPill.ui": "UI",
-  "versionPill.uiWithVersion": "UI {version}",
+  "versionPill.ui": "IU",
+  "versionPill.uiWithVersion": "IU {version}",
   "versionPill.source": " ({source})",
 
   "opencodeBinarySelector.title": "Binario de OpenCode",
@@ -214,4 +214,15 @@ export const instanceMessages = {
   "opencodeBinarySelector.validation.alreadyValidating": "Ya se está validando",
   "opencodeBinarySelector.display.systemPath": "{name} (PATH del sistema)",
   "opencodeBinarySelector.versionLabel": "v{version}",
+
+  "instanceShell.gitChanges.noSessionSelected": "Selecciona una sesión para ver los cambios de Git.",
+  "instanceShell.filesShell.hideFiles": "Ocultar archivos",
+  "instanceShell.filesShell.showFiles": "Mostrar archivos",
+  "instanceShell.diff.hideUnchanged": "Ocultar regiones sin cambios",
+  "instanceShell.diff.showFull": "Mostrar archivo completo",
+  "instanceShell.diff.switchToSplit": "Cambiar a vista dividida",
+  "instanceShell.diff.switchToUnified": "Cambiar a vista unificada",
+  "instanceShell.diff.enableWordWrap": "Activar ajuste de línea",
+  "instanceShell.diff.disableWordWrap": "Desactivar ajuste de línea",
+  "instanceShell.worktree.create": "+ Crear worktree",
 } as const

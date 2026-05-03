@@ -141,6 +141,7 @@ export const instanceMessages = {
   "instanceShell.gitChanges.noSessionSelected": "בחר סשן לצפייה בשינויי Git.",
   "instanceShell.gitChanges.loading": "טוען שינויי Git…",
   "instanceShell.gitChanges.empty": "אין שינויי Git עדיין.",
+  "instanceShell.gitChanges.deleted": "נמחק",
   "instanceShell.gitChanges.binaryViewer": "לא ניתן להציג קובץ בינארי",
   "instanceShell.gitChanges.sections.staged": "שינויים שנשמרו ל-staging",
   "instanceShell.gitChanges.sections.unstaged": "שינויים",

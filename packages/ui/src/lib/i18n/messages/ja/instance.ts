@@ -212,6 +212,17 @@ export const instanceMessages = {
   "opencodeBinarySelector.dialog.description": "CLI サーバーから公開されているファイルを参照します。",
   "opencodeBinarySelector.validation.invalidBinary": "OpenCode バイナリが無効です",
   "opencodeBinarySelector.validation.alreadyValidating": "すでに検証中です",
-  "opencodeBinarySelector.display.systemPath": "{name} (system PATH)",
+  "opencodeBinarySelector.display.systemPath": "{name}（システムPATH）",
   "opencodeBinarySelector.versionLabel": "v{version}",
+
+  "instanceShell.gitChanges.noSessionSelected": "セッションを選択してGitの変更を表示します。",
+  "instanceShell.filesShell.hideFiles": "ファイルを隠す",
+  "instanceShell.filesShell.showFiles": "ファイルを表示",
+  "instanceShell.diff.hideUnchanged": "未変更領域を隠す",
+  "instanceShell.diff.showFull": "ファイル全体を表示",
+  "instanceShell.diff.switchToSplit": "分割表示に切り替え",
+  "instanceShell.diff.switchToUnified": "統一表示に切り替え",
+  "instanceShell.diff.enableWordWrap": "ワードラップを有効にする",
+  "instanceShell.diff.disableWordWrap": "ワードラップを無効にする",
+  "instanceShell.worktree.create": "+ ワークツリーを作成",
 } as const

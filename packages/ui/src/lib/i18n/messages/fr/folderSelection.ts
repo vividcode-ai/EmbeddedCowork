@@ -74,5 +74,5 @@ export const folderSelectionMessages = {
   "folderSelection.servers.certificateInstall.confirmLabel": "Continuer",
   "folderSelection.servers.certificateInstall.cancelLabel": "Annuler",
   "folderSelection.servers.certificateInstall.cancelled": "EmbeddedCowork a besoin que le certificat local soit approuve avant de pouvoir ouvrir des fenetres distantes HTTPS auto-signees.",
-  "folderSelection.sidecars.button": "Open SideCar",
+  "folderSelection.sidecars.button": "Ouvrir SideCar",
 } as const
