@@ -32,7 +32,7 @@ function ensureUiBuild() {
   }
 
   console.log("[dev-prep] UI loader build missing; running workspace build…")
-  execSync("npm --workspace @embedcowork/ui run build", {
+  execSync("npm --workspace @embeddedcowork/ui run build", {
     cwd: workspaceRoot,
     stdio: "inherit",
   })

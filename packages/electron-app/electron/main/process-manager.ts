@@ -661,7 +661,7 @@ export class CliProcessManager extends EventEmitter {
       }
     }
 
-    throw new Error(`Unable to locate standalone EmbeddedCowork server executable (${executableName}). Run npm run build:standalone --workspace @vividcode/embedcowork.`)
+    throw new Error(`Unable to locate standalone EmbeddedCowork server executable (${executableName}). Run npm run build:standalone --workspace @vividcodeai/embeddedcowork.`)
   }
 
   private shouldUsePackagedShellSupervisor(options: StartOptions, cliEntry: CliEntryResolution): boolean {

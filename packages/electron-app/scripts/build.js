@@ -148,7 +148,7 @@ async function build(platform) {
     await ensureEsbuildPlatformBinary()
 
     console.log("📦 Step 1/3: Building CLI dependency...\n")
-    await run(npmCmd, ["run", "build", "--workspace", "@vividcode/embedcowork"], {
+    await run(npmCmd, ["run", "build", "--workspace", "@vividcodeai/embeddedcowork"], {
       cwd: workspaceRoot,
       env: { NODE_PATH: workspaceNodeModulesPath },
     })

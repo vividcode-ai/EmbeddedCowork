@@ -57,7 +57,7 @@ env:
 
 jobs:
   build-macos:
-    runs-on: macos-15-intel
+    runs-on: macos-13
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -228,7 +228,7 @@ jobs:
           if-no-files-found: error
 
   build-windows:
-    runs-on: windows-2025
+    runs-on: windows-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -331,7 +331,7 @@ jobs:
           if-no-files-found: error
 
   build-tauri-macos:
-    runs-on: macos-15-intel
+    runs-on: macos-13
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -362,7 +362,7 @@ jobs:
         run: npm install @rollup/rollup-darwin-x64 --no-save
 
       - name: Prebuild (Tauri)
-        run: npm run prebuild --workspace @embedcowork/tauri-app
+        run: npm run prebuild --workspace @embeddedcowork/tauri-app
 
       - name: Ensure tauri native binary
         working-directory: packages/tauri-app
@@ -415,7 +415,7 @@ jobs:
           done
 
   build-tauri-macos-arm64:
-    runs-on: macos-26
+    runs-on: macos-15
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -446,7 +446,7 @@ jobs:
         run: npm install @rollup/rollup-darwin-arm64 --no-save
 
       - name: Prebuild (Tauri)
-        run: npm run prebuild --workspace @embedcowork/tauri-app
+        run: npm run prebuild --workspace @embeddedcowork/tauri-app
 
       - name: Ensure tauri native binary
         working-directory: packages/tauri-app
@@ -499,7 +499,7 @@ jobs:
           done
 
   build-tauri-windows:
-    runs-on: windows-2025
+    runs-on: windows-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -531,7 +531,7 @@ jobs:
         run: npm install @rollup/rollup-win32-x64-msvc --no-save
 
       - name: Prebuild (Tauri)
-        run: npm run prebuild --workspace @embedcowork/tauri-app
+        run: npm run prebuild --workspace @embeddedcowork/tauri-app
 
       - name: Ensure tauri native binary
         shell: bash
@@ -633,7 +633,7 @@ jobs:
         run: npm install @rollup/rollup-linux-x64-gnu --no-save
 
       - name: Prebuild (Tauri)
-        run: npm run prebuild --workspace @embedcowork/tauri-app
+        run: npm run prebuild --workspace @embeddedcowork/tauri-app
 
       - name: Ensure tauri native binary
         working-directory: packages/tauri-app
@@ -769,7 +769,7 @@ jobs:
           CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
           CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
           AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
-        run: npm run build --workspace @embedcowork/tauri-app
+        run: npm run build --workspace @embeddedcowork/tauri-app
 
       - name: Package Tauri artifacts (Linux arm64)
         run: |

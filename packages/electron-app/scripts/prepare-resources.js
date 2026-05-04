@@ -34,7 +34,7 @@ function ensureStandaloneServerBuild() {
   log("building standalone server executable")
   const result = spawnSync(
     "npm",
-    ["run", "build:standalone", "--workspace", "@vividcodeAI/embeddedcowork"],
+    ["run", "build:standalone", "--workspace", "@vividcodeai/embeddedcowork"],
     {
       cwd: workspaceRoot,
       stdio: "inherit",

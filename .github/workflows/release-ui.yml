@@ -44,7 +44,7 @@ jobs:
         working-directory: packages/cloudflare
 
       - name: Build UI
-        run: npm run build --workspace @embedcowork/ui
+        run: npm run build --workspace @embeddedcowork/ui
 
       - name: Publish UI zip + update manifest
         working-directory: packages/cloudflare

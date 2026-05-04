@@ -13,7 +13,7 @@ This guide explains how to build distributable binaries for EmbeddedCowork.
 All commands now run inside the workspace packages. From the repo root you can target the Electron app package directly:
 
 ```bash
-npm run build --workspace @vividcode/embedcowork-electron-app
+npm run build --workspace @vividcodeAI/embeddedcowork-electron-app
 ```
 
 ### Build for Current Platform (macOS default)
@@ -77,7 +77,7 @@ bun run build:all
 
 The build script performs these steps:
 
-1. **Build @vividcode/embedcowork** → Produces the CLI `dist/` bundle (also rebuilds the UI assets it serves)
+1. **Build @vividcodeai/embeddedcowork** → Produces the CLI `dist/` bundle (also rebuilds the UI assets it serves)
 2. **Compile TypeScript + bundle with Vite** → Electron main, preload, and renderer output in `dist/`
 3. **Package with electron-builder** → Platform-specific binaries
 

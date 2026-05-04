@@ -43,8 +43,8 @@
     "package:linux": "electron-builder --linux"
   },
   "dependencies": {
-    "@vividcode/embedcowork": "file:../server",
-    "@embedcowork/ui": "file:../ui",
+    "@vividcodeai/embeddedcowork": "file:../server",
+    "@embeddedcowork/ui": "file:../ui",
     "yaml": "^2.4.2"
   },
   "devDependencies": {

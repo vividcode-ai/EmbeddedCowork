@@ -17,11 +17,11 @@ const sources = ["dist", "public", "node_modules", "package.json"]
 const serverInstallCommand =
   "npm install --omit=dev --ignore-scripts --workspaces=false --package-lock=false --install-strategy=shallow --fund=false --audit=false"
 const serverDevInstallCommand =
-  "npm install --workspace @vividcode-ai/embedcowork --include-workspace-root=false --install-strategy=nested --fund=false --audit=false"
+  "npm install --workspace @vividcodeai/embeddedcowork --include-workspace-root=false --install-strategy=nested --fund=false --audit=false"
 const uiDevInstallCommand =
-  "npm install --workspace @embedcowork/ui --include-workspace-root=false --install-strategy=nested --fund=false --audit=false"
-const serverPrepareUiCommand = "npm run prepare-ui --workspace @vividcode-ai/embedcowork"
-const serverStandaloneBuildCommand = "npm run build:standalone --workspace @vividcode-ai/embedcowork"
+  "npm install --workspace @embeddedcowork/ui --include-workspace-root=false --install-strategy=nested --fund=false --audit=false"
+const serverPrepareUiCommand = "npm run prepare-ui --workspace @vividcodeai/embeddedcowork"
+const serverStandaloneBuildCommand = "npm run build:standalone --workspace @vividcodeai/embeddedcowork"
 
 const envWithRootBin = {
   ...process.env,
@@ -64,7 +64,7 @@ function ensureServerBuild() {
   const distPath = path.join(serverRoot, "dist")
   const publicPath = path.join(serverRoot, "public")
   console.log("[prebuild] rebuilding server workspace for desktop packaging...")
-  execSync("npm --workspace @vividcode-ai/embedcowork run build", {
+  execSync("npm --workspace @vividcodeai/embeddedcowork run build", {
     cwd: workspaceRoot,
     stdio: "inherit",
     env: {
@@ -94,7 +94,7 @@ function ensureUiBuild() {
   }
 
   console.log("[prebuild] ui build missing; running workspace build...")
-  execSync("npm --workspace @embedcowork/ui run build", {
+  execSync("npm --workspace @embeddedcowork/ui run build", {
     cwd: workspaceRoot,
     stdio: "inherit",
   })
