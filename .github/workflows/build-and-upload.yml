@@ -57,7 +57,7 @@ env:
 
 jobs:
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -331,7 +331,7 @@ jobs:
           if-no-files-found: error
 
   build-tauri-macos:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -415,7 +415,7 @@ jobs:
           done
 
   build-tauri-macos-arm64:
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
@@ -800,7 +800,6 @@ jobs:
             echo "Uploading $file"
             gh release upload "$TAG" "$file" --clobber
           done
-
 
   build-linux-rpm:
     runs-on: ubuntu-24.04

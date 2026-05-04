@@ -51,5 +51,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          EMBEDCOWORK_R2_BUCKET: ${{ vars.EMBEDCOWORK_R2_BUCKET }}
+          EMBEDDEDCOWORK_R2_BUCKET: ${{ vars.EMBEDDEDCOWORK_R2_BUCKET }}
         run: npm run release:ui

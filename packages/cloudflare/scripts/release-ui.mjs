@@ -10,10 +10,10 @@ const __dirname = path.dirname(__filename)
 const root = path.resolve(__dirname, "..")
 const repoRoot = path.resolve(root, "..", "..")
 
-const r2Bucket = process.env.CODENOMAD_R2_BUCKET
+const r2Bucket = process.env.EMBEDDEDCOWORK_R2_BUCKET
 
 if (!r2Bucket) {
-  console.error("Missing env var: CODENOMAD_R2_BUCKET")
+  console.error("Missing env var: EMBEDDEDCOWORK_R2_BUCKET")
   process.exit(1)
 }
 
@@ -59,7 +59,7 @@ try {
       stdio: "inherit",
       env: {
         ...process.env,
-        CODENOMAD_R2_BUCKET: r2Bucket,
+        EMBEDDEDCOWORK_R2_BUCKET: r2Bucket,
       },
     },
   )
