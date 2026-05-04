@@ -1,60 +1,62 @@
 # EmbeddedCowork
 
-## The AI Coding Cockpit for OpenCode
+[![EN](https://img.shields.io/badge/EN-English-blue)](README.en.md) [![ES](https://img.shields.io/badge/ES-Espa%C3%B1ol-blue)](README.es.md) [![FR](https://img.shields.io/badge/FR-Fran%C3%A7ais-blue)](README.fr.md) [![RU](https://img.shields.io/badge/RU-%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9-blue)](README.ru.md) [![JA](https://img.shields.io/badge/JA-%E6%97%A5%E6%9C%AC%E8%AA%9E-blue)](README.ja.md) [![ZH](https://img.shields.io/badge/ZH-%E4%B8%AD%E6%96%87-red)](README.md) [![HE](https://img.shields.io/badge/HE-%D7%A2%D7%91%D7%A8%D7%99%D7%AA-blue)](README.he.md)
 
-EmbeddedCowork transforms OpenCode from a terminal tool into a **premium desktop workspace** — built for developers who live inside AI coding sessions for hours and need control, speed, and clarity.
+## OpenCode 的 AI 编程驾驶舱
 
-> OpenCode gives you the engine. EmbeddedCowork gives you the cockpit.
+EmbeddedCowork 将 OpenCode 从终端工具转变为**高端桌面工作空间**——专为那些在 AI 编程会话中沉浸数小时、需要掌控力、速度和清晰度的开发者而打造。
 
-![Multi-instance workspace](docs/screenshots/newSession.png)
+> OpenCode 提供引擎，EmbeddedCowork 提供驾驶舱。
+
+![多实例工作空间](docs/screenshots/newSession.png)
 
 ---
 
-## Features
+## 功能特性
 
-- **🚀 Multi-Instance Workspace**
-- **🌐 Remote Access**
-- **🧠 Session Management**
-- **🎙️ Voice Input & Speech**
+- **🚀 多实例工作空间**
+- **🌐 远程访问**
+- **🧠 会话管理**
+- **🎙️ 语音输入与语音功能**
 - **🌳 Git Worktrees**
-- **💬 Rich Message Experience**
-- **🧩 SideCars**
-- **⌨️ Command Palette**
-- **📁 File System Browser**
-- **🔐 Authentication & Security**
-- **🔔 Notifications**
-- **🎨 Theming**
-- **🌍 Internationalization**
+- **💬 富消息体验**
+- **🧩 侧边应用 (SideCars)**
+- **⌨️ 命令面板**
+- **📁 文件系统浏览器**
+- **🔐 认证与安全**
+- **🔔 通知**
+- **🎨 主题定制**
+- **🌍 国际化**
 
 ---
 
-## Getting Started
+## 快速开始
 
-### 🖥️ Desktop App
+### 🖥️ 桌面应用
 
-Available as both Electron and Tauri builds — choose based on your preference.
+提供 Electron 和 Tauri 两种构建版本——可根据偏好选择。
 
-Download the latest installer for your platform from [Releases](https://github.com/shantur/EmbeddedCowork/releases).
+从 [Releases](https://github.com/vividcode-ai/EmbeddedCowork/releases) 下载适用于您平台的最新安装包。
 
-| Platform | Formats |
-|----------|---------|
-| macOS | DMG, ZIP (Universal: Intel + Apple Silicon) |
-| Windows | NSIS Installer, ZIP (x64, ARM64) |
-| Linux | AppImage, deb, tar.gz (x64, ARM64) |
+| 平台 | 格式 |
+|------|------|
+| macOS | DMG、ZIP（通用：Intel + Apple Silicon） |
+| Windows | NSIS 安装程序、ZIP（x64、ARM64） |
+| Linux | AppImage、deb、tar.gz（x64、ARM64） |
 
-### 💻 EmbeddedCowork Server
+### 💻 EmbeddedCowork 服务器
 
-Run as a local server and access via browser. Perfect for remote development.
+作为本地服务器运行，通过浏览器访问。适用于远程开发。
 
 ```bash
 npx @vividcodeai/embeddedcowork --launch
 ```
 
-See [Server Documentation](packages/server/README.md) for flags, TLS, auth, and remote access.
+参见[服务器文档](packages/server/README.md)了解命令行参数、TLS、认证和远程访问配置。
 
-### 🧪 Dev Releases
+### 🧪 开发版
 
-Bleeding-edge builds from the `dev` branch:
+来自 `dev` 分支的最新构建版本：
 
 ```bash
 npx @vividcodeai/embeddedcowork-dev --launch
@@ -62,79 +64,79 @@ npx @vividcodeai/embeddedcowork-dev --launch
 
 ---
 
-## SideCars
+## 侧边应用 (SideCars)
 
-SideCars let you open local web tools inside EmbeddedCowork as tabs.
+SideCars 允许您将本地 Web 工具以标签页形式在 EmbeddedCowork 中打开。
 
 <details>
-<summary><strong>Configuration</strong></summary>
+<summary><strong>配置说明</strong></summary>
 
-- **Name**: Display name used in EmbeddedCowork
-- **Port**: Local HTTP or HTTPS service running on `127.0.0.1:<port>`
-- **Base path**: Mounted under `/sidecars/:id`
-- **Prefix mode**:
-  - **Preserve prefix** forwards the full `/sidecars/:id/...` path upstream
-  - **Strip prefix** removes `/sidecars/:id` before forwarding the request upstream
+- **名称**：EmbeddedCowork 中显示的标签名称
+- **端口**：运行在 `127.0.0.1:<port>` 的本地 HTTP 或 HTTPS 服务
+- **基础路径**：挂载在 `/sidecars/:id` 下
+- **前缀模式**：
+  - **保留前缀**：将完整的 `/sidecars/:id/...` 路径转发到上游服务
+  - **去除前缀**：在转发请求到上游服务之前移除 `/sidecars/:id` 前缀
 
 </details>
 
 <details>
-<summary><strong>VSCode (OpenVSCode Server)</strong></summary>
+<summary><strong>VSCode（OpenVSCode Server）</strong></summary>
 
-Run with Docker:
+使用 Docker 运行：
 
 ```bash
 docker run -it --init -p 8000:3000 -v "${HOME}:${HOME}:cached" -e HOME=${HOME} gitpod/openvscode-server --server-base-path /sidecars/vscode
 ```
 
-Add SideCar as:
+添加 SideCar 配置：
 
-- **Name**: `VSCode`
-- **Port**: `http://127.0.0.1:8000`
-- **Base path**: `/sidecars/vscode`
-- **Prefix mode**: `Preserve prefix`
+- **名称**：`VSCode`
+- **端口**：`http://127.0.0.1:8000`
+- **基础路径**：`/sidecars/vscode`
+- **前缀模式**：`保留前缀`
 
 </details>
 
 <details>
-<summary><strong>Terminal (ttyd)</strong></summary>
+<summary><strong>终端（ttyd）</strong></summary>
 
-Run with:
+运行方式：
 
 ```bash
 ttyd --writable zsh
 ```
 
-Add SideCar as:
+添加 SideCar 配置：
 
-- **Name**: `Terminal`
-- **Port**: `http://127.0.0.1:7681`
-- **Base path**: `/sidecars/terminal`
-- **Prefix mode**: `Strip prefix`
+- **名称**：`Terminal`
+- **端口**：`http://127.0.0.1:7681`
+- **基础路径**：`/sidecars/terminal`
+- **前缀模式**：`去除前缀`
 
 </details>
 
 ---
 
-## Requirements
+## 系统要求
 
-- **[OpenCode CLI](https://opencode.ai)** — must be installed and in your `PATH`
-- **Node.js 18+** — for server mode or building from source
+- **[OpenCode CLI](https://opencode.ai)** — 必须已安装且在 `PATH` 环境变量中
+- **Node.js 18+** — 用于服务器模式或从源码构建
 
 ---
 
-## Development
+## 开发指南
 
-EmbeddedCowork is a monorepo built with:
+EmbeddedCowork 是一个基于以下技术构建的 monorepo（多包仓库）：
 
-| Package | Description |
-|---------|-------------|
-| **[packages/server](packages/server/README.md)** | Core logic & CLI — workspaces, OpenCode proxy, API, auth, speech |
-| **[packages/ui](packages/ui/README.md)** | SolidJS frontend — reactive, fast, beautiful |
-| **[packages/electron-app](packages/electron-app/README.md)** | Desktop shell — process management, IPC, native dialogs |
-| **[packages/tauri-app](packages/tauri-app)** | Tauri desktop shell (experimental) |
+| 包 | 说明 |
+|----|------|
+| **[packages/server](packages/server/README.md)** | 核心逻辑与 CLI——工作空间、OpenCode 代理、API、认证、语音 |
+| **[packages/ui](packages/ui/README.md)** | SolidJS 前端——响应式、快速、美观 |
+| **[packages/electron-app](packages/electron-app/README.md)** | 桌面壳——进程管理、IPC、原生对话框 |
+| **[packages/tauri-app](packages/tauri-app)** | Tauri 桌面壳（实验性） |
 
-### Quick Start
+### 快速启动
 
 ```bash
 git clone https://github.com/vividcode-ai/EmbeddedCowork.git
@@ -145,43 +147,43 @@ npm run dev
 
 ---
 
-## Troubleshooting
+## 故障排除
 
 <details>
-<summary><strong>macOS: "EmbeddedCowork.app is damaged and can't be opened"</strong></summary>
+<summary><strong>macOS："EmbeddedCowork.app 已损坏，无法打开"</strong></summary>
 
-Gatekeeper flag due to missing notarization. Clear the quarantine attribute:
+由于缺少公证导致 Gatekeeper 标记。清除隔离属性：
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/EmbeddedCowork.app
 ```
 
-On Intel Macs, also check **System Settings → Privacy & Security** on first launch.
+在 Intel Mac 上，首次启动时还需检查**系统设置 → 隐私与安全性**。
 </details>
 
 <details>
-<summary><strong>Linux (Wayland + NVIDIA): Tauri App closes immediately</strong></summary>
+<summary><strong>Linux（Wayland + NVIDIA）：Tauri 应用立即关闭</strong></summary>
 
-WebKitGTK DMA-BUF/GBM issue. Run with:
+WebKitGTK DMA-BUF/GBM 问题。使用以下方式运行：
 
 ```bash
 WEBKIT_DISABLE_DMABUF_RENDERER=1 embeddedcowork
 ```
 
-See full workaround in the original README.
+参见原始 README 中的完整解决方案。
 </details>
 
 ---
 
-## Community
+## 社区
 
-[![Star History](https://api.star-history.com/svg?repos=vividcode-ai/EmbeddedCowork&type=Date)](https://star-history.com/#vividcode-ai/EmbeddedCowork&Date)
+[![Star 历史](https://api.star-history.com/svg?repos=vividcode-ai/EmbeddedCowork&type=Date)](https://star-history.com/#vividcode-ai/EmbeddedCowork&Date)
 
 ---
 
-感谢以下开源项目：
+## 致谢
 
-- [CodeNomad](https://github.com/NeuralNomadsAI/CodeNomad) [opencode](https://github.com/anomalyco/opencode) 
+- [CodeNomad](https://github.com/NeuralNomadsAI/CodeNomad)
+- [opencode](https://github.com/anomalyco/opencode)
 
-
-**Built with ♥ by [VividCodeAI](https://github.com/vividcode-ai)** · [MIT License](LICENSE)
+**由 [VividCodeAI](https://github.com/vividcode-ai) 用心构建** · [MIT 许可证](LICENSE)
