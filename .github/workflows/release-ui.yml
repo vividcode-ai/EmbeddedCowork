@@ -40,7 +40,7 @@ jobs:
         run: npm install @rollup/rollup-linux-x64-gnu --no-save
 
       - name: Install Cloudflare worker deps
-        run: npm ci
+        run: npm install
         working-directory: packages/cloudflare
 
       - name: Build UI

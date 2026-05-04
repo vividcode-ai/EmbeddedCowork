@@ -1,0 +1,9 @@
+{
+  "name": "@embeddedcowork/opencode-config",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@opencode-ai/plugin": "1.14.28"
+  }
+}
