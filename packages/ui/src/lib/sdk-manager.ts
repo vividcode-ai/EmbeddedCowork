@@ -1,5 +1,5 @@
 import { createOpencodeClient, type OpencodeClient } from "@opencode-ai/sdk/v2/client"
-import { EMBEDCOWORK_API_BASE } from "./api-client"
+import { EMBEDDEDCOWORK_API_BASE } from "./api-client"
 
 class SDKManager {
   private clients = new Map<string, OpencodeClient>()
@@ -48,7 +48,7 @@ export type { OpencodeClient }
 
 export function buildInstanceBaseUrl(proxyPath: string): string {
   const normalized = normalizeProxyPath(proxyPath)
-  const base = stripTrailingSlashes(EMBEDCOWORK_API_BASE)
+  const base = stripTrailingSlashes(EMBEDDEDCOWORK_API_BASE)
   return `${base}${normalized}/`
 }
 

@@ -26,7 +26,7 @@ export function getPackagedDistDir(): string {
 
 export function resolveServerPackageRoot(importMetaUrl: string): string {
   const moduleDir = safeModuleDir(importMetaUrl)
-  const configuredRoot = process.env.EMBEDCOWORK_SERVER_ROOT?.trim()
+  const configuredRoot = process.env.EMBEDDEDCOWORK_SERVER_ROOT?.trim()
   const candidates = [
     configuredRoot ? path.resolve(configuredRoot) : null,
     moduleDir ? path.resolve(moduleDir, "..") : null,

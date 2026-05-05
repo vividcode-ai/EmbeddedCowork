@@ -249,7 +249,7 @@ export function RemoteAccessOverlay(props: RemoteAccessOverlayProps) {
                 >
                   <div class="remote-card">
                     <p class="remote-help">
-                      {t("remoteAccess.username", { username: authStatus()!.username ?? "embedcowork" })}
+                      {t("remoteAccess.username", { username: authStatus()!.username ?? "embeddedcowork" })}
                     </p>
                     <p class="remote-help">
                       {authStatus()!.passwordUserProvided

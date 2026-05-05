@@ -124,13 +124,13 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       payload: { id: string; name: string; baseUrl: string; skipTlsVerify: boolean },
     ): Promise<{ ok: boolean }> => {
       const opener = (mainWindow as BrowserWindow & {
-        __embedcoworkOpenRemoteWindow?: (payload: {
+        __embeddedcoworkOpenRemoteWindow?: (payload: {
           id: string
           name: string
           baseUrl: string
           skipTlsVerify: boolean
         }) => Promise<void>
-      }).__embedcoworkOpenRemoteWindow
+      }).__embeddedcoworkOpenRemoteWindow
       if (!opener) {
         throw new Error("Remote window opening is not available")
       }

@@ -12,7 +12,7 @@ const DEFAULT_INSTANCE_DATA: InstanceData = {
 export class InstanceStore {
   private readonly instancesDir: string
 
-  constructor(baseDir = path.join(os.homedir(), ".config", "embedcowork", "instances")) {
+  constructor(baseDir = path.join(os.homedir(), ".config", "embeddedcowork", "instances")) {
     this.instancesDir = baseDir
     fs.mkdirSync(this.instancesDir, { recursive: true })
   }

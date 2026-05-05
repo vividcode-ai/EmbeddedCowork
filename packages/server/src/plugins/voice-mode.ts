@@ -87,7 +87,7 @@ export class VoiceModeManager {
 
 function buildVoiceModeEvent(enabled: boolean) {
   return {
-    type: "embedcowork.voiceMode",
+    type: "embeddedcowork.voiceMode",
     properties: {
       enabled,
       formatVersion: "v1",

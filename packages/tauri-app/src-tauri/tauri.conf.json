@@ -46,23 +46,23 @@
       "deb": {
         "files": {
           "/usr/share/applications/ai.vividcode.embeddedcowork.client.desktop": "icons/linux/ai.vividcode.embeddedcowork.client.desktop",
-          "/usr/share/icons/hicolor/32x32/apps/embedcowork-tauri.png": "icons/linux/32x32.png",
-          "/usr/share/icons/hicolor/48x48/apps/embedcowork-tauri.png": "icons/linux/48x48.png",
-          "/usr/share/icons/hicolor/64x64/apps/embedcowork-tauri.png": "icons/linux/64x64.png",
-          "/usr/share/icons/hicolor/128x128/apps/embedcowork-tauri.png": "icons/linux/128x128.png",
-          "/usr/share/icons/hicolor/256x256/apps/embedcowork-tauri.png": "icons/linux/256x256.png",
-          "/usr/share/icons/hicolor/512x512/apps/embedcowork-tauri.png": "icons/linux/512x512.png"
+          "/usr/share/icons/hicolor/32x32/apps/embeddedcowork-tauri.png": "icons/linux/32x32.png",
+          "/usr/share/icons/hicolor/48x48/apps/embeddedcowork-tauri.png": "icons/linux/48x48.png",
+          "/usr/share/icons/hicolor/64x64/apps/embeddedcowork-tauri.png": "icons/linux/64x64.png",
+          "/usr/share/icons/hicolor/128x128/apps/embeddedcowork-tauri.png": "icons/linux/128x128.png",
+          "/usr/share/icons/hicolor/256x256/apps/embeddedcowork-tauri.png": "icons/linux/256x256.png",
+          "/usr/share/icons/hicolor/512x512/apps/embeddedcowork-tauri.png": "icons/linux/512x512.png"
         }
       },
       "rpm": {
         "files": {
           "/usr/share/applications/ai.vividcode.embeddedcowork.client.desktop": "icons/linux/ai.vividcode.embeddedcowork.client.desktop",
-          "/usr/share/icons/hicolor/32x32/apps/embedcowork-tauri.png": "icons/linux/32x32.png",
-          "/usr/share/icons/hicolor/48x48/apps/embedcowork-tauri.png": "icons/linux/48x48.png",
-          "/usr/share/icons/hicolor/64x64/apps/embedcowork-tauri.png": "icons/linux/64x64.png",
-          "/usr/share/icons/hicolor/128x128/apps/embedcowork-tauri.png": "icons/linux/128x128.png",
-          "/usr/share/icons/hicolor/256x256/apps/embedcowork-tauri.png": "icons/linux/256x256.png",
-          "/usr/share/icons/hicolor/512x512/apps/embedcowork-tauri.png": "icons/linux/512x512.png"
+          "/usr/share/icons/hicolor/32x32/apps/embeddedcowork-tauri.png": "icons/linux/32x32.png",
+          "/usr/share/icons/hicolor/48x48/apps/embeddedcowork-tauri.png": "icons/linux/48x48.png",
+          "/usr/share/icons/hicolor/64x64/apps/embeddedcowork-tauri.png": "icons/linux/64x64.png",
+          "/usr/share/icons/hicolor/128x128/apps/embeddedcowork-tauri.png": "icons/linux/128x128.png",
+          "/usr/share/icons/hicolor/256x256/apps/embeddedcowork-tauri.png": "icons/linux/256x256.png",
+          "/usr/share/icons/hicolor/512x512/apps/embeddedcowork-tauri.png": "icons/linux/512x512.png"
         }
       }
     },

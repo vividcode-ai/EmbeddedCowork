@@ -21,7 +21,7 @@ const noopLogger: Logger = {
 let tempRoot: string
 
 beforeEach(() => {
-  tempRoot = mkdtempSync(path.join(os.tmpdir(), "embedcowork-ui-test-"))
+  tempRoot = mkdtempSync(path.join(os.tmpdir(), "embeddedcowork-ui-test-"))
 })
 
 afterEach(() => {

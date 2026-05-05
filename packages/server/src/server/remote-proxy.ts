@@ -7,8 +7,8 @@ import type { AuthManager } from "../auth/manager"
 import type { Logger } from "../logger"
 
 const LOOPBACK_HOST = "127.0.0.1"
-const BOOTSTRAP_PAGE_PATH = "/__embedcowork/auth/token"
-const BOOTSTRAP_EXCHANGE_PATH = "/__embedcowork/api/auth/token"
+const BOOTSTRAP_PAGE_PATH = "/__embeddedcowork/auth/token"
+const BOOTSTRAP_EXCHANGE_PATH = "/__embeddedcowork/api/auth/token"
 const SESSION_IDLE_TTL_MS = 30 * 60_000
 
 interface RemoteProxySession {

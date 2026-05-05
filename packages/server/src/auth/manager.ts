@@ -6,9 +6,9 @@ import { TokenManager } from "./token-manager"
 import { SessionManager } from "./session-manager"
 import { isLoopbackAddress, parseCookies } from "./http-auth"
 
-export const BOOTSTRAP_TOKEN_STDOUT_PREFIX = "EMBEDCOWORK_BOOTSTRAP_TOKEN:" as const
-export const DEFAULT_AUTH_USERNAME = "embedcowork" as const
-export const DEFAULT_AUTH_COOKIE_NAME = "embedcowork_session" as const
+export const BOOTSTRAP_TOKEN_STDOUT_PREFIX = "EMBEDDEDCOWORK_BOOTSTRAP_TOKEN:" as const
+export const DEFAULT_AUTH_USERNAME = "embeddedcowork" as const
+export const DEFAULT_AUTH_COOKIE_NAME = "embeddedcowork_session" as const
 
 export interface AuthManagerInit {
   configPath: string

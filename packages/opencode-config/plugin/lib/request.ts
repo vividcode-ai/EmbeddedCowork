@@ -14,8 +14,8 @@ export type EmbeddedCoworkConfig = {
 
 export function getEmbeddedCoworkConfig(): EmbeddedCoworkConfig {
   return {
-    instanceId: requireEnv("EMBEDCOWORK_INSTANCE_ID"),
-    baseUrl: requireEnv("EMBEDCOWORK_BASE_URL"),
+    instanceId: requireEnv("EMBEDDEDCOWORK_INSTANCE_ID"),
+    baseUrl: requireEnv("EMBEDDEDCOWORK_BASE_URL"),
   }
 }
 

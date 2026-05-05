@@ -12,7 +12,7 @@ import type { Logger } from "../../logger"
 import { RemoteProxySessionManager } from "../remote-proxy"
 import { resolveHttpsOptions } from "../tls"
 
-const sharedTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "embedcowork-remote-proxy-test-"))
+const sharedTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "embeddedcowork-remote-proxy-test-"))
 const sharedTls = resolveHttpsOptions({
   enabled: true,
   configDir: sharedTempDir,
@@ -51,7 +51,7 @@ describe("RemoteProxySessionManager", () => {
       const blocked = await proxyFetch(`${session1.proxyOrigin}/status`)
       assert.equal(blocked.status, 403)
 
-      const wrongTokenResponse = await proxyFetch(`${session1.proxyOrigin}/__embedcowork/api/auth/token`, {
+      const wrongTokenResponse = await proxyFetch(`${session1.proxyOrigin}/__embeddedcowork/api/auth/token`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ token: session2.token }),
@@ -183,7 +183,7 @@ async function createSession(manager: RemoteProxySessionManager, baseUrl: string
 }
 
 async function activateSession(session: { proxyOrigin: string; token: string }) {
-  const response = await proxyFetch(`${session.proxyOrigin}/__embedcowork/api/auth/token`, {
+  const response = await proxyFetch(`${session.proxyOrigin}/__embeddedcowork/api/auth/token`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ token: session.token }),

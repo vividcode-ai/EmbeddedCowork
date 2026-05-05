@@ -223,7 +223,7 @@ export const RemoteAccessSettingsSection: Component = () => {
           <div class="settings-card-content">
                 <div class="settings-password-summary-row">
                   <div class="settings-password-summary-copy">
-                 <p class="settings-help-text">{t("remoteAccess.username", { username: authStatus()!.username ?? "embedcowork" })}</p>
+                 <p class="settings-help-text">{t("remoteAccess.username", { username: authStatus()!.username ?? "embeddedcowork" })}</p>
                  <p class="settings-help-text">
                    {authStatus()!.passwordUserProvided
                      ? t("remoteAccess.password.status.set")

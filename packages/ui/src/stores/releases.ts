@@ -10,8 +10,8 @@ const log = getLogger("actions")
 
 const [supportInfo, setSupportInfo] = createSignal<SupportMeta | null>(null)
 
-const UI_VERSION_STORAGE_KEY = "embedcowork:lastSeenUiVersion"
-const DEV_RELEASE_STORAGE_KEY = "embedcowork:lastSeenDevRelease"
+const UI_VERSION_STORAGE_KEY = "embeddedcowork:lastSeenUiVersion"
+const DEV_RELEASE_STORAGE_KEY = "embeddedcowork:lastSeenDevRelease"
 const META_REFRESH_INTERVAL_MS = 10 * 60 * 1000
 
 let initialized = false

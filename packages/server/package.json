@@ -27,7 +27,7 @@
     "build:ui": "npm run build --prefix ../ui",
     "prepare-ui": "node ./scripts/copy-ui-dist.mjs",
     "prepare-config": "node ./scripts/copy-opencode-config.mjs",
-    "dev": "cross-env EMBEDCOWORK_DEV=1 EMBEDCOWORK_SERVER_PASSWORD=embedcowork-dev CLI_UI_DEV_SERVER=http://localhost:3000 CLI_HTTPS=false CLI_HTTP=true tsx src/index.ts",
+    "dev": "cross-env EMBEDDEDCOWORK_DEV=1 EMBEDDEDCOWORK_SERVER_PASSWORD=embeddedcowork-dev CLI_UI_DEV_SERVER=http://localhost:3000 CLI_HTTPS=false CLI_HTTP=true tsx src/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

@@ -7,7 +7,7 @@ import type { WorkspaceManager } from "../workspaces/manager"
 import type { Logger } from "../logger"
 import type { BackgroundProcess, BackgroundProcessStatus, BackgroundProcessTerminalReason } from "../api-types"
 
-const ROOT_DIR = ".embedcowork/background_processes"
+const ROOT_DIR = ".embeddedcowork/background_processes"
 const INDEX_FILE = "index.json"
 const OUTPUT_FILE = "output.txt"
 const STOP_TIMEOUT_MS = 2000

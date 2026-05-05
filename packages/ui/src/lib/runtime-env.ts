@@ -16,7 +16,7 @@ declare global {
   }
 
   interface Window {
-    __EMBEDCOWORK_WINDOW_CONTEXT__?: WindowContextKind
+    __EMBEDDEDCOWORK_WINDOW_CONTEXT__?: WindowContextKind
     electronAPI?: unknown
     __TAURI__?: {
       core?: TauriCoreModule
@@ -29,11 +29,11 @@ function detectWindowContext(): WindowContextKind {
     return "remote"
   }
 
-  if (window.__EMBEDCOWORK_WINDOW_CONTEXT__ === "remote") {
+  if (window.__EMBEDDEDCOWORK_WINDOW_CONTEXT__ === "remote") {
     return "remote"
   }
 
-  if (window.__EMBEDCOWORK_WINDOW_CONTEXT__ === "local") {
+  if (window.__EMBEDDEDCOWORK_WINDOW_CONTEXT__ === "local") {
     return "local"
   }
 

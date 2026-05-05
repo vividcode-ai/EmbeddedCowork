@@ -3,7 +3,7 @@ import { getLogger } from "../lib/logger"
 
 const log = getLogger("api")
 
-const STORAGE_KEY = "embedcowork:github:stars"
+const STORAGE_KEY = "embeddedcowork:github:stars"
 const REPO_API_URL = "https://api.github.com/repos/vividcode-ai/EmbeddedCowork"
 
 function readStoredStars(): number | null {

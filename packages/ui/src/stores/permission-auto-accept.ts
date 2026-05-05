@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js"
 
-const STORAGE_KEY = "embedcowork:permission-auto-accept:v1"
+const STORAGE_KEY = "embeddedcowork:permission-auto-accept:v1"
 
 function makeKey(instanceId: string, sessionId: string) {
   return `${instanceId}:${sessionId}`

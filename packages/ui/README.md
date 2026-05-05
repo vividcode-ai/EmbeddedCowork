@@ -41,14 +41,14 @@ The UI now routes all logging through a lightweight wrapper around [`debug`](htt
 - `session` – Session/model state, prompt handling, tool calls
 - `actions` – User-driven interactions in UI components
 
-You can enable or disable namespaces from DevTools (in dev or production builds) via the global `window.embedcoworkLogger` helpers:
+You can enable or disable namespaces from DevTools (in dev or production builds) via the global `window.embeddedcoworkLogger` helpers:
 
 ```js
-window.embedcoworkLogger?.listLoggerNamespaces() // => [{ name: "sse", enabled: false }, ...]
-window.embedcoworkLogger?.enableLogger("sse") // turn on SSE logs
-window.embedcoworkLogger?.disableLogger("sse") // turn them off again
-window.embedcoworkLogger?.enableAllLoggers() // optional helper
+window.embeddedcoworkLogger?.listLoggerNamespaces() // => [{ name: "sse", enabled: false }, ...]
+window.embeddedcoworkLogger?.enableLogger("sse") // turn on SSE logs
+window.embeddedcoworkLogger?.disableLogger("sse") // turn them off again
+window.embeddedcoworkLogger?.enableAllLoggers() // optional helper
 ```
 
-Enabled namespaces are persisted in `localStorage` under `embedcowork:logger:namespaces`, so your preference survives reloads.
+Enabled namespaces are persisted in `localStorage` under `embeddedcowork:logger:namespaces`, so your preference survives reloads.
 

@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer, webUtils } = require("electron")
 
 function resolveWindowContext() {
-  const prefix = "--embedcowork-window-context="
+  const prefix = "--embeddedcowork-window-context="
   const arg = process.argv.find((value) => typeof value === "string" && value.startsWith(prefix))
   const context = arg ? arg.slice(prefix.length) : "local"
   return context === "remote" ? "remote" : "local"

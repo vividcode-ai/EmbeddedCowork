@@ -42,7 +42,7 @@ export interface RemoteUiOptions {
   logger: Logger
 }
 
-const DEFAULT_MANIFEST_URL = "https://ui.embedcowork.vividcode.ai/version.json"
+const DEFAULT_MANIFEST_URL = "https://ui.embeddedcowork.vividcode.ai/version.json"
 
 const MANIFEST_TIMEOUT_MS = 5_000
 const ZIP_TIMEOUT_MS = 30_000
@@ -190,7 +190,7 @@ function resolveUiCacheRoot(configDir?: string): string {
   if (configDir) {
     return path.join(configDir, "ui")
   }
-  return path.join(os.homedir(), ".config", "embedcowork", "ui")
+  return path.join(os.homedir(), ".config", "embeddedcowork", "ui")
 }
 
 async function resolveFromCacheOrBundled(args: {

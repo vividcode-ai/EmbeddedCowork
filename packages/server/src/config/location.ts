@@ -34,13 +34,13 @@ function isJsonPath(filePath: string): boolean {
  * Resolve EmbeddedCowork's config location into a stable base directory + derived file paths.
  *
  * Supported inputs:
- * - Directory: "~/.config/embedcowork"
- * - YAML file: "~/.config/embedcowork/config.yaml" (or any *.yml/*.yaml)
- * - Legacy JSON file: "~/.config/embedcowork/config.json"
+ * - Directory: "~/.config/embeddedcowork"
+ * - YAML file: "~/.config/embeddedcowork/config.yaml" (or any *.yml/*.yaml)
+ * - Legacy JSON file: "~/.config/embeddedcowork/config.json"
  */
 export function resolveConfigLocation(raw: string): ConfigLocation {
   const trimmed = (raw ?? "").trim()
-  const fallback = "~/.config/embedcowork/config.json"
+  const fallback = "~/.config/embeddedcowork/config.json"
   const input = trimmed.length > 0 ? trimmed : fallback
 
   const resolvedInput = resolvePath(input)

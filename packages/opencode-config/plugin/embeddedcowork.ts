@@ -10,9 +10,9 @@ export async function EmbeddedCoworkPlugin(input: PluginInput) {
   const backgroundProcessTools = createBackgroundProcessTools(config, { baseDir: input.directory })
 
   await client.startEvents((event) => {
-    if (event.type === "embedcowork.ping") {
+    if (event.type === "embeddedcowork.ping") {
       void client.postEvent({
-        type: "embedcowork.pong",
+        type: "embeddedcowork.pong",
         properties: {
           ts: Date.now(),
           pingTs: (event.properties as any)?.ts,
@@ -21,7 +21,7 @@ export async function EmbeddedCoworkPlugin(input: PluginInput) {
       return
     }
 
-    if (event.type === "embedcowork.voiceMode") {
+    if (event.type === "embeddedcowork.voiceMode") {
       voiceModeEnabled = Boolean((event.properties as { enabled?: unknown } | undefined)?.enabled)
     }
   })

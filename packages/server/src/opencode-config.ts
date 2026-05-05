@@ -5,7 +5,7 @@ import { resolveOpencodeTemplateDir } from "./runtime-paths"
 const log = createLogger({ component: "opencode-config" })
 const templateDir = resolveOpencodeTemplateDir(import.meta.url)
 
-const isDevBuild = Boolean(process.env.EMBEDCOWORK_DEV ?? process.env.CLI_UI_DEV_SERVER)
+const isDevBuild = Boolean(process.env.EMBEDDEDCOWORK_DEV ?? process.env.CLI_UI_DEV_SERVER)
 
 export function getOpencodeConfigDir(): string {
   if (!existsSync(templateDir)) {

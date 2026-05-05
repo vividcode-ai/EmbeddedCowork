@@ -199,8 +199,8 @@ export class WorkspaceManager {
     const environment = {
       ...userEnvironment,
       OPENCODE_CONFIG_DIR: this.opencodeConfigDir,
-      EMBEDCOWORK_INSTANCE_ID: id,
-      EMBEDCOWORK_BASE_URL: this.options.getServerBaseUrl(),
+      EMBEDDEDCOWORK_INSTANCE_ID: id,
+      EMBEDDEDCOWORK_BASE_URL: this.options.getServerBaseUrl(),
       ...(this.options.nodeExtraCaCertsPath ? { NODE_EXTRA_CA_CERTS: this.options.nodeExtraCaCertsPath } : {}),
       [OPENCODE_SERVER_USERNAME_ENV]: opencodeUsername,
       [OPENCODE_SERVER_PASSWORD_ENV]: opencodePassword,

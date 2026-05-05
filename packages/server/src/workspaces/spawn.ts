@@ -207,7 +207,7 @@ function buildWslSpawnSpec(wslPath: WslPath, args: string[], options: BuildSpawn
       "sh",
       "-lc",
       launchScript,
-      "embedcowork-wsl-launch",
+      "embeddedcowork-wsl-launch",
     )
     if (workingDirectory) {
       wslArgs.push(workingDirectory.path)

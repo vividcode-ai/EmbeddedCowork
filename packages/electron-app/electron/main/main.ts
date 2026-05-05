@@ -293,7 +293,7 @@ function createMainWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: !isMac,
-      additionalArguments: ["--embedcowork-window-context=local"],
+      additionalArguments: ["--embeddedcowork-window-context=local"],
     },
   })
 
@@ -413,7 +413,7 @@ async function openRemoteWindow(payload: { id: string; name: string; baseUrl: st
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: !isMac,
-      additionalArguments: ["--embedcowork-window-context=remote"],
+      additionalArguments: ["--embeddedcowork-window-context=remote"],
     },
   })
 
@@ -594,7 +594,7 @@ app.whenReady().then(() => {
 
   createLoadingWindow()
   createMainWindow()
-  ;(mainWindow as BrowserWindow & { __embedcoworkOpenRemoteWindow?: typeof openRemoteWindow }).__embedcoworkOpenRemoteWindow = openRemoteWindow
+  ;(mainWindow as BrowserWindow & { __embeddedcoworkOpenRemoteWindow?: typeof openRemoteWindow }).__embeddedcoworkOpenRemoteWindow = openRemoteWindow
 
   if (isMac) {
     session.defaultSession.setSpellCheckerEnabled(false)

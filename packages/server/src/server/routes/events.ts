@@ -49,7 +49,7 @@ export function registerEventRoutes(app: FastifyInstance, deps: RouteDeps) {
     const unsubscribe = deps.eventBus.onEvent(send)
     const heartbeat = setInterval(() => {
       const ping = { ts: Date.now() }
-      reply.raw.write(`event: embedcowork.client.ping\ndata: ${JSON.stringify(ping)}\n\n`)
+      reply.raw.write(`event: embeddedcowork.client.ping\ndata: ${JSON.stringify(ping)}\n\n`)
     }, 15000)
 
     let closed = false

@@ -32,13 +32,13 @@
 You can run EmbeddedCowork directly without installing it:
 
 ```sh
-npx @vividcode/embedcowork --launch
+npx @vividcodeai/embeddedcowork --launch
 ```
 
 To list all CLI options:
 
 ```sh
-npx @vividcode/embedcowork --help
+npx @vividcodeai/embeddedcowork --help
 ```
 
 On startup, EmbeddedCowork prints two URLs:
@@ -48,11 +48,11 @@ On startup, EmbeddedCowork prints two URLs:
 
 ### Install Globally
 
-Or install it globally to use the `embedcowork` command:
+Or install it globally to use the `embeddedcowork` command:
 
 ```sh
-npm install -g @vividcode/embedcowork
-embedcowork --launch
+npm install -g @vividcodeai/embeddedcowork
+embeddedcowork --launch
 ```
 
 ### Install Locally (per-project)
@@ -60,11 +60,11 @@ embedcowork --launch
 If you prefer to install EmbeddedCowork into a project and run the local binary:
 
 ```sh
-npm install @vividcode/embedcowork
-npx embedcowork --launch
+npm install @vividcodeai/embeddedcowork
+npx embeddedcowork --launch
 ```
 
-(`npx embedcowork ...` will use `./node_modules/.bin/embedcowork` when present.)
+(`npx embeddedcowork ...` will use `./node_modules/.bin/embeddedcowork` when present.)
 
 ### Common Flags
 
@@ -81,16 +81,16 @@ You can configure the server using flags or environment variables:
 | `--tls-ca <path>` | `CLI_TLS_CA` | Optional CA chain/bundle (PEM) |
 | `--tlsSANs <list>` | `CLI_TLS_SANS` | Additional TLS SANs (comma-separated) |
 | `--host <addr>` | `CLI_HOST` | Interface to bind (default 127.0.0.1) |
-| `--workspace-root <path>` | `CLI_WORKSPACE_ROOT` | Restricts the root path where new workspaces can be opened. Git worktrees are created in `.embedcowork/worktrees` inside the project folder. |
+| `--workspace-root <path>` | `CLI_WORKSPACE_ROOT` | Restricts the root path where new workspaces can be opened. Git worktrees are created in `.embeddedcowork/worktrees` inside the project folder. |
 | `--unrestricted-root` | `CLI_UNRESTRICTED_ROOT` | Allow full-filesystem browsing |
 | `--config <path>` | `CLI_CONFIG` | Config file location |
 | `--launch` | `CLI_LAUNCH` | Open the UI in a Chromium-based browser |
 | `--log-level <level>` | `CLI_LOG_LEVEL` | Logging level (trace, debug, info, warn, error) |
 | `--log-destination <path>` | `CLI_LOG_DESTINATION` | Log destination file (defaults to stdout) |
-| `--username <username>` | `EMBEDCOWORK_SERVER_USERNAME` | Username for EmbeddedCowork's internal auth (default `embedcowork`) |
-| `--password <password>` | `EMBEDCOWORK_SERVER_PASSWORD` | Password for EmbeddedCowork's internal auth |
-| `--generate-token` | `EMBEDCOWORK_GENERATE_TOKEN` | Emit a one-time local bootstrap token for desktop flows |
-| `--dangerously-skip-auth` | `EMBEDCOWORK_SKIP_AUTH` | Disable EmbeddedCowork's internal auth (use only behind a trusted perimeter) |
+| `--username <username>` | `EMBEDDEDCOWORK_SERVER_USERNAME` | Username for EmbeddedCowork's internal auth (default `embeddedcowork`) |
+| `--password <password>` | `EMBEDDEDCOWORK_SERVER_PASSWORD` | Password for EmbeddedCowork's internal auth |
+| `--generate-token` | `EMBEDDEDCOWORK_GENERATE_TOKEN` | Emit a one-time local bootstrap token for desktop flows |
+| `--dangerously-skip-auth` | `EMBEDDEDCOWORK_SKIP_AUTH` | Disable EmbeddedCowork's internal auth (use only behind a trusted perimeter) |
 | `--ui-dir <path>` | `CLI_UI_DIR` | Directory containing the built UI bundle |
 | `--ui-dev-server <url>` | `CLI_UI_DEV_SERVER` | Proxy UI requests to a running dev server (requires `--https=false --http=true`) |
 | `--ui-no-update` | `CLI_UI_NO_UPDATE` | Disable remote UI updates |
@@ -102,15 +102,15 @@ You can configure the server using flags or environment variables:
 If you want the latest bleeding-edge builds (published as GitHub pre-releases), use the dev package:
 
 ```sh
-npx @vividcode/embedcowork-dev --launch
+npx @vividcodeai/embeddedcowork-dev --launch
 ```
 
 These environment variables control how EmbeddedCowork checks for dev updates:
 
 | Env Variable | Description |
 |-------------|-------------|
-| `EMBEDCOWORK_UPDATE_CHANNEL` | Update channel (use `dev` to enable dev build update checks) |
-| `EMBEDCOWORK_GITHUB_REPO` | GitHub repo used for dev release checks (default `VividCodeAI/EmbeddedCowork`) |
+| `EMBEDDEDCOWORK_UPDATE_CHANNEL` | Update channel (use `dev` to enable dev build update checks) |
+| `EMBEDDEDCOWORK_GITHUB_REPO` | GitHub repo used for dev release checks (default `VividCodeAI/EmbeddedCowork`) |
 
 ### HTTP vs HTTPS
 
@@ -118,13 +118,13 @@ These environment variables control how EmbeddedCowork checks for dev updates:
 - To run plain HTTP only (useful for development):
 
 ```sh
-embedcowork --https=false --http=true
+embeddedcowork --https=false --http=true
 ```
 
 - To run both HTTPS (for remote) and HTTP loopback (for desktop):
 
 ```sh
-embedcowork --https=true --http=true
+embeddedcowork --https=true --http=true
 ```
 
 ### Remote Access Binding Rules
@@ -139,19 +139,19 @@ embedcowork --https=true --http=true
 
 If `--https=true` and you do not provide `--tls-key/--tls-cert`, EmbeddedCowork generates a local certificate automatically under your config directory:
 
-- `~/.config/embedcowork/tls/ca-cert.pem`
-- `~/.config/embedcowork/tls/server-cert.pem`
+- `~/.config/embeddedcowork/tls/ca-cert.pem`
+- `~/.config/embeddedcowork/tls/server-cert.pem`
 
 Certificates are valid for about 30 days and rotate automatically on startup when needed. You can add extra SANs via:
 
 ```sh
-embedcowork --tlsSANs "localhost,127.0.0.1,my-hostname,192.168.1.10"
+embeddedcowork --tlsSANs "localhost,127.0.0.1,my-hostname,192.168.1.10"
 ```
 
 ### Authentication
 
 - Default behavior: EmbeddedCowork requires a login (username/password) and stores a session cookie in the browser.
-- `--dangerously-skip-auth` / `EMBEDCOWORK_SKIP_AUTH=true` disables the login prompt and treats all requests as authenticated.
+- `--dangerously-skip-auth` / `EMBEDDEDCOWORK_SKIP_AUTH=true` disables the login prompt and treats all requests as authenticated.
   Use this only when access is already protected by another layer (SSO proxy, VPN, Coder workspace auth, etc.).
   If you bind to `0.0.0.0` while skipping auth, anyone who can reach the port can access the API.
 
@@ -169,5 +169,5 @@ When running as a server EmbeddedCowork can also be installed as a PWA from any 
 
 ### Data Storage
 
-- **Config**: `~/.config/embedcowork/config.json`
-- **Instance Data**: `~/.config/embedcowork/instances` (chat history, etc.)
+- **Config**: `~/.config/embeddedcowork/config.json`
+- **Instance Data**: `~/.config/embeddedcowork/instances` (chat history, etc.)

@@ -12,7 +12,7 @@ const DEFAULT_MAP: WorktreeMap = {
 }
 
 function getMapPath(repoRoot: string): string {
-  return path.join(repoRoot, ".embedcowork", "worktreeMap.json")
+  return path.join(repoRoot, ".embeddedcowork", "worktreeMap.json")
 }
 
 function getGitExcludePath(repoRoot: string): string {
@@ -28,8 +28,8 @@ async function ensureGitExclude(repoRoot: string, logger?: LogLike): Promise<voi
   }
 
   const entries = [
-    ".embedcowork/worktrees/",
-    ".embedcowork/worktreeMap.json",
+    ".embeddedcowork/worktrees/",
+    ".embeddedcowork/worktreeMap.json",
   ]
 
   let existing = ""
@@ -50,7 +50,7 @@ async function ensureGitExclude(repoRoot: string, logger?: LogLike): Promise<voi
     return
   }
 
-  const header = existing.includes("# embedcowork") ? "" : (existing.trim() ? "\n" : "") + "# embedcowork\n"
+  const header = existing.includes("# embeddedcowork") ? "" : (existing.trim() ? "\n" : "") + "# embeddedcowork\n"
   const suffix = missing.map((e) => `${e}\n`).join("")
   await fsp.writeFile(excludePath, `${existing}${header}${suffix}`, "utf-8")
 }

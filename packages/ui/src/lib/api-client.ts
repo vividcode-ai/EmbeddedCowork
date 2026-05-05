@@ -40,12 +40,12 @@ import { getClientIdentity } from "./client-identity"
 import { getLogger } from "./logger"
 
 const RUNTIME_BASE = typeof window !== "undefined" ? window.location?.origin : undefined
-const DEFAULT_BASE = typeof window !== "undefined" ? window.__EMBEDCOWORK_API_BASE__ ?? RUNTIME_BASE : undefined
-const DEFAULT_EVENTS_PATH = typeof window !== "undefined" ? window.__EMBEDCOWORK_EVENTS_URL__ ?? "/api/events" : "/api/events"
-const API_BASE = import.meta.env.VITE_EMBEDCOWORK_API_BASE ?? DEFAULT_BASE
+const DEFAULT_BASE = typeof window !== "undefined" ? window.__EMBEDDEDCOWORK_API_BASE__ ?? RUNTIME_BASE : undefined
+const DEFAULT_EVENTS_PATH = typeof window !== "undefined" ? window.__EMBEDDEDCOWORK_EVENTS_URL__ ?? "/api/events" : "/api/events"
+const API_BASE = import.meta.env.VITE_EMBEDDEDCOWORK_API_BASE ?? DEFAULT_BASE
 const EVENTS_URL = buildEventsUrl(API_BASE, DEFAULT_EVENTS_PATH)
 
-export const EMBEDCOWORK_API_BASE = API_BASE
+export const EMBEDDEDCOWORK_API_BASE = API_BASE
 
 export function buildBackgroundProcessStreamUrl(instanceId: string, processId: string): string {
   const encodedInstanceId = encodeURIComponent(instanceId)
@@ -522,7 +522,7 @@ export const serverApi = {
       sseLogger.warn("EventSource error, closing stream")
       onError?.()
     }
-    source.addEventListener("embedcowork.client.ping", (event: MessageEvent) => {
+    source.addEventListener("embeddedcowork.client.ping", (event: MessageEvent) => {
       try {
         const payload = event.data ? (JSON.parse(event.data) as { ts?: number }) : {}
         onPing?.(payload)

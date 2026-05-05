@@ -55,10 +55,10 @@ describe("buildWindowsSpawnSpec", () => {
         cwd: String.raw`\\wsl.localhost\Ubuntu\home\dev\workspace`,
         env: {
           OPENCODE_CONFIG_DIR: String.raw`C:\Users\dev\AppData\Roaming\EmbeddedCowork\opencode-config`,
-          EMBEDCOWORK_INSTANCE_ID: "workspace-123",
+          EMBEDDEDCOWORK_INSTANCE_ID: "workspace-123",
           OPENCODE_SERVER_PASSWORD: "secret",
         },
-        propagateEnvKeys: ["OPENCODE_CONFIG_DIR", "EMBEDCOWORK_INSTANCE_ID", "OPENCODE_SERVER_PASSWORD"],
+        propagateEnvKeys: ["OPENCODE_CONFIG_DIR", "EMBEDDEDCOWORK_INSTANCE_ID", "OPENCODE_SERVER_PASSWORD"],
       },
     )
 
@@ -75,7 +75,7 @@ describe("buildWindowsSpawnSpec", () => {
       "0",
     ])
     assert.equal(spec.cwd, undefined)
-    assert.equal(spec.env?.WSLENV, "OPENCODE_CONFIG_DIR/p:EMBEDCOWORK_INSTANCE_ID:OPENCODE_SERVER_PASSWORD")
+    assert.equal(spec.env?.WSLENV, "OPENCODE_CONFIG_DIR/p:EMBEDDEDCOWORK_INSTANCE_ID:OPENCODE_SERVER_PASSWORD")
   })
 
   it("upgrades existing WSLENV path entries to include /p", () => {
@@ -85,13 +85,13 @@ describe("buildWindowsSpawnSpec", () => {
       {
         env: {
           OPENCODE_CONFIG_DIR: String.raw`C:\Users\dev\AppData\Roaming\EmbeddedCowork\opencode-config`,
-          WSLENV: "OPENCODE_CONFIG_DIR:EMBEDCOWORK_INSTANCE_ID/u",
+          WSLENV: "OPENCODE_CONFIG_DIR:EMBEDDEDCOWORK_INSTANCE_ID/u",
         },
-        propagateEnvKeys: ["OPENCODE_CONFIG_DIR", "EMBEDCOWORK_INSTANCE_ID"],
+        propagateEnvKeys: ["OPENCODE_CONFIG_DIR", "EMBEDDEDCOWORK_INSTANCE_ID"],
       },
     )
 
-    assert.equal(spec.env?.WSLENV, "OPENCODE_CONFIG_DIR/p:EMBEDCOWORK_INSTANCE_ID/u")
+    assert.equal(spec.env?.WSLENV, "OPENCODE_CONFIG_DIR/p:EMBEDDEDCOWORK_INSTANCE_ID/u")
   })
 
   it("propagates inherited known path variables even when they are not explicitly requested", () => {
@@ -125,7 +125,7 @@ describe("buildWindowsSpawnSpec", () => {
       "sh",
       "-lc",
       'cd "$(wslpath -au "$1")" && shift && exec "$@"',
-      "embedcowork-wsl-launch",
+      "embeddedcowork-wsl-launch",
       String.raw`C:\Users\dev\workspace`,
       "/home/dev/.opencode/bin/opencode",
       "serve",
@@ -151,7 +151,7 @@ describe("buildWindowsSpawnSpec", () => {
       "sh",
       "-lc",
       'cd "$(wslpath -au "$1")" && shift && exec "$@"',
-      "embedcowork-wsl-launch",
+      "embeddedcowork-wsl-launch",
       String.raw`\\server\share\workspace`,
       "/home/dev/.opencode/bin/opencode",
       "serve",
@@ -164,7 +164,7 @@ describe("buildWindowsSpawnSpec", () => {
       ["serve"],
       {
         cwd: String.raw`\\wsl.localhost\Ubuntu\home\dev\workspace`,
-        wslPidMarker: "__EMBEDCOWORK_WSL_PID__:",
+        wslPidMarker: "__EMBEDDEDCOWORK_WSL_PID__:",
       },
     )
 
@@ -175,13 +175,13 @@ describe("buildWindowsSpawnSpec", () => {
       "--exec",
       "sh",
       "-lc",
-      `printf '%s%s\\n' '__EMBEDCOWORK_WSL_PID__:' "$$" && cd "$1" && shift && exec "$@"`,
-      "embedcowork-wsl-launch",
+      `printf '%s%s\\n' '__EMBEDDEDCOWORK_WSL_PID__:' "$$" && cd "$1" && shift && exec "$@"`,
+      "embeddedcowork-wsl-launch",
       "/home/dev/workspace",
       "/home/dev/.opencode/bin/opencode",
       "serve",
     ])
-    assert.equal(spec.wsl?.pidMarker, "__EMBEDCOWORK_WSL_PID__:")
+    assert.equal(spec.wsl?.pidMarker, "__EMBEDDEDCOWORK_WSL_PID__:")
   })
 
   it("builds the WSL kill command for tracked Linux PIDs", () => {

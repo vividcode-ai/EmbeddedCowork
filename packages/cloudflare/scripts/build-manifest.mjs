@@ -58,7 +58,7 @@ if (!uiVersion || !serverVersion) {
 
 const sha256 = createHash("sha256").update(fs.readFileSync(resolvedZipPath)).digest("hex")
 
-const uiPackageURL = `https://download.embedcowork.vividcode.ai/ui/ui-${uiVersion}.zip`
+const uiPackageURL = `https://download.embeddedcowork.vividcode.ai/ui/ui-${uiVersion}.zip`
 
 const manifest = {
   minServerVersion: releaseConfig.minServerVersion,

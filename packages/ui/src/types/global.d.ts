@@ -63,12 +63,12 @@ declare global {
   }
 
   interface Window {
-      __EMBEDCOWORK_API_BASE__?: string
-      __EMBEDCOWORK_EVENTS_URL__?: string
-      __EMBEDCOWORK_RUNTIME_HOST__?: "electron" | "tauri" | "web"
-      __EMBEDCOWORK_WINDOW_CONTEXT__?: "local" | "remote"
+      __EMBEDDEDCOWORK_API_BASE__?: string
+      __EMBEDDEDCOWORK_EVENTS_URL__?: string
+      __EMBEDDEDCOWORK_RUNTIME_HOST__?: "electron" | "tauri" | "web"
+      __EMBEDDEDCOWORK_WINDOW_CONTEXT__?: "local" | "remote"
       electronAPI?: ElectronAPI
       __TAURI__?: TauriBridge
-      embedcoworkLogger?: LoggerControls
+      embeddedcoworkLogger?: LoggerControls
    }
  }

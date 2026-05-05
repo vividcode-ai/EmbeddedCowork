@@ -13,8 +13,8 @@ const nodeRequire = createRequire(import.meta.url)
 const mainFilename = fileURLToPath(import.meta.url)
 const mainDirname = path.dirname(mainFilename)
 
-const BOOTSTRAP_TOKEN_PREFIX = "EMBEDCOWORK_BOOTSTRAP_TOKEN:"
-const SESSION_COOKIE_NAME_PREFIX = "embedcowork_session"
+const BOOTSTRAP_TOKEN_PREFIX = "EMBEDDEDCOWORK_BOOTSTRAP_TOKEN:"
+const SESSION_COOKIE_NAME_PREFIX = "embeddedcowork_session"
 
 type CliState = "starting" | "ready" | "error" | "stopped"
 type ListeningMode = "local" | "all"
@@ -45,7 +45,7 @@ interface CliEntryResolution {
 type ManagedChild = ChildProcess | UtilityProcess
 type ChildLaunchMode = "spawn" | "utility"
 
-const DEFAULT_CONFIG_PATH = "~/.config/embedcowork/config.json"
+const DEFAULT_CONFIG_PATH = "~/.config/embeddedcowork/config.json"
 
 function isYamlPath(filePath: string): boolean {
   const lower = filePath.toLowerCase()
@@ -648,7 +648,7 @@ export class CliProcessManager extends EventEmitter {
   }
  
   private resolveStandaloneProdEntry(): string {
-    const executableName = process.platform === "win32" ? "embedcowork-server.exe" : "embedcowork-server"
+    const executableName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
     const candidates = [
       path.join(process.resourcesPath, "server", "dist", executableName),
       path.join(mainDirname, "../resources/server/dist", executableName),

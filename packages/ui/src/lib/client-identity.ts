@@ -1,5 +1,5 @@
-const CLIENT_ID_STORAGE_KEY = "embedcowork.client-id"
-const CONNECTION_ID_STORAGE_KEY = "embedcowork.connection-id"
+const CLIENT_ID_STORAGE_KEY = "embeddedcowork.client-id"
+const CONNECTION_ID_STORAGE_KEY = "embeddedcowork.connection-id"
 
 let cachedClientId: string | null = null
 let cachedConnectionId: string | null = null
