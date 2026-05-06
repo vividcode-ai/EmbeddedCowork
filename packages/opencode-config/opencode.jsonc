@@ -1,3 +1,35 @@
 {
-  "$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+   "mcp": {
+    "embedded-xLink-mcp": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@vividcodeai/embedded-xlink-mcp"
+      ],
+      "enabled": false,
+      "environment": {}
+    },
+	 "embedded-serial-mcp": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@vividcodeai/embedded-serial-mcp"
+      ],
+      "enabled": false,
+      "environment": {}
+    },
+    "embedded-gdb-mcp": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@vividcodeai/embedded-gdb-mcp"
+      ],
+      "enabled": false,
+      "environment": {}
+    },
+  },
 }
