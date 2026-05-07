@@ -122,6 +122,13 @@ export const settingsMessages = {
   "settings.opencode.logLevel.option.warn": "אזהרה",
   "settings.opencode.logLevel.option.error": "שגיאה",
 
+  "settings.opencode.sessionStorage.title": "Session Storage",
+  "settings.opencode.sessionStorage.subtitle": "Choose where session data is stored.",
+  "settings.opencode.sessionStorage.selector.title": "Storage mode",
+  "settings.opencode.sessionStorage.selector.subtitle": "Select where the session database is placed.",
+  "settings.opencode.sessionStorage.option.project": "Project path",
+  "settings.opencode.sessionStorage.option.global": "Global path",
+
   "settings.appearance.behavior.title": "אינטראקציה",
   "settings.appearance.behavior.subtitle": "ברירות מחדל להודעות, diff וקלט.",
   "settings.behavior.keyboardHints.title": "רמזי קיצורי מקלדת",

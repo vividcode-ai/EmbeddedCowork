@@ -122,6 +122,13 @@ export const settingsMessages = {
   "settings.opencode.logLevel.option.warn": "警告",
   "settings.opencode.logLevel.option.error": "错误",
 
+  "settings.opencode.sessionStorage.title": "会话存储",
+  "settings.opencode.sessionStorage.subtitle": "选择会话数据的存放位置。",
+  "settings.opencode.sessionStorage.selector.title": "存储模式",
+  "settings.opencode.sessionStorage.selector.subtitle": "选择会话数据库的存放位置。",
+  "settings.opencode.sessionStorage.option.project": "项目路径",
+  "settings.opencode.sessionStorage.option.global": "全局路径",
+
   "settings.appearance.behavior.title": "交互",
   "settings.appearance.behavior.subtitle": "消息、差异与输入的默认值。",
   "settings.behavior.keyboardHints.title": "键盘快捷键提示",

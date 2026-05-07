@@ -1,5 +1,8 @@
 import path from "path"
-import { spawnSync } from "child_process"
+import os from "os"
+import { createHash } from "crypto"
+import { mkdirSync } from "fs"
+import { execSync, spawnSync } from "child_process"
 import { connect } from "net"
 import { EventBus } from "../events/bus"
 import type { SettingsService } from "../settings/service"
@@ -153,12 +156,43 @@ export class WorkspaceManager {
     browser.writeFile(relativePath, contents)
   }
 
+  /**
+   * Compute a deterministic workspace ID based on the folder's content identity.
+   *
+   * - If the folder is inside a git repository: ID is derived from the git root
+   *   commit hash + the folder's relative path from git root. This ensures the
+   *   ID stays the same when the folder is moved/renamed within the repo.
+   * - Otherwise: fall back to hashing the absolute path.
+   */
+  private computeWorkspaceId(folder: string): string {
+    const absPath = path.resolve(folder)
+
+    // Attempt git-based identity
+    try {
+      const topLevel = execSync("git rev-parse --show-toplevel", { cwd: absPath, encoding: "utf8", timeout: 5000 }).trim()
+      const rootHash = execSync("git rev-list --max-parents=0 HEAD", { cwd: absPath, encoding: "utf8", timeout: 5000 })
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .sort()[0]
+      if (rootHash) {
+        const relPath = path.relative(topLevel, absPath) || "/"
+        return createHash("sha256").update(`${rootHash}:${relPath}`).digest("hex").slice(0, 12)
+      }
+    } catch {
+      // Not a git repo or git unavailable — fall through
+    }
+
+    // Fallback: use absolute path hash
+    return createHash("sha256").update(absPath).digest("hex").slice(0, 12)
+  }
+
   async create(folder: string, name?: string): Promise<WorkspaceDescriptor> {
  
-    const id = `${Date.now().toString(36)}`
+    const workspacePath = path.isAbsolute(folder) ? folder : path.resolve(this.options.rootDir, folder)
+    const id = this.computeWorkspaceId(workspacePath)
     const binary = this.options.binaryResolver.resolveDefault()
     const resolvedBinaryPath = this.resolveBinaryPath(binary.path)
-    const workspacePath = path.isAbsolute(folder) ? folder : path.resolve(this.options.rootDir, folder)
     clearWorkspaceSearchCache(workspacePath)
 
     this.options.logger.info({ workspaceId: id, folder: workspacePath, binary: resolvedBinaryPath }, "Creating workspace")
@@ -196,9 +230,24 @@ export class WorkspaceManager {
     }
     this.opencodeAuth.set(id, { username: opencodeUsername, password: opencodePassword, authorization })
 
+    // Determine session database path based on user preference.
+    //   - "project": place DB inside the workspace folder so it travels with the project
+    //   - "global":  place DB in a centralized directory keyed by workspaceId
+    const sessionStorageMode = (serverConfig as any)?.sessionStorageMode ?? "project"
+    let dbPath: string
+    if (sessionStorageMode === "global") {
+      dbPath = path.join(os.homedir(), ".embeddedcowork", "session-data", `${id}.db`)
+    } else {
+      dbPath = path.join(workspacePath, ".embeddedcowork", "session", "data.db")
+    }
+    // Ensure parent directory exists before opencode starts; Database(path, { create: true })
+    // only creates the file, not intermediate directories.
+    mkdirSync(path.dirname(dbPath), { recursive: true })
+
     const environment = {
       ...userEnvironment,
       OPENCODE_CONFIG_DIR: this.opencodeConfigDir,
+      OPENCODE_DB: dbPath,
       EMBEDDEDCOWORK_INSTANCE_ID: id,
       EMBEDDEDCOWORK_BASE_URL: this.options.getServerBaseUrl(),
       ...(this.options.nodeExtraCaCertsPath ? { NODE_EXTRA_CA_CERTS: this.options.nodeExtraCaCertsPath } : {}),

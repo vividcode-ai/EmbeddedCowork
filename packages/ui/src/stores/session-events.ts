@@ -219,7 +219,7 @@ async function fetchSessionInfo(instanceId: string, sessionId: string, directory
 
     setSessions((prev) => {
       const next = new Map(prev)
-      const instanceSessions = next.get(instanceId) ?? new Map<string, Session>()
+      const instanceSessions = new Map(next.get(instanceId) ?? new Map<string, Session>())
       const existing = instanceSessions.get(sessionId)
       const merged: Session = {
         ...fetched,
@@ -471,7 +471,7 @@ function handleSessionUpdate(instanceId: string, event: EventSessionUpdated): vo
 
     setSessions((prev) => {
       const next = new Map(prev)
-      const instanceSessions = next.get(instanceId) ?? new Map<string, Session>()
+      const instanceSessions = new Map(next.get(instanceId) ?? new Map<string, Session>())
       instanceSessions.set(newSession.id, newSession)
       next.set(instanceId, instanceSessions)
       updatedInstanceSessions = instanceSessions
@@ -507,7 +507,7 @@ function handleSessionUpdate(instanceId: string, event: EventSessionUpdated): vo
 
     setSessions((prev) => {
       const next = new Map(prev)
-      const instanceSessions = next.get(instanceId) ?? new Map<string, Session>()
+      const instanceSessions = new Map(next.get(instanceId) ?? new Map<string, Session>())
       instanceSessions.set(existingSession.id, updatedSession)
       next.set(instanceId, instanceSessions)
       updatedInstanceSessions = instanceSessions

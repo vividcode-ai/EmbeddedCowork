@@ -344,6 +344,10 @@ const App: Component = () => {
   async function handleNewSession(instanceId: string) {
     try {
       const session = await createSession(instanceId)
+      if (!session?.id) {
+        log.error("Created session has no id", { instanceId })
+        return
+      }
       setActiveParentSession(instanceId, session.id)
     } catch (error) {
       log.error("Failed to create session", error)

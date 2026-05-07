@@ -287,11 +287,11 @@ function withSession(instanceId: string, sessionId: string, updater: (session: S
 
     nextBucket = getIndicatorBucket(updatedSession)
 
-    instanceSessions.set(sessionId, updatedSession)
-    didUpdate = true
-
     const next = new Map(prev)
-    next.set(instanceId, instanceSessions)
+    const clonedSessions = new Map(instanceSessions)
+    clonedSessions.set(sessionId, updatedSession)
+    next.set(instanceId, clonedSessions)
+    didUpdate = true
     return next
   })
 

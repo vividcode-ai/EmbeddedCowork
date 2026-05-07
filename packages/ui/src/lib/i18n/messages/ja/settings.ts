@@ -122,6 +122,13 @@ export const settingsMessages = {
   "settings.opencode.logLevel.option.warn": "警告",
   "settings.opencode.logLevel.option.error": "エラー",
 
+  "settings.opencode.sessionStorage.title": "Session Storage",
+  "settings.opencode.sessionStorage.subtitle": "Choose where session data is stored.",
+  "settings.opencode.sessionStorage.selector.title": "Storage mode",
+  "settings.opencode.sessionStorage.selector.subtitle": "Select where the session database is placed.",
+  "settings.opencode.sessionStorage.option.project": "Project path",
+  "settings.opencode.sessionStorage.option.global": "Global path",
+
   "settings.appearance.behavior.title": "操作",
   "settings.appearance.behavior.subtitle": "メッセージ、差分、入力の既定値。",
   "settings.behavior.keyboardHints.title": "キーボードショートカットのヒント",

@@ -101,6 +101,7 @@ interface ServerConfigBucket {
   environmentVariables?: Record<string, string>
   opencodeBinary?: string
   speech?: Partial<SpeechSettings>
+  sessionStorageMode?: "project" | "global"
 }
 
 interface UiStateBucket {
@@ -303,7 +304,7 @@ function normalizeUiState(input?: UiStateBucket | null): NormalizedUiState {
 
 function normalizeServerConfig(
   input?: ServerConfigBucket | null,
-): Required<Pick<ServerConfigBucket, "listeningMode" | "logLevel" | "environmentVariables" | "opencodeBinary">> & { speech: SpeechSettings } {
+): Required<Pick<ServerConfigBucket, "listeningMode" | "logLevel" | "environmentVariables" | "opencodeBinary">> & { speech: SpeechSettings; sessionStorageMode: "project" | "global" } {
   const source = input ?? {}
   const listeningMode = source.listeningMode === "all" ? "all" : "local"
   const logLevel =
@@ -313,7 +314,8 @@ function normalizeServerConfig(
   const opencodeBinary = typeof source.opencodeBinary === "string" && source.opencodeBinary.trim() ? source.opencodeBinary : "opencode"
   const environmentVariables = normalizeRecord(source.environmentVariables)
   const speech = normalizeSpeechSettings(source.speech)
-  return { listeningMode, logLevel, opencodeBinary, environmentVariables, speech }
+  const sessionStorageMode = source.sessionStorageMode === "global" ? "global" : "project"
+  return { listeningMode, logLevel, opencodeBinary, environmentVariables, speech, sessionStorageMode }
 }
 
 function getModelKey(model: { providerId: string; modelId: string }): string {
@@ -485,6 +487,12 @@ function updateLastUsedBinary(path: string): void {
 function updateLogLevel(level: ServerLogLevel): void {
   const target = level ?? "DEBUG"
   void patchConfigOwner("server", { logLevel: target }).catch((error) => log.error("Failed to set log level", error))
+}
+
+function updateSessionStorageMode(mode: "project" | "global"): void {
+  void patchConfigOwner("server", { sessionStorageMode: mode }).catch((error) =>
+    log.error("Failed to update session storage mode", error),
+  )
 }
 
 async function updateSpeechSettings(updates: SpeechSettingsUpdate): Promise<void> {
@@ -716,6 +724,7 @@ interface ConfigContextValue {
     updateLastUsedBinary: typeof updateLastUsedBinary
     updateLogLevel: typeof updateLogLevel
     updateSpeechSettings: typeof updateSpeechSettings
+    updateSessionStorageMode: typeof updateSessionStorageMode
 
   // ui-owned state
   recentFolders: typeof recentFolders
@@ -771,6 +780,7 @@ const configContextValue: ConfigContextValue = {
   updateLastUsedBinary,
   updateLogLevel,
   updateSpeechSettings,
+  updateSessionStorageMode,
   recentFolders,
   opencodeBinaries,
   remoteServers,
@@ -859,6 +869,7 @@ export {
   updateLastUsedBinary,
   updateLogLevel,
   updateSpeechSettings,
+  updateSessionStorageMode,
   addRecentFolder,
   removeRecentFolder,
   addOpenCodeBinary,

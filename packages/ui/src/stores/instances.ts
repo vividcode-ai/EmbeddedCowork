@@ -33,7 +33,7 @@ import {
 } from "./worktrees"
 import { fetchCommands, clearCommands } from "./commands"
 import { serverSettings } from "./preferences"
-import { setSessionPendingPermission, setSessionPendingQuestion } from "./session-state"
+import { setSessionPendingPermission, setSessionPendingQuestion, setSessions } from "./session-state"
 import { setHasInstances } from "./ui"
 import { messageStoreBus } from "./message-v2/bus"
 import { upsertPermissionV2, removePermissionV2, upsertQuestionV2, removeQuestionV2 } from "./message-v2/bridge"
@@ -544,6 +544,16 @@ function removeInstance(id: string) {
   clearCacheForInstance(id)
   messageStoreBus.unregisterInstance(id)
   clearInstanceDraftPrompts(id)
+
+  // Clean up session state for this instance to prevent stale data from
+  // persisting in memory when the workspace is re-created with a new ID.
+  setSessions((prev) => {
+    if (!prev.has(id)) return prev
+    const next = new Map(prev)
+    next.delete(id)
+    return next
+  })
+
   syncHasInstancesFlag()
 }
 

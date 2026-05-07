@@ -285,7 +285,7 @@ async function createSession(instanceId: string, agent?: string): Promise<Sessio
 
     setSessions((prev) => {
       const next = new Map(prev)
-      const instanceSessions = next.get(instanceId) || new Map()
+      const instanceSessions = new Map(next.get(instanceId) ?? new Map())
       instanceSessions.set(session.id, session)
       next.set(instanceId, instanceSessions)
       return next
@@ -393,7 +393,7 @@ async function forkSession(
 
   setSessions((prev) => {
     const next = new Map(prev)
-    const instanceSessions = next.get(instanceId) || new Map()
+    const instanceSessions = new Map(next.get(instanceId) ?? new Map())
     instanceSessions.set(forkedSession.id, forkedSession)
     next.set(instanceId, instanceSessions)
     return next
@@ -457,11 +457,14 @@ async function deleteSession(instanceId: string, sessionId: string): Promise<voi
 
     setSessions((prev) => {
       const next = new Map(prev)
-      const instanceSessions = next.get(instanceId)
-      if (instanceSessions) {
+      const existing = next.get(instanceId)
+      if (existing) {
+        const instanceSessions = new Map(existing)
         instanceSessions.delete(sessionId)
         if (instanceSessions.size === 0) {
           next.delete(instanceId)
+        } else {
+          next.set(instanceId, instanceSessions)
         }
       }
       return next
@@ -717,12 +720,12 @@ async function loadMessages(instanceId: string, sessionId: string, force = false
 
     setSessions((prev) => {
       const next = new Map(prev)
-      const nextInstanceSessions = next.get(instanceId)
-      if (!nextInstanceSessions) {
+      const existing = next.get(instanceId)
+      if (!existing) {
         return next
       }
 
-      const existingSession = nextInstanceSessions.get(sessionId)
+      const existingSession = existing.get(sessionId)
       if (!existingSession) {
         return next
       }
@@ -733,8 +736,9 @@ async function loadMessages(instanceId: string, sessionId: string, force = false
         model: providerID && modelID ? { providerId: providerID, modelId: modelID } : existingSession.model,
       }
 
-      nextInstanceSessions.set(sessionId, updatedSession)
-      next.set(instanceId, nextInstanceSessions)
+      const instanceSessions = new Map(existing)
+      instanceSessions.set(sessionId, updatedSession)
+      next.set(instanceId, instanceSessions)
       return next
     })
 

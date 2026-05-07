@@ -99,23 +99,6 @@ jobs:
           set -euo pipefail
           node -e "const fs=require('fs'); const path=require('path'); const p=path.join('packages','server','package.json'); const j=JSON.parse(fs.readFileSync(p,'utf8')); j.name=process.env.PACKAGE_NAME || j.name; fs.writeFileSync(p, JSON.stringify(j, null, 2)+'\n'); console.log('Publishing as', j.name);"
 
-      - name: Debug OIDC token claims
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const resp = await fetch(
-              process.env.ACTIONS_ID_TOKEN_REQUEST_URL + '&audience=npm',
-              { headers: { Authorization: `bearer ${process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}` } }
-            );
-            const token = (await resp.json()).value;
-            const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-            console.log('=== OIDC Token Claims ===');
-            console.log('workflow:', claims.workflow);
-            console.log('job_workflow_ref:', claims.job_workflow_ref);
-            console.log('repository:', claims.repository);
-            console.log('repository_owner:', claims.repository_owner);
-            console.log('ref:', claims.ref);
-
       - name: Publish server package with provenance
         env:
           # Optional: when present, npm will use token auth.

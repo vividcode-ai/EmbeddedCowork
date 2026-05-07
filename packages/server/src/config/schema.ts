@@ -27,6 +27,7 @@ const PreferencesSchema = z
   autoCleanupBlankSessions: z.boolean().default(true),
   listeningMode: z.enum(["local", "all"]).default("local"),
   logLevel: z.enum(["DEBUG", "INFO", "WARN", "ERROR"]).default("DEBUG"),
+  sessionStorageMode: z.enum(["project", "global"]).default("project"),
 
   // OS notifications
   osNotificationsEnabled: z.boolean().default(false),
