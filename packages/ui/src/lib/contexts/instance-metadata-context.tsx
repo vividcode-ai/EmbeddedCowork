@@ -35,7 +35,7 @@ export const InstanceMetadataProvider: Component<InstanceMetadataProviderProps> 
       return
     }
 
-    setIsLoading(true)
+    if (!force) setIsLoading(true)
     await loadInstanceMetadata(current, { force })
     setIsLoading(false)
   }

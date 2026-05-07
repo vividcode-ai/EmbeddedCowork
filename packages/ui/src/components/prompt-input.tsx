@@ -605,6 +605,21 @@ export default function PromptInput(props: PromptInputProps) {
                         when={props.escapeInDebounce}
                         fallback={
                           <>
+                            <span class="prompt-overlay-text">
+                            <Show
+                              when={submitOnEnter()}
+                              fallback={
+                                <>
+                                  <Kbd>Enter</Kbd> {t("promptInput.overlay.newLine")} • <Kbd shortcut="cmd+enter" /> {t("promptInput.overlay.send")}
+                                </>
+                              }
+                            >
+                              <>
+                                <Kbd>Enter</Kbd> {t("promptInput.overlay.send")} • <Kbd shortcut="cmd+enter" /> {t("promptInput.overlay.newLine")}
+                              </>
+                            </Show>
+                            {" "}• <Kbd>@</Kbd> {t("promptInput.overlay.filesAgents")} • <Kbd>↑↓</Kbd> {t("promptInput.overlay.history")}
+                          </span>
                             <Show when={attachments().length > 0}>
                               <span class="prompt-overlay-text prompt-overlay-muted">{t("promptInput.overlay.attachments", { count: attachments().length })}</span>
                             </Show>
