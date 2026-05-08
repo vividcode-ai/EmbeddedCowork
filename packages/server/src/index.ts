@@ -595,6 +595,28 @@ async function main() {
 
 main().catch((error) => {
   const logger = createLogger({ component: "app" })
+  const message = (error as Error)?.message ?? ""
+
+  if (message.includes("No server password configured")) {
+    const friendlyMsg = `\
+[ERROR] [auth] EmbeddedCowork cannot start: no server password configured.
+
+  To fix this, choose one of the following options:
+
+  1. Set a password via the command line:
+     npx @vividcodeai/embeddedcowork --password <your-password>
+
+  2. Set the EMBEDDEDCOWORK_SERVER_PASSWORD environment variable
+
+  3. Create an auth.json configuration file (see path in the error above)
+
+  4. Use --dangerously-skip-auth to disable authentication (not recommended for production)
+`
+    console.error(friendlyMsg)
+    process.exit(1)
+    return
+  }
+
   logger.error({ err: error }, "CLI server crashed")
   process.exit(1)
 })
