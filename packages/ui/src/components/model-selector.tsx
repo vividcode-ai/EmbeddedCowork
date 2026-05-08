@@ -1,6 +1,7 @@
 import { Combobox } from "@kobalte/core/combobox"
-import { createEffect, createMemo, createSignal } from "solid-js"
+import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { providers, fetchProviders } from "../stores/sessions"
+import { getRootClient } from "../stores/worktrees"
 import { ChevronDown, Star } from "lucide-solid"
 import type { Model } from "../types/session"
 import { useI18n } from "../lib/i18n"
@@ -22,6 +23,8 @@ interface FlatModel extends Model {
   searchText: string
 }
 
+type ViewState = "browse" | "add-model" | "enter-key" | "connecting" | "error"
+
 export default function ModelSelector(props: ModelSelectorProps) {
   const { t } = useI18n()
   const instanceProviders = () => providers().get(props.instanceId) || []
@@ -33,6 +36,12 @@ export default function ModelSelector(props: ModelSelectorProps) {
   const [initialQuery, setInitialQuery] = createSignal("")
   const [initialQueryReady, setInitialQueryReady] = createSignal(false)
   const [inputValue, setInputValue] = createSignal("")
+  const [view, setView] = createSignal<ViewState>("browse")
+  const [addSearch, setAddSearch] = createSignal("")
+  const [unconnectedModels, setUnconnectedModels] = createSignal<FlatModel[]>([])
+  const [pendingModel, setPendingModel] = createSignal<FlatModel | null>(null)
+  const [apiKey, setApiKey] = createSignal("")
+  const [pollError, setPollError] = createSignal<string | null>(null)
   let triggerRef!: HTMLButtonElement
   let searchInputRef!: HTMLInputElement
   let listboxRef!: HTMLUListElement
@@ -109,9 +118,122 @@ export default function ModelSelector(props: ModelSelectorProps) {
     return favoriteModels()
   })
 
+  const filteredUnconnected = createMemo(() => {
+    const query = addSearch().toLowerCase().trim()
+    const all = unconnectedModels()
+    if (!query) return all
+    return all.filter((m) =>
+      m.providerName.toLowerCase().includes(query) ||
+      m.providerId.toLowerCase().includes(query)
+    )
+  })
+
+  const groupedModels = createMemo(() => {
+    const map = new Map<string, FlatModel[]>()
+    for (const m of filteredUnconnected()) {
+      const list = map.get(m.providerId) ?? []
+      list.push(m)
+      map.set(m.providerId, list)
+    }
+    return [...map.entries()]
+  })
+
   const handleChange = async (value: FlatModel | null) => {
     if (!value) return
     await props.onModelChange({ providerId: value.providerId, modelId: value.id })
+  }
+
+  const handleAddModel = async () => {
+    try {
+      const rootClient = getRootClient(props.instanceId)
+      const res = await rootClient.provider.list()
+      const connectedSet = new Set(res.data?.connected ?? [])
+      const list: FlatModel[] = []
+      for (const p of res.data?.all ?? []) {
+        if (connectedSet.has(p.id)) continue
+        for (const [id, m] of Object.entries(p.models)) {
+          list.push({
+            id,
+            name: m.name,
+            providerId: p.id,
+            providerName: p.name,
+            key: `${p.id}/${id}`,
+            searchText: `${m.name} ${p.name} ${p.id} ${id} ${p.id}/${id}`,
+            limit: m.limit,
+            cost: m.cost,
+            variantKeys: Object.keys(m.variants ?? {}),
+          })
+        }
+      }
+      setUnconnectedModels(list)
+      setAddSearch("")
+      setView("add-model")
+    } catch (error) {
+      log.error("Failed to fetch unconnected providers", error)
+    }
+  }
+
+  const handleModelClick = (model: FlatModel) => {
+    setPendingModel(model)
+    setApiKey("")
+    setPollError(null)
+    setView("enter-key")
+  }
+
+  const handleApiKeySubmit = async (event: MouseEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const model = pendingModel()
+    if (!model || !apiKey().trim()) return
+
+    setView("connecting")
+    setPollError(null)
+
+    try {
+      const rootClient = getRootClient(props.instanceId)
+      await rootClient.config.update({
+        config: {
+          provider: {
+            [model.providerId]: {
+              options: { apiKey: apiKey().trim() },
+            },
+          },
+        },
+      })
+
+      const startTime = Date.now()
+      const maxDuration = 10000
+      const poll = async () => {
+        if (Date.now() - startTime > maxDuration) {
+          setPollError(t("modelSelector.apiKey.failed"))
+          setView("error")
+          return
+        }
+        try {
+          const res = await rootClient.provider.list()
+          if (res.data?.connected?.includes(model.providerId)) {
+            await fetchProviders(props.instanceId)
+            suppressNextClose = true
+            setTimeout(() => { suppressNextClose = false }, 0)
+            setIsOpen(false)
+            await props.onModelChange({ providerId: model.providerId, modelId: model.id })
+            return
+          }
+        } catch {
+          // ignore polling errors
+        }
+        setTimeout(poll, 200)
+      }
+      poll()
+    } catch {
+      setPollError(t("modelSelector.apiKey.failed"))
+      setView("error")
+    }
+  }
+
+  const handleCancel = () => {
+    setView("browse")
+    setIsOpen(false)
   }
 
   const customFilter = (option: FlatModel, rawInput: string) => {
@@ -121,6 +243,8 @@ export default function ModelSelector(props: ModelSelectorProps) {
 
   createEffect(() => {
     if (isOpen()) {
+      setView("browse")
+      setAddSearch("")
       setManualAll(false)
       setExplicitFavorites(false)
       setAutoFavoritesEligibleAtOpen(hasFavorites() && currentModelIsFavorite())
@@ -308,7 +432,7 @@ export default function ModelSelector(props: ModelSelectorProps) {
 
         <Combobox.Portal>
           <Combobox.Content class="selector-popover">
-            <div class="selector-search-container">
+            <div class="selector-search-container" style={{ display: view() === "browse" ? undefined : "none" }}>
               <div class="selector-input-group">
                 <Combobox.Input
                   ref={searchInputRef}
@@ -333,8 +457,19 @@ export default function ModelSelector(props: ModelSelectorProps) {
                 </button>
               </div>
             </div>
-            <Combobox.Listbox ref={listboxRef} class="selector-listbox" />
-            <div class="selector-footer">
+            <Combobox.Listbox ref={listboxRef} class="selector-listbox" style={{ display: view() === "browse" ? undefined : "none" }} />
+            <div class="selector-footer" style={{ display: view() === "browse" ? undefined : "none" }}>
+              <button
+                type="button"
+                class="selector-option selector-option-action w-full"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  handleAddModel()
+                }}
+              >
+                <span class="selector-option-label">{t("modelSelector.addModel")}</span>
+              </button>
               <button
                 type="button"
                 class="selector-option selector-option-action w-full"
@@ -355,6 +490,137 @@ export default function ModelSelector(props: ModelSelectorProps) {
               >
                 <span class="selector-option-label">{t("modelSelector.favoritesOnly.showAll")}</span>
               </button>
+            </div>
+
+            <div style={{ display: view() === "add-model" ? undefined : "none" }}>
+              <div class="selector-search-container">
+                <button
+                  type="button"
+                  class="selector-back-button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setView("browse")
+                  }}
+                >
+                  ← {t("modelSelector.addModel.back")}
+                </button>
+              </div>
+              <Show when={groupedModels().length > 0}>
+                <div class="selector-search-container">
+                  <input
+                    class="selector-search-input"
+                    placeholder={t("modelSelector.addModel.search")}
+                    value={addSearch()}
+                    onInput={(e) => setAddSearch(e.currentTarget.value)}
+                  />
+                </div>
+                <div class="selector-listbox">
+                  <For each={groupedModels()}>
+                    {([providerId, models]) => (
+                      <>
+                        <div class="selector-section-title">{providerId}</div>
+                        <For each={models}>
+                          {(model) => (
+                            <div
+                              class="selector-option"
+                              onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                handleModelClick(model)
+                              }}
+                            >
+                              <div class="selector-option-content">
+                                <span class="selector-option-label">{model.name}</span>
+                                <span class="selector-option-description">
+                                  {model.providerName} • {model.providerId}/{model.id}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </For>
+                      </>
+                    )}
+                  </For>
+                </div>
+              </Show>
+              <Show when={groupedModels().length === 0}>
+                <div class="selector-empty-state">{t("modelSelector.addModel.empty")}</div>
+              </Show>
+            </div>
+
+            <div style={{ display: view() === "enter-key" ? undefined : "none" }}>
+              <div class="selector-api-key-area">
+                <p class="selector-api-key-label">
+                  {t("modelSelector.apiKey.required", { provider: pendingModel()!.providerName })}
+                </p>
+                <input
+                  type="password"
+                  class="selector-api-key-input"
+                  placeholder={t("modelSelector.apiKey.placeholder")}
+                  value={apiKey()}
+                  onInput={(e) => setApiKey(e.currentTarget.value)}
+                />
+                <div class="selector-api-key-actions">
+                  <button
+                    type="button"
+                    class="selector-button selector-button-primary"
+                    onClick={handleApiKeySubmit}
+                    disabled={!apiKey().trim()}
+                  >
+                    {t("modelSelector.apiKey.submit")}
+                  </button>
+                  <button
+                    type="button"
+                    class="selector-button selector-button-secondary"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setView("add-model")
+                    }}
+                  >
+                    {t("modelSelector.apiKey.cancel")}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: view() === "connecting" ? undefined : "none" }}>
+              <div class="selector-api-key-area">
+                <p class="selector-api-key-status">
+                  {t("modelSelector.apiKey.connecting")}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: view() === "error" ? undefined : "none" }}>
+              <div class="selector-api-key-area">
+                <p class="selector-api-key-error">{pollError()}</p>
+                <div class="selector-api-key-actions">
+                  <button
+                    type="button"
+                    class="selector-button selector-button-primary"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setView("enter-key")
+                    }}
+                  >
+                    {t("modelSelector.apiKey.retry")}
+                  </button>
+                  <button
+                    type="button"
+                    class="selector-button selector-button-secondary"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      handleCancel()
+                    }}
+                  >
+                    {t("modelSelector.apiKey.cancel")}
+                  </button>
+                </div>
+              </div>
             </div>
           </Combobox.Content>
         </Combobox.Portal>

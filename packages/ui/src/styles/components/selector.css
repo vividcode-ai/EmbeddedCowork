@@ -334,3 +334,51 @@
   @apply w-4 h-4 animate-spin;
   color: var(--accent-primary);
 }
+
+.selector-back-button {
+  @apply text-xs font-medium cursor-pointer bg-transparent border-none p-0;
+  color: var(--accent-primary);
+}
+
+.selector-back-button:hover {
+  text-decoration: underline;
+}
+
+.selector-api-key-area {
+  @apply p-3 flex flex-col gap-2;
+}
+
+.selector-api-key-label {
+  @apply text-xs font-medium;
+  color: var(--text-primary);
+}
+
+.selector-api-key-input {
+  @apply w-full px-3 py-1.5 text-xs border rounded outline-none transition-colors;
+  background-color: var(--surface-base);
+  border-color: var(--border-base);
+  color: var(--text-primary);
+}
+
+.selector-api-key-input:focus {
+  @apply ring-2;
+  ring-color: var(--accent-primary);
+}
+
+.selector-api-key-input::placeholder {
+  color: var(--text-muted);
+}
+
+.selector-api-key-actions {
+  @apply flex gap-2;
+}
+
+.selector-api-key-status {
+  @apply text-xs;
+  color: var(--text-muted);
+}
+
+.selector-api-key-error {
+  @apply text-xs;
+  color: var(--status-error);
+}
