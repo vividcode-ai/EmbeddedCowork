@@ -55,6 +55,7 @@ export default function AddModelDialog(props: AddModelDialogProps) {
   const [pollError, setPollError] = createSignal<string | null>(null)
   const [connecting, setConnecting] = createSignal(false)
   const [successMsg, setSuccessMsg] = createSignal("")
+  let connectBtnRef!: HTMLButtonElement
 
   const filteredUnconnected = createMemo(() => {
     const query = search().toLowerCase().trim()
@@ -116,13 +117,12 @@ export default function AddModelDialog(props: AddModelDialogProps) {
     const model = pendingModel()
     if (!model || !apiKey().trim()) return
 
-    setConnecting(true)
-    setPollError(null)
-    setSuccessMsg("")
+    connectBtnRef.textContent = "连接中..."
+    connectBtnRef.disabled = true
 
     try {
       const rootClient = getRootClient(props.instanceId)
-      await rootClient.config.update({
+      await rootClient.global.config.update({
         config: {
           provider: {
             [model.providerId]: {
@@ -136,16 +136,14 @@ export default function AddModelDialog(props: AddModelDialogProps) {
       const maxDuration = 10000
       const poll = async () => {
         if (Date.now() - startTime > maxDuration) {
-          setApiKey("")
+          connectBtnRef.textContent = t("modelSelector.apiKey.submit")
+          connectBtnRef.disabled = false
           setPollError(t("modelSelector.apiKey.failed"))
-          setConnecting(false)
           return
         }
         try {
           const res = await rootClient.provider.list()
           if (res.data?.connected?.includes(model.providerId)) {
-            setApiKey("")
-            setConnecting(false)
             setSuccessMsg("连接成功")
             await fetchProviders(props.instanceId)
             await new Promise((r) => setTimeout(r, 1000))
@@ -161,9 +159,9 @@ export default function AddModelDialog(props: AddModelDialogProps) {
       }
       poll()
     } catch {
-      setApiKey("")
+      connectBtnRef.textContent = t("modelSelector.apiKey.submit")
+      connectBtnRef.disabled = false
       setPollError(t("modelSelector.apiKey.failed"))
-      setConnecting(false)
     }
   }
 
@@ -179,8 +177,8 @@ export default function AddModelDialog(props: AddModelDialogProps) {
 
   return (
     <Dialog open={props.open} onOpenChange={(open) => !open && props.onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay class="modal-overlay" />
+      <Dialog.Overlay class="modal-overlay" />
+      <Show when={props.open}>
         <div style={{
           position: "fixed",
           inset: "0",
@@ -275,12 +273,13 @@ export default function AddModelDialog(props: AddModelDialogProps) {
               />
               <div class="selector-api-key-actions">
                 <button
+                  ref={connectBtnRef}
                   type="button"
                   class="selector-button selector-button-primary"
                   onClick={handleApiKeySubmit}
-                  disabled={connecting() || !apiKey().trim()}
+                  disabled={!apiKey().trim()}
                 >
-                  {connecting() ? t("modelSelector.apiKey.connecting") : t("modelSelector.apiKey.submit")}
+                  {t("modelSelector.apiKey.submit")}
                 </button>
                 <button
                   type="button"
@@ -301,7 +300,7 @@ export default function AddModelDialog(props: AddModelDialogProps) {
           </Show>
           </Dialog.Content>
         </div>
-      </Dialog.Portal>
+      </Show>
     </Dialog>
   )
 }
