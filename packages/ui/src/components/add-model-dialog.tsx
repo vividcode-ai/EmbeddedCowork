@@ -21,7 +21,7 @@ interface FlatModel extends Model {
   searchText: string
 }
 
-type ViewState = "list" | "enter-key" | "connecting" | "error"
+type ViewState = "list" | "enter-key"
 
 export function mapProvidersToFlatModels(providers: Array<{ id: string; name: string; models: Record<string, any> }>): FlatModel[] {
   const list: FlatModel[] = []
@@ -53,6 +53,8 @@ export default function AddModelDialog(props: AddModelDialogProps) {
   const [pendingModel, setPendingModel] = createSignal<FlatModel | null>(null)
   const [apiKey, setApiKey] = createSignal("")
   const [pollError, setPollError] = createSignal<string | null>(null)
+  const [connecting, setConnecting] = createSignal(false)
+  const [successMsg, setSuccessMsg] = createSignal("")
 
   const filteredUnconnected = createMemo(() => {
     const query = search().toLowerCase().trim()
@@ -114,8 +116,9 @@ export default function AddModelDialog(props: AddModelDialogProps) {
     const model = pendingModel()
     if (!model || !apiKey().trim()) return
 
-    setView("connecting")
+    setConnecting(true)
     setPollError(null)
+    setSuccessMsg("")
 
     try {
       const rootClient = getRootClient(props.instanceId)
@@ -133,14 +136,20 @@ export default function AddModelDialog(props: AddModelDialogProps) {
       const maxDuration = 10000
       const poll = async () => {
         if (Date.now() - startTime > maxDuration) {
+          setApiKey("")
           setPollError(t("modelSelector.apiKey.failed"))
-          setView("error")
+          setConnecting(false)
           return
         }
         try {
           const res = await rootClient.provider.list()
           if (res.data?.connected?.includes(model.providerId)) {
+            setApiKey("")
+            setConnecting(false)
+            setSuccessMsg("连接成功")
             await fetchProviders(props.instanceId)
+            await new Promise((r) => setTimeout(r, 1000))
+            setSuccessMsg("")
             props.onClose()
             await props.onModelChange({ providerId: model.providerId, modelId: model.id })
             return
@@ -152,8 +161,9 @@ export default function AddModelDialog(props: AddModelDialogProps) {
       }
       poll()
     } catch {
+      setApiKey("")
       setPollError(t("modelSelector.apiKey.failed"))
-      setView("error")
+      setConnecting(false)
     }
   }
 
@@ -249,7 +259,7 @@ export default function AddModelDialog(props: AddModelDialogProps) {
                 class="selector-back-button"
                 onClick={() => setView("list")}
               >
-                ← {t("modelSelector.addModel.back")}
+                <span style="font-size:14px">&lt;</span> <span style="font-size:13px">{t("modelSelector.addModel.back")}</span>
               </button>
             </div>
             <div class="selector-api-key-area">
@@ -268,48 +278,25 @@ export default function AddModelDialog(props: AddModelDialogProps) {
                   type="button"
                   class="selector-button selector-button-primary"
                   onClick={handleApiKeySubmit}
-                  disabled={!apiKey().trim()}
+                  disabled={connecting() || !apiKey().trim()}
                 >
-                  {t("modelSelector.apiKey.submit")}
+                  {connecting() ? t("modelSelector.apiKey.connecting") : t("modelSelector.apiKey.submit")}
                 </button>
                 <button
                   type="button"
                   class="selector-button selector-button-secondary"
                   onClick={() => setView("list")}
+                  disabled={connecting()}
                 >
                   {t("modelSelector.apiKey.cancel")}
                 </button>
               </div>
-            </div>
-          </Show>
-
-          <Show when={view() === "connecting"}>
-            <div class="selector-api-key-area">
-              <p class="selector-api-key-status">
-                {t("modelSelector.apiKey.connecting")}
-              </p>
-            </div>
-          </Show>
-
-          <Show when={view() === "error"}>
-            <div class="selector-api-key-area">
-              <p class="selector-api-key-error">{pollError()}</p>
-              <div class="selector-api-key-actions">
-                <button
-                  type="button"
-                  class="selector-button selector-button-primary"
-                  onClick={() => setView("enter-key")}
-                >
-                  {t("modelSelector.apiKey.retry")}
-                </button>
-                <button
-                  type="button"
-                  class="selector-button selector-button-secondary"
-                  onClick={props.onClose}
-                >
-                  {t("modelSelector.apiKey.cancel")}
-                </button>
-              </div>
+              <Show when={pollError()}>
+                <p class="selector-api-key-error" style="margin:8px 0 0">{pollError()}</p>
+              </Show>
+              <Show when={successMsg()}>
+                <p style="font-size:14px;font-weight:600;color:var(--status-success);margin:8px 0 0">{successMsg()}</p>
+              </Show>
             </div>
           </Show>
           </Dialog.Content>
