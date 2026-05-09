@@ -34,7 +34,7 @@ export const settingsMessages = {
   "modelSelector.favorite.remove": "从收藏移除",
   "modelSelector.addModel": "添加模型",
   "modelSelector.addModel.back": "返回模型列表",
-  "modelSelector.addModel.search": "搜索未连接的模型...",
+  "modelSelector.addModel.search": "搜索需要添加的模型供应商...",
   "modelSelector.addModel.empty": "所有提供商已连接",
   "modelSelector.apiKey.required": "输入 {provider} 的 API key",
   "modelSelector.apiKey.placeholder": "sk-...",
