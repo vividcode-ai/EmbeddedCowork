@@ -44,6 +44,10 @@ export const settingsMessages = {
   "modelSelector.apiKey.connecting": "מתחבר...",
   "modelSelector.apiKey.failed": "החיבור נכשל. בדוק את מפתח ה-API",
   "modelSelector.apiKey.retry": "נסה שוב",
+  "modelSelector.apiKey.connected": "התחבר בהצלחה",
+  "modelSelector.selectModel.title": "בחר מודל עבור {provider}",
+  "modelSelector.selectModel.confirm": "אישור",
+  "modelSelector.selectModel.noModels": "אין מודלים זמינים עבור ספק זה",
 
   "thinkingSelector.variant.default": "ברירת מחדל",
   "thinkingSelector.label": "חשיבה: {variant}",

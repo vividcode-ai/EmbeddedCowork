@@ -44,6 +44,10 @@ export const settingsMessages = {
   "modelSelector.apiKey.connecting": "连接中...",
   "modelSelector.apiKey.failed": "连接失败，请检查 API key",
   "modelSelector.apiKey.retry": "重试",
+  "modelSelector.apiKey.connected": "连接成功",
+  "modelSelector.selectModel.title": "为 {provider} 选择模型",
+  "modelSelector.selectModel.confirm": "确认",
+  "modelSelector.selectModel.noModels": "该提供商没有可用模型",
 
   "thinkingSelector.variant.default": "默认",
   "thinkingSelector.label": "思考：{variant}",

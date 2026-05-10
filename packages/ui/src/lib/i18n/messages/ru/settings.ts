@@ -44,6 +44,10 @@ export const settingsMessages = {
   "modelSelector.apiKey.connecting": "Подключение...",
   "modelSelector.apiKey.failed": "Ошибка подключения. Проверьте API-ключ",
   "modelSelector.apiKey.retry": "Повторить",
+  "modelSelector.apiKey.connected": "Подключение выполнено",
+  "modelSelector.selectModel.title": "Выберите модель для {provider}",
+  "modelSelector.selectModel.confirm": "Подтвердить",
+  "modelSelector.selectModel.noModels": "Нет доступных моделей для этого провайдера",
 
   "thinkingSelector.variant.default": "По умолчанию",
   "thinkingSelector.label": "Размышления: {variant}",

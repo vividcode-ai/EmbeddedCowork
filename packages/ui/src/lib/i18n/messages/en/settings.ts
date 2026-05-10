@@ -44,6 +44,10 @@ export const settingsMessages = {
   "modelSelector.apiKey.connecting": "Connecting...",
   "modelSelector.apiKey.failed": "Connection failed. Check your API key.",
   "modelSelector.apiKey.retry": "Retry",
+  "modelSelector.apiKey.connected": "Connected successfully",
+  "modelSelector.selectModel.title": "Select a model for {provider}",
+  "modelSelector.selectModel.confirm": "Confirm",
+  "modelSelector.selectModel.noModels": "No models available for this provider",
 
   "thinkingSelector.variant.default": "Default",
   "thinkingSelector.label": "Thinking: {variant}",

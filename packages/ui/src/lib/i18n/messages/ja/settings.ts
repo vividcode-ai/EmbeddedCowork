@@ -44,6 +44,10 @@ export const settingsMessages = {
   "modelSelector.apiKey.connecting": "接続中...",
   "modelSelector.apiKey.failed": "接続に失敗しました。API キーを確認してください",
   "modelSelector.apiKey.retry": "再試行",
+  "modelSelector.apiKey.connected": "接続に成功しました",
+  "modelSelector.selectModel.title": "{provider} のモデルを選択",
+  "modelSelector.selectModel.confirm": "確認",
+  "modelSelector.selectModel.noModels": "このプロバイダーに利用可能なモデルはありません",
 
   "thinkingSelector.variant.default": "デフォルト",
   "thinkingSelector.label": "思考: {variant}",

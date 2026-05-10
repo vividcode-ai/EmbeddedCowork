@@ -21,14 +21,19 @@ interface FlatModel extends Model {
   searchText: string
 }
 
-type ViewState = "list" | "enter-key"
+interface ConnectedProviderInfo {
+  providerId: string
+  providerName: string
+}
+
+type ViewState = "list" | "enter-key" | "select-model"
 
 export function mapProvidersToFlatModels(providers: Array<{ id: string; name: string; models: Record<string, any> }>): FlatModel[] {
   const list: FlatModel[] = []
   for (const p of providers) {
     const modelEntries = Array.isArray(p.models) ? p.models.map((m: any) => [m.id, m] as const) : Object.entries(p.models)
     for (const [id, m] of modelEntries) {
-      const modelId = m.id ?? id
+      const modelId = id
       list.push({
         id: modelId,
         name: m.name,
@@ -55,32 +60,28 @@ export default function AddModelDialog(props: AddModelDialogProps) {
   const [pollError, setPollError] = createSignal<string | null>(null)
   const [connecting, setConnecting] = createSignal(false)
   const [successMsg, setSuccessMsg] = createSignal("")
+  const [connectedProvider, setConnectedProvider] = createSignal<ConnectedProviderInfo | null>(null)
+  const [selectedModelId, setSelectedModelId] = createSignal("")
+  const [selectedVariant, setSelectedVariant] = createSignal("")
   let connectBtnRef!: HTMLButtonElement
 
-  const filteredUnconnected = createMemo(() => {
+  const visibleProviders = createMemo(() => {
     const query = search().toLowerCase().trim()
     const all = unconnectedModels()
-    if (!query) return all
-    const matchingIds = new Set(
-      all
-        .filter((m) =>
-          m.providerName.toLowerCase().includes(query) ||
-          m.providerId.toLowerCase().includes(query)
+    const seen = new Set<string>()
+    const result: Array<{ providerId: string; providerName: string }> = []
+    const source = !query
+      ? all
+      : all.filter((m) =>
+          m.providerName.toLowerCase().includes(query) || m.providerId.toLowerCase().includes(query)
         )
-        .map((m) => m.providerId)
-    )
-    if (matchingIds.size === 0) return []
-    return all.filter((m) => matchingIds.has(m.providerId))
-  })
-
-  const groupedModels = createMemo(() => {
-    const map = new Map<string, FlatModel[]>()
-    for (const m of filteredUnconnected()) {
-      const list = map.get(m.providerId) ?? []
-      list.push(m)
-      map.set(m.providerId, list)
+    for (const m of source) {
+      if (!seen.has(m.providerId)) {
+        seen.add(m.providerId)
+        result.push({ providerId: m.providerId, providerName: m.providerName })
+      }
     }
-    return [...map.entries()]
+    return result
   })
 
   const handleOpen = async () => {
@@ -89,6 +90,9 @@ export default function AddModelDialog(props: AddModelDialogProps) {
     setPendingModel(null)
     setApiKey("")
     setPollError(null)
+    setConnectedProvider(null)
+    setSelectedModelId("")
+    setSelectedVariant("")
     if (props.preloadedProviders?.length) {
       setUnconnectedModels(props.preloadedProviders)
       return
@@ -109,6 +113,11 @@ export default function AddModelDialog(props: AddModelDialogProps) {
     setApiKey("")
     setPollError(null)
     setView("enter-key")
+  }
+
+  const handleProviderClick = (providerId: string) => {
+    const model = unconnectedModels().find((m) => m.providerId === providerId)
+    if (model) handleModelClick(model)
   }
 
   const handleApiKeySubmit = async (event: MouseEvent) => {
@@ -144,12 +153,14 @@ export default function AddModelDialog(props: AddModelDialogProps) {
         try {
           const res = await rootClient.provider.list()
           if (res.data?.connected?.includes(model.providerId)) {
-            setSuccessMsg("连接成功")
+            setSuccessMsg(t("modelSelector.apiKey.connected"))
             await fetchProviders(props.instanceId)
-            await new Promise((r) => setTimeout(r, 1000))
+            await new Promise((r) => setTimeout(r, 800))
             setSuccessMsg("")
-            props.onClose()
-            await props.onModelChange({ providerId: model.providerId, modelId: model.id })
+            setConnectedProvider({ providerId: model.providerId, providerName: model.providerName })
+            setSelectedModelId("")
+            setSelectedVariant("")
+            setView("select-model")
             return
           }
         } catch {
@@ -163,6 +174,23 @@ export default function AddModelDialog(props: AddModelDialogProps) {
       connectBtnRef.disabled = false
       setPollError(t("modelSelector.apiKey.failed"))
     }
+  }
+
+  const providerModels = createMemo(() => {
+    const cp = connectedProvider()
+    if (!cp) return []
+    return unconnectedModels().filter((m) => m.providerId === cp.providerId)
+  })
+
+  const handleConfirmModel = async (modelId: string) => {
+    const cp = connectedProvider()
+    if (!cp || !modelId) return
+    try {
+      await props.onModelChange({ providerId: cp.providerId, modelId })
+    } catch (error) {
+      log.error("Failed to confirm model selection", error)
+    }
+    props.onClose()
   }
 
   createEffect(() => {
@@ -203,35 +231,26 @@ export default function AddModelDialog(props: AddModelDialogProps) {
             </div>
             <div class="selector-listbox" style={{ "flex": "1", "overflow-y": "auto" }}>
               <Show when={unconnectedModels().length > 0}>
-                <Show when={groupedModels().length > 0}>
-                  <For each={groupedModels()}>
-                    {([providerId, models]) => (
-                      <>
-                        <div class="selector-section-title" style={{ "padding": "8px 12px 4px", "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.05em" }}>{providerId}</div>
-                        <For each={models}>
-                          {(model) => (
-                            <div
-                              class="selector-option"
-                              onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                handleModelClick(model)
-                              }}
-                            >
-                              <div class="selector-option-content">
-                                <span class="selector-option-label">{model.name}</span>
-                                <span class="selector-option-description">
-                                  {model.providerName} • {model.providerId}/{model.id}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </For>
-                      </>
+                <Show when={visibleProviders().length > 0}>
+                  <For each={visibleProviders()}>
+                    {(p) => (
+                      <div
+                        class="selector-option"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          handleProviderClick(p.providerId)
+                        }}
+                      >
+                        <div class="selector-option-content">
+                          <span class="selector-option-label">{p.providerName}</span>
+                          <span class="selector-option-description">{p.providerId}</span>
+                        </div>
+                      </div>
                     )}
                   </For>
                 </Show>
-                <Show when={groupedModels().length === 0}>
+                <Show when={visibleProviders().length === 0}>
                   <div class="selector-empty-state">{t("modelSelector.addModel.empty")}</div>
                 </Show>
               </Show>
@@ -295,6 +314,78 @@ export default function AddModelDialog(props: AddModelDialogProps) {
               </Show>
               <Show when={successMsg()}>
                 <p style="font-size:14px;font-weight:600;color:var(--status-success);margin:8px 0 0">{successMsg()}</p>
+              </Show>
+            </div>
+          </Show>
+
+          <Show when={view() === "select-model" && connectedProvider()}>
+            <div class="selector-api-key-area" style={{ flex: "1", "overflow-y": "auto" }}>
+              <p class="selector-api-key-label">{t("modelSelector.selectModel.title", { provider: connectedProvider()!.providerName })}</p>
+              <div style={{ "margin-top": "12px" }}>
+                <For each={providerModels()}>
+                  {(model) => {
+                    const isSelected = () => selectedModelId() === model.id
+                    const hasVariants = () => model.variantKeys && model.variantKeys.length > 0
+                    return (
+                      <div style={{ "margin-bottom": "8px" }}>
+                        <div
+                          class="selector-option"
+                          data-selected={isSelected()}
+                          onClick={() => {
+                            if (hasVariants()) {
+                              if (isSelected()) {
+                                setSelectedModelId("")
+                                setSelectedVariant("")
+                              } else {
+                                setSelectedModelId(model.id)
+                                setSelectedVariant(model.variantKeys![0])
+                              }
+                            } else {
+                              handleConfirmModel(model.id)
+                            }
+                          }}
+                          style={isSelected() ? {
+                            "background": "var(--accent-bg)",
+                            "border": "1px solid var(--accent)",
+                            "border-radius": "6px",
+                          } : undefined}
+                        >
+                          <div class="selector-option-content">
+                            <span class="selector-option-label">{model.name}</span>
+                            <span class="selector-option-description">
+                              {model.providerName} • {model.providerId}/{model.id}
+                            </span>
+                          </div>
+                        </div>
+                        <Show when={isSelected() && hasVariants()}>
+                          <div style={{ display: "flex", gap: "6px", "flex-wrap": "wrap", padding: "6px 12px 2px" }}>
+                            <For each={model.variantKeys}>
+                              {(vk) => (
+                                <button
+                                  type="button"
+                                  class="selector-button"
+                                  classList={{
+                                    "selector-button-primary": selectedVariant() === vk,
+                                    "selector-button-secondary": selectedVariant() !== vk,
+                                  }}
+                                  style={{ "font-size": "12px", padding: "2px 10px" }}
+                                  onClick={() => handleConfirmModel(model.id)}
+                                >
+                                  {vk}
+                                </button>
+                              )}
+                            </For>
+                          </div>
+                        </Show>
+                      </div>
+                    )
+                  }}
+                </For>
+              </div>
+              <Show when={providerModels().length === 0}>
+                <p style={{ "font-size": "13px", color: "var(--text-tertiary)", "margin-top": "12px" }}>
+                  {t("modelSelector.selectModel.noModels")}
+                </p>
               </Show>
             </div>
           </Show>
