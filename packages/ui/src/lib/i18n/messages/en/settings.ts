@@ -36,6 +36,7 @@ export const settingsMessages = {
   "modelSelector.addModel.back": "Back to models",
   "modelSelector.addModel.search": "Search unconnected models...",
   "modelSelector.addModel.empty": "All providers are connected",
+  "modelSelector.addModel.disabledTooltip": "In a session",
   "modelSelector.apiKey.required": "Enter API key for {provider}",
   "modelSelector.apiKey.placeholder": "sk-...",
   "modelSelector.apiKey.submit": "Connect",

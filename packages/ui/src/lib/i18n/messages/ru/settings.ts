@@ -36,6 +36,7 @@ export const settingsMessages = {
   "modelSelector.addModel.back": "Назад к моделям",
   "modelSelector.addModel.search": "Поиск неподключенных моделей...",
   "modelSelector.addModel.empty": "Все провайдеры подключены",
+  "modelSelector.addModel.disabledTooltip": "В сеансе",
   "modelSelector.apiKey.required": "Введите API-ключ для {provider}",
   "modelSelector.apiKey.placeholder": "sk-...",
   "modelSelector.apiKey.submit": "Подключить",

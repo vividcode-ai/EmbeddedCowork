@@ -36,6 +36,7 @@ export const settingsMessages = {
   "modelSelector.addModel.back": "Retour aux modèles",
   "modelSelector.addModel.search": "Rechercher des modèles non connectés...",
   "modelSelector.addModel.empty": "Tous les fournisseurs sont connectés",
+  "modelSelector.addModel.disabledTooltip": "En session",
   "modelSelector.apiKey.required": "Entrez la clé API pour {provider}",
   "modelSelector.apiKey.placeholder": "sk-...",
   "modelSelector.apiKey.submit": "Connecter",

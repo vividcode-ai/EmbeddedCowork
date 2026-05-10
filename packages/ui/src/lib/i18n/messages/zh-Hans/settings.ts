@@ -36,6 +36,7 @@ export const settingsMessages = {
   "modelSelector.addModel.back": "返回模型列表",
   "modelSelector.addModel.search": "搜索需要添加的模型供应商...",
   "modelSelector.addModel.empty": "所有提供商已连接",
+  "modelSelector.addModel.disabledTooltip": "会话中",
   "modelSelector.apiKey.required": "输入 {provider} 的 API key",
   "modelSelector.apiKey.placeholder": "sk-...",
   "modelSelector.apiKey.submit": "连接",

@@ -1,6 +1,6 @@
 import { Combobox } from "@kobalte/core/combobox"
 import { Show, createEffect, createMemo, createSignal } from "solid-js"
-import { providers, fetchProviders } from "../stores/sessions"
+import { providers, fetchProviders, sessions } from "../stores/sessions"
 import { getRootClient } from "../stores/worktrees"
 import { ChevronDown, Star } from "lucide-solid"
 import type { Model } from "../types/session"
@@ -37,6 +37,10 @@ export default function ModelSelector(props: ModelSelectorProps) {
   const [initialQuery, setInitialQuery] = createSignal("")
   const [initialQueryReady, setInitialQueryReady] = createSignal(false)
   const [inputValue, setInputValue] = createSignal("")
+  const sessionActive = createMemo(() => {
+    const s = sessions().get(props.instanceId)?.get(props.sessionId)
+    return s?.status === "working" || s?.status === "compacting"
+  })
   let searchInputRef!: HTMLInputElement
   let listboxRef!: HTMLUListElement
   let wasFavoritesOnlyEnabled = false
@@ -338,6 +342,12 @@ export default function ModelSelector(props: ModelSelectorProps) {
               <button
                 type="button"
                 class="selector-option selector-option-action w-full"
+                disabled={sessionActive()}
+                title={sessionActive() ? t("modelSelector.addModel.disabledTooltip") : undefined}
+                style={{
+                  opacity: sessionActive() ? 0.5 : undefined,
+                  cursor: sessionActive() ? "not-allowed" : undefined,
+                }}
                 onClick={(event) => {
                   event.preventDefault()
                   event.stopPropagation()

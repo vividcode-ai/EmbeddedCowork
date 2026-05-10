@@ -36,6 +36,7 @@ export const settingsMessages = {
   "modelSelector.addModel.back": "モデル一覧に戻る",
   "modelSelector.addModel.search": "未接続のモデルを検索...",
   "modelSelector.addModel.empty": "すべてのプロバイダーが接続済みです",
+  "modelSelector.addModel.disabledTooltip": "セッション中",
   "modelSelector.apiKey.required": "{provider} の API キーを入力",
   "modelSelector.apiKey.placeholder": "sk-...",
   "modelSelector.apiKey.submit": "接続",

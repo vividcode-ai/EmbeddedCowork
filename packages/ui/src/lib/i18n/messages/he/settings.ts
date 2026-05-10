@@ -36,6 +36,7 @@ export const settingsMessages = {
   "modelSelector.addModel.back": "חזור למודלים",
   "modelSelector.addModel.search": "חפש מודלים לא מחוברים...",
   "modelSelector.addModel.empty": "כל הספקים מחוברים",
+  "modelSelector.addModel.disabledTooltip": "בסשן",
   "modelSelector.apiKey.required": "הזן מפתח API עבור {provider}",
   "modelSelector.apiKey.placeholder": "sk-...",
   "modelSelector.apiKey.submit": "התחבר",
