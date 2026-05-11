@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork-win32-x64",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Prebuilt binary for Windows x64 - EmbeddedCowork Server",
   "license": "MIT",
   "author": {
@@ -11,5 +11,7 @@
     "type": "git",
     "url": "https://github.com/vividcode-ai/EmbeddedCowork.git"
   },
-  "files": ["bin/"]
+  "files": [
+    "bin/"
+  ]
 }
