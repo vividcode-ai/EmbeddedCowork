@@ -649,13 +649,13 @@ impl CliProcessManager {
             log_line("spawning via user shell");
             ShellCommandType::UserShell(build_shell_command_string(&resolution, &args)?)
         } else {
-            log_line(if resolution.runner == Runner::Standalone {
+            log_line(if resolution.runner == Runner::Standalone || resolution.runner == Runner::System {
                 "spawning directly with standalone executable"
             } else {
                 "spawning directly with node"
             });
             ShellCommandType::Direct(DirectCommand {
-                program: if resolution.runner == Runner::Standalone {
+                program: if resolution.runner == Runner::Standalone || resolution.runner == Runner::System {
                     resolution.entry.clone()
                 } else {
                     resolution.node_binary.clone()
@@ -673,7 +673,7 @@ impl CliProcessManager {
                     .env_remove("NPM_CONFIG_PREFIX")
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped());
-                if resolution.runner != Runner::Standalone {
+                if resolution.runner != Runner::Standalone && resolution.runner != Runner::System {
                     c.env("ELECTRON_RUN_AS_NODE", "1");
                 }
                 configure_spawn(&mut c);
@@ -690,7 +690,7 @@ impl CliProcessManager {
                 c.args(&cmd.args)
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped());
-                if resolution.runner != Runner::Standalone {
+                if resolution.runner != Runner::Standalone && resolution.runner != Runner::System {
                     c.env("ELECTRON_RUN_AS_NODE", "1");
                 }
                 configure_spawn(&mut c);
@@ -1027,6 +1027,12 @@ impl CliProcessManager {
         }
         let _ = app.emit("cli:ready", locked.clone());
         Self::emit_status(app, &locked);
+
+        // 后台静默检查 GitHub 更新
+        let app_clone = app.clone();
+        thread::spawn(move || {
+            check_and_download_update();
+        });
     }
 
     fn emit_status(app: &AppHandle, status: &CliStatus) {
@@ -1068,6 +1074,7 @@ struct CliEntry {
 enum Runner {
     Standalone,
     Tsx,
+    System,
 }
 
 impl CliEntry {
@@ -1085,6 +1092,16 @@ impl CliEntry {
                     });
                 }
             }
+        }
+
+        // Prod: 三步检测链
+        if let Some(entry) = resolve_system_entry() {
+            return Ok(Self {
+                entry,
+                runner: Runner::System,
+                runner_path: None,
+                node_binary: String::new(),
+            });
         }
 
         if let Some(entry) = resolve_standalone_entry(app) {
@@ -1151,7 +1168,7 @@ impl CliEntry {
     }
 
     fn runner_args(&self, cli_args: &[String]) -> Vec<String> {
-        if self.runner == Runner::Standalone {
+        if self.runner == Runner::Standalone || self.runner == Runner::System {
             return cli_args.to_vec();
         }
 
@@ -1167,6 +1184,25 @@ impl CliEntry {
         }
         args.into_iter().collect()
     }
+}
+
+fn resolve_system_entry() -> Option<String> {
+    // Step 1: 系统 PATH → embeddedCowork
+    if let Ok(path) = which::which("embeddedCowork") {
+        return Some(path.to_string_lossy().to_string());
+    }
+
+    // Step 2: ~/.embeddedcowork/bin/embeddedcowork-server
+    let binary_name = if cfg!(windows) {
+        "embeddedcowork-server.exe"
+    } else {
+        "embeddedcowork-server"
+    };
+    let installed = home_dir()
+        .or_else(|| std::env::var("HOME").ok().map(PathBuf::from))
+        .map(|h| h.join(".embeddedcowork").join("bin").join(binary_name))
+        .filter(|p| p.exists())?;
+    Some(installed.to_string_lossy().to_string())
 }
 
 fn resolve_tsx(_app: &AppHandle) -> Option<String> {
@@ -1271,7 +1307,7 @@ fn build_shell_command_string(
 ) -> anyhow::Result<ShellCommand> {
     let shell = default_shell();
     let mut quoted: Vec<String> = Vec::new();
-    let command = if entry.runner == Runner::Standalone {
+    let command = if entry.runner == Runner::Standalone || entry.runner == Runner::System {
         quoted.push(shell_escape(&entry.entry));
         for arg in cli_args {
             quoted.push(shell_escape(arg));
@@ -1384,4 +1420,115 @@ fn normalize_path(path: PathBuf) -> String {
     } else {
         rendered
     }
+}
+
+fn check_and_download_update() {
+    if let Err(_) = try_download_update() {
+        // 静默失败
+    }
+}
+
+fn try_download_update() -> anyhow::Result<()> {
+    let current_version = env!("CARGO_PKG_VERSION");
+
+    let client = reqwest::blocking::Client::builder()
+        .user_agent("EmbeddedCowork")
+        .connect_timeout(Duration::from_secs(10))
+        .build()?;
+
+    let resp = client
+        .get("https://api.github.com/repos/vividcode-ai/EmbeddedCowork/releases/latest")
+        .header("Accept", "application/vnd.github.v3+json")
+        .send()?;
+
+    if !resp.status().is_success() {
+        return Ok(());
+    }
+
+    let data: serde_json::Value = resp.json()?;
+    let tag_name = data
+        .get("tag_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let latest_version = tag_name.strip_prefix('v').unwrap_or(tag_name);
+
+    if compare_versions(latest_version, current_version) <= 0 {
+        return Ok(());
+    }
+
+    let platform = get_platform_key();
+    if platform.is_empty() {
+        return Ok(());
+    }
+
+    let ext = if cfg!(windows) { ".exe" } else { "" };
+    let asset_name = format!("embeddedcowork-server-{latest_version}-{platform}{ext}");
+    let download_url = format!(
+        "https://github.com/vividcode-ai/EmbeddedCowork/releases/download/{tag_name}/{asset_name}"
+    );
+
+    let bin_dir = home_dir()
+        .or_else(|| std::env::var("HOME").ok().map(PathBuf::from))
+        .map(|h| h.join(".embeddedcowork").join("bin"))
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+
+    let binary_name = if cfg!(windows) {
+        "embeddedcowork-server.exe"
+    } else {
+        "embeddedcowork-server"
+    };
+    let target_path = bin_dir.join(binary_name);
+
+    fs::create_dir_all(&bin_dir)?;
+
+    let mut response = client.get(&download_url).send()?;
+    if !response.status().is_success() {
+        return Ok(());
+    }
+
+    {
+        let mut file = fs::File::create(&target_path)?;
+        response.copy_to(&mut file)?;
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&target_path, fs::Permissions::from_mode(0o755))?;
+    }
+
+    log_line(&format!(
+        "server updated to v{latest_version} → {}",
+        target_path.display()
+    ));
+
+    Ok(())
+}
+
+fn compare_versions(a: &str, b: &str) -> i32 {
+    let va: Vec<i32> = a.split('.').filter_map(|s| s.parse().ok()).collect();
+    let vb: Vec<i32> = b.split('.').filter_map(|s| s.parse().ok()).collect();
+    for i in 0..3 {
+        let diff = va.get(i).unwrap_or(&0) - vb.get(i).unwrap_or(&0);
+        if diff != 0 {
+            return diff;
+        }
+    }
+    0
+}
+
+fn get_platform_key() -> String {
+    let os = if cfg!(target_os = "macos") {
+        "darwin"
+    } else if cfg!(windows) {
+        "win32"
+    } else {
+        "linux"
+    };
+    let arch = if cfg!(target_arch = "aarch64") {
+        "arm64"
+    } else {
+        "x64"
+    };
+    format!("{os}-{arch}")
 }

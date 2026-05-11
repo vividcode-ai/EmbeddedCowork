@@ -2,7 +2,7 @@ import { spawn, spawnSync, type ChildProcess } from "child_process"
 import { app, utilityProcess, type UtilityProcess } from "electron"
 import { createRequire } from "module"
 import { EventEmitter } from "events"
-import { existsSync, readFileSync } from "fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "fs"
 import os from "os"
 import path from "path"
 import { fileURLToPath } from "url"
@@ -38,7 +38,7 @@ interface StartOptions {
 
 interface CliEntryResolution {
   entry: string
-  runner: "node" | "tsx" | "standalone"
+  runner: "node" | "tsx" | "standalone" | "system"
   runnerPath?: string
 }
 
@@ -155,7 +155,7 @@ export class CliProcessManager extends EventEmitter {
     if (this.shouldUsePackagedShellSupervisor(options, cliEntry)) {
       const supervisorPath = this.resolveCliSupervisorPath()
       const shellEnv = supportsUserShell() ? getUserShellEnv() : { ...process.env }
-      const shellTarget = cliEntry.runner === "standalone" ? this.buildExecutableCommand(cliEntry.entry, args) : this.buildCommand(cliEntry, args)
+      const shellTarget = cliEntry.runner === "standalone" || cliEntry.runner === "system" ? this.buildExecutableCommand(cliEntry.entry, args) : this.buildCommand(cliEntry, args)
       const shellCommand = buildUserShellCommand(`exec ${shellTarget}`)
       const supervisorPayload = JSON.stringify({
         command: shellCommand.command,
@@ -170,7 +170,7 @@ export class CliProcessManager extends EventEmitter {
       console.info(`[cli] shell command: ${shellCommand.command} ${shellCommand.args.join(" ")}`)
 
       child = utilityProcess.fork(supervisorPath, [supervisorPayload], {
-        env: cliEntry.runner === "standalone" ? shellEnv : { ...shellEnv, ELECTRON_RUN_AS_NODE: "1" },
+        env: cliEntry.runner === "standalone" || cliEntry.runner === "system" ? shellEnv : { ...shellEnv, ELECTRON_RUN_AS_NODE: "1" },
         stdio: "pipe",
         serviceName: "EmbeddedCowork CLI Supervisor",
       })
@@ -181,14 +181,14 @@ export class CliProcessManager extends EventEmitter {
       )
 
       const env = supportsUserShell() ? getUserShellEnv() : { ...process.env }
-      if (cliEntry.runner !== "standalone") {
+      if (cliEntry.runner !== "standalone" && cliEntry.runner !== "system") {
         env.ELECTRON_RUN_AS_NODE = "1"
       }
 
       const spawnDetails = supportsUserShell()
         ? buildUserShellCommand(
-            `${cliEntry.runner === "standalone" ? "" : "ELECTRON_RUN_AS_NODE=1 "}exec ${
-              cliEntry.runner === "standalone" ? this.buildExecutableCommand(cliEntry.entry, args) : this.buildCommand(cliEntry, args)
+            `${cliEntry.runner === "standalone" || cliEntry.runner === "system" ? "" : "ELECTRON_RUN_AS_NODE=1 "}exec ${
+              cliEntry.runner === "standalone" || cliEntry.runner === "system" ? this.buildExecutableCommand(cliEntry.entry, args) : this.buildCommand(cliEntry, args)
             }`,
           )
         : this.buildDirectSpawn(cliEntry, args)
@@ -272,6 +272,8 @@ export class CliProcessManager extends EventEmitter {
 
       this.once("ready", (status) => {
         clearTimeout(timeout)
+        // 后台静默检查 GitHub 更新
+        this.checkAndDownloadUpdate().catch(() => {})
         resolve(status)
       })
 
@@ -568,7 +570,7 @@ export class CliProcessManager extends EventEmitter {
   }
 
   private buildCommand(cliEntry: CliEntryResolution, args: string[]): string {
-    if (cliEntry.runner === "standalone") {
+    if (cliEntry.runner === "standalone" || cliEntry.runner === "system") {
       return this.buildExecutableCommand(cliEntry.entry, args)
     }
 
@@ -586,7 +588,7 @@ export class CliProcessManager extends EventEmitter {
   }
 
   private buildDirectSpawn(cliEntry: CliEntryResolution, args: string[]) {
-    if (cliEntry.runner === "standalone") {
+    if (cliEntry.runner === "standalone" || cliEntry.runner === "system") {
       return { command: cliEntry.entry, args }
     }
 
@@ -605,6 +607,12 @@ export class CliProcessManager extends EventEmitter {
       }
       const devEntry = this.resolveDevEntry()
       return { entry: devEntry, runner: "tsx", runnerPath: tsxPath }
+    }
+
+    // Prod: 三步检测链
+    const systemEntry = this.resolveSystemEntry()
+    if (systemEntry) {
+      return { entry: systemEntry, runner: "system" }
     }
 
     return { entry: this.resolveStandaloneProdEntry(), runner: "standalone" }
@@ -664,8 +672,40 @@ export class CliProcessManager extends EventEmitter {
     throw new Error(`Unable to locate standalone EmbeddedCowork server executable (${executableName}). Run npm run build:standalone --workspace @vividcodeai/embeddedcowork.`)
   }
 
+  /**
+   * 三步检测链：
+   *   1. which/where → "embeddedCowork" on PATH (npm 全局安装)
+   *   2. ~/.embeddedcowork/bin/embeddedcowork-server (CI 定义的 binary 名)
+   *   3. 未找到 → return null
+   */
+  private resolveSystemEntry(): string | null {
+    const locator = process.platform === "win32" ? "where" : "which"
+    try {
+      const result = spawnSync(locator, ["embeddedCowork"], { encoding: "utf8" })
+      if (result.status === 0 && result.stdout) {
+        const candidates = result.stdout
+          .split(/\r?\n/)
+          .map((line: string) => line.trim())
+          .filter((line: string) => line.length > 0)
+          .filter((line: string) => !/^INFO:/i.test(line))
+        if (candidates.length > 0 && existsSync(candidates[0])) {
+          return candidates[0]
+        }
+      }
+    } catch {}
+
+    const binDir = path.join(os.homedir(), ".embeddedcowork", "bin")
+    const binaryName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
+    const installedPath = path.join(binDir, binaryName)
+    if (existsSync(installedPath)) {
+      return installedPath
+    }
+
+    return null
+  }
+
   private shouldUsePackagedShellSupervisor(options: StartOptions, cliEntry: CliEntryResolution): boolean {
-    return !options.dev && app.isPackaged && process.platform === "darwin" && cliEntry.runner !== "standalone"
+    return !options.dev && app.isPackaged && process.platform === "darwin" && cliEntry.runner !== "standalone" && cliEntry.runner !== "system"
   }
 
   private resolveCliSupervisorPath(): string {
@@ -696,5 +736,65 @@ export class CliProcessManager extends EventEmitter {
     }
 
     return String(error)
+  }
+
+  private async checkAndDownloadUpdate(): Promise<void> {
+    try {
+      const currentVersion = app.getVersion()
+
+      const response = await fetch(
+        "https://api.github.com/repos/vividcode-ai/EmbeddedCowork/releases/latest",
+        { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "EmbeddedCowork" } },
+      )
+      if (!response.ok) return
+      const data = (await response.json()) as { tag_name: string }
+      const latestTag = data.tag_name
+      const latestVersion = latestTag.startsWith("v") ? latestTag.slice(1) : latestTag
+
+      if (this.compareVersions(latestVersion, currentVersion) <= 0) return
+
+      const platform = this.getPlatformKey()
+      if (!platform) return
+      const ext = process.platform === "win32" ? ".exe" : ""
+      const assetName = `embeddedcowork-server-${latestVersion}-${platform}${ext}`
+      const downloadUrl = `https://github.com/vividcode-ai/EmbeddedCowork/releases/download/${latestTag}/${assetName}`
+
+      const binDir = path.join(os.homedir(), ".embeddedcowork", "bin")
+      const binaryName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
+      const targetPath = path.join(binDir, binaryName)
+
+      mkdirSync(binDir, { recursive: true })
+      const downloadResponse = await fetch(downloadUrl)
+      if (!downloadResponse.ok) return
+
+      const buffer = Buffer.from(await downloadResponse.arrayBuffer())
+      writeFileSync(targetPath, buffer)
+      if (process.platform !== "win32") {
+        chmodSync(targetPath, 0o755)
+      }
+
+      console.info(`[cli] server updated to v${latestVersion} → ${targetPath}`)
+    } catch {
+      // 静默失败，不影响正在运行的 server
+    }
+  }
+
+  private compareVersions(a: string, b: string): number {
+    const pa = a.split(".").map(Number)
+    const pb = b.split(".").map(Number)
+    for (let i = 0; i < 3; i++) {
+      const diff = (pa[i] ?? 0) - (pb[i] ?? 0)
+      if (diff !== 0) return diff
+    }
+    return 0
+  }
+
+  private getPlatformKey(): string {
+    const map: Record<string, Record<string, string>> = {
+      darwin: { x64: "darwin-x64", arm64: "darwin-arm64" },
+      win32: { x64: "win32-x64" },
+      linux: { x64: "linux-x64" },
+    }
+    return map[process.platform]?.[process.arch] ?? ""
   }
 }
