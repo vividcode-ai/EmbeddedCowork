@@ -17,18 +17,24 @@
     "url": "https://github.com/vividcode-ai/EmbeddedCowork.git"
   },
   "type": "module",
-  "main": "dist/index.js",
   "bin": {
-    "embeddedCowork": "dist/bin.js"
+    "embeddedCowork": "bin/cli.js"
   },
   "scripts": {
     "build": "npm run build:ui && npm run prepare-ui && tsc -p tsconfig.json && node ./scripts/copy-auth-pages.mjs && npm run prepare-config",
     "build:standalone": "node ./scripts/build-standalone.mjs",
+    "build:platforms": "node ./scripts/build-platforms.mjs",
     "build:ui": "npm run build --prefix ../ui",
     "prepare-ui": "node ./scripts/copy-ui-dist.mjs",
     "prepare-config": "node ./scripts/copy-opencode-config.mjs",
     "dev": "cross-env EMBEDDEDCOWORK_DEV=1 EMBEDDEDCOWORK_SERVER_PASSWORD=embeddedcowork-dev CLI_UI_DEV_SERVER=http://localhost:3000 CLI_HTTPS=false CLI_HTTP=true tsx src/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "optionalDependencies": {
+    "@vividcodeai/embeddedcowork-darwin-x64": "0.0.8",
+    "@vividcodeai/embeddedcowork-darwin-arm64": "0.0.8",
+    "@vividcodeai/embeddedcowork-win32-x64": "0.0.8",
+    "@vividcodeai/embeddedcowork-linux-x64": "0.0.8"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",

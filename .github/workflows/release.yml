@@ -14,5 +14,4 @@ jobs:
     uses: ./.github/workflows/reusable-release.yml
     with:
       dist_tag: latest
-      npm_package_name: "@vividcodeai/embeddedcowork"
     secrets: inherit

@@ -4,18 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to publish (e.g. 0.2.0-dev)"
+        description: "Version to publish (e.g. 0.2.0)"
         required: false
         type: string
       dist_tag:
         description: "npm dist-tag"
         required: false
-        default: dev
-        type: string
-      package_name:
-        description: "Package name to publish (e.g. @vividcodeai/embeddedcowork)"
-        required: false
-        default: "@vividcodeai/embeddedcowork"
+        default: latest
         type: string
   workflow_call:
     inputs:
@@ -29,11 +24,7 @@ on:
       dist_tag:
         required: false
         type: string
-        default: dev
-      package_name:
-        required: false
-        type: string
-        default: "@vividcodeai/embeddedcowork"
+        default: latest
     secrets:
       NPM_TOKEN:
         required: false
@@ -43,8 +34,8 @@ permissions:
   id-token: write
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build-and-publish:
+    runs-on: ubuntu-24.04
     env:
       NODE_VERSION: 22
       PUBLISH_NPM_VERSION: 11.5.1
@@ -79,6 +70,9 @@ jobs:
       - name: Build server package (includes UI bundling)
         run: node "$PINNED_NPM_CLI" run build --workspace packages/server
 
+      - name: Build platform binaries (cross-compile all targets)
+        run: node "$PINNED_NPM_CLI" run build:platforms --workspace packages/server
+
       - name: Set publish metadata
         shell: bash
         run: |
@@ -87,22 +81,17 @@ jobs:
             VERSION_INPUT=$(node -p "require('./package.json').version")
           fi
           echo "VERSION=$VERSION_INPUT" >> "$GITHUB_ENV"
-          echo "DIST_TAG=${{ inputs.dist_tag || 'dev' }}" >> "$GITHUB_ENV"
-          echo "PACKAGE_NAME=${{ inputs.package_name }}" >> "$GITHUB_ENV"
+          echo "DIST_TAG=${{ inputs.dist_tag || 'latest' }}" >> "$GITHUB_ENV"
 
-      - name: Bump package version for publish
+      - name: Bump package versions for publish
         run: node "$PINNED_NPM_CLI" version ${VERSION} --workspaces --include-workspace-root --no-git-tag-version --allow-same-version
-
-      - name: Set server package name for publish
-        shell: bash
-        run: |
-          set -euo pipefail
-          node -e "const fs=require('fs'); const path=require('path'); const p=path.join('packages','server','package.json'); const j=JSON.parse(fs.readFileSync(p,'utf8')); j.name=process.env.PACKAGE_NAME || j.name; fs.writeFileSync(p, JSON.stringify(j, null, 2)+'\n'); console.log('Publishing as', j.name);"
-
-      - name: Publish server package with provenance
         env:
-          # Optional: when present, npm will use token auth.
-          # When empty/unset, npm trusted publishing (OIDC) may be used if configured.
+          NPM_CONFIG_FETCH_RETRIES: 5
+          NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: 20000
+          NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 120000
+
+      - name: Publish platform packages
+        env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           NPM_CONFIG_REGISTRY: https://registry.npmjs.org
@@ -112,7 +101,29 @@ jobs:
           if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
             echo "NPM_TOKEN not set; attempting npm trusted publishing (OIDC)"
             unset NODE_AUTH_TOKEN
-          else
-            echo "Using NPM_TOKEN authentication"
           fi
-          node "$PINNED_NPM_CLI" publish --workspace packages/server --access public --tag ${DIST_TAG} --provenance
+          for pkg in darwin-x64 darwin-arm64 win32-x64 linux-x64; do
+            echo "Publishing packages/server/publish-packages/$pkg ..."
+            node "$PINNED_NPM_CLI" publish \
+              --workspace packages/server/publish-packages/$pkg \
+              --access public \
+              --provenance || true
+          done
+
+      - name: Publish wrapper package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "NPM_TOKEN not set; attempting npm trusted publishing (OIDC)"
+            unset NODE_AUTH_TOKEN
+          fi
+          node "$PINNED_NPM_CLI" publish \
+            --workspace packages/server \
+            --access public \
+            --tag ${DIST_TAG} \
+            --provenance

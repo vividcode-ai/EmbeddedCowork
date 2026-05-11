@@ -7,6 +7,7 @@
   "workspaces": {
     "packages": [
       "packages/server",
+      "packages/server/publish-packages/*",
       "packages/ui",
       "packages/electron-app",
       "packages/tauri-app"
