@@ -30,6 +30,7 @@ import { ClientConnectionManager } from "./clients/connection-manager"
 import { PluginChannelManager } from "./plugins/channel"
 import { VoiceModeManager } from "./plugins/voice-mode"
 import { readServerPackageVersion, resolveServerPublicDir } from "./runtime-paths"
+import { isBinaryAvailable, triggerBinaryDownload } from "./opencode-paths"
 
 const require = createRequire(import.meta.url)
 
@@ -512,6 +513,15 @@ async function main() {
       : resolveNetworkAddresses({ host: options.host, protocol: remoteProtocol, port: serverMeta.remotePort })
   } else {
     serverMeta.addresses = []
+  }
+
+  if (!isBinaryAvailable()) {
+    logger.info("OpenCode binary not found, triggering auto-download in background")
+    triggerBinaryDownload(logger)
+      .then(() => logger.info("OpenCode auto-download completed"))
+      .catch((err) => logger.error({ err }, "OpenCode auto-download failed"))
+  } else {
+    logger.info("OpenCode binary found, skipping auto-download")
   }
 
   console.log(`Local Connection URL : ${serverMeta.localUrl}`)

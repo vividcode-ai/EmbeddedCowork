@@ -20,6 +20,7 @@ export class EventBus extends EventEmitter {
   onEvent(listener: (event: WorkspaceEventPayload) => void) {
     const handler = (event: WorkspaceEventPayload) => listener(event)
     this.on("workspace.created", handler)
+    this.on("workspace.update", handler)
     this.on("workspace.started", handler)
     this.on("workspace.error", handler)
     this.on("workspace.stopped", handler)
@@ -33,6 +34,7 @@ export class EventBus extends EventEmitter {
     this.on("instance.eventStatus", handler)
     return () => {
       this.off("workspace.created", handler)
+      this.off("workspace.update", handler)
       this.off("workspace.started", handler)
       this.off("workspace.error", handler)
       this.off("workspace.stopped", handler)

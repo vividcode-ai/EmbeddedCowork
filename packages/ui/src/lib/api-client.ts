@@ -532,6 +532,9 @@ export const serverApi = {
     })
     return source
   },
+  checkOpencodeStatus(): Promise<{ available: boolean; status?: string; progress?: { current: number; total: number }; error?: string }> {
+    return request<{ available: boolean; status?: string; progress?: { current: number; total: number }; error?: string }>("/api/opencode/status")
+  },
 }
 
 function buildClientEventsUrl(identity: { clientId: string; connectionId: string }): string {

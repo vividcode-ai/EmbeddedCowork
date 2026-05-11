@@ -8,6 +8,7 @@ import FolderSelectionView from "./components/folder-selection-view"
 import { showConfirmDialog } from "./stores/alerts"
 import InstanceTabs from "./components/instance-tabs"
 import InstanceDisconnectedModal from "./components/instance-disconnected-modal"
+import { OpencodeSetupScreen } from "./components/opencode-setup-screen"
 import InstanceShell from "./components/instance/instance-shell2"
 import { SettingsScreen } from "./components/settings-screen"
 import { SideCarPickerDialog } from "./components/sidecar-picker-dialog"
@@ -38,6 +39,9 @@ import {
   stopInstance,
   disconnectedInstance,
   acknowledgeDisconnectedInstance,
+  downloadingInstance,
+  opencodeAvailable,
+  checkOpencodeStatus,
 } from "./stores/instances"
 import {
   getSessions,
@@ -227,6 +231,7 @@ const App: Component = () => {
 
   onMount(() => {
     void initGithubStars()
+    void checkOpencodeStatus()
     updateInstanceTabBarHeight()
     const handleResize = () => updateInstanceTabBarHeight()
     window.addEventListener("resize", handleResize)
@@ -595,11 +600,15 @@ const App: Component = () => {
             </>
           }
         >
-          <FolderSelectionView
-            onSelectFolder={handleSelectFolder}
-            isLoading={isSelectingFolder()}
-            onOpenSidecar={handleOpenSidecarPicker}
-          />
+          <Show when={opencodeAvailable() !== null}>
+            <Show when={opencodeAvailable()} fallback={<OpencodeSetupScreen />}>
+              <FolderSelectionView
+                onSelectFolder={handleSelectFolder}
+                isLoading={isSelectingFolder()}
+                onOpenSidecar={handleOpenSidecarPicker}
+              />
+            </Show>
+          </Show>
         </Show>
 
         <Show when={showFolderSelection()}>

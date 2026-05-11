@@ -90,6 +90,71 @@ interface DisconnectedInstanceInfo {
 }
 const [disconnectedInstance, setDisconnectedInstance] = createSignal<DisconnectedInstanceInfo | null>(null)
 
+export const [opencodeAvailable, setOpencodeAvailable] = createSignal<boolean | null>(null)
+
+export interface OpencodeProgress {
+  current: number
+  total: number
+}
+export const [opencodeDownloadPhase, setOpencodeDownloadPhase] = createSignal<string | undefined>(undefined)
+export const [opencodeDownloadProgress, setOpencodeDownloadProgress] = createSignal<OpencodeProgress | undefined>(undefined)
+
+let opencodePollTimer: ReturnType<typeof setTimeout> | null = null
+let opencodePollStopped = false
+let opencodePollFailCount = 0
+
+export async function checkOpencodeStatus(): Promise<void> {
+  try {
+    const res = await serverApi.checkOpencodeStatus()
+    opencodePollFailCount = 0
+    setOpencodeAvailable(res.available)
+    setOpencodeDownloadPhase(res.status)
+    if (res.progress) {
+      setOpencodeDownloadProgress({ current: res.progress.current, total: res.progress.total })
+    }
+  } catch {
+    opencodePollFailCount++
+    setOpencodeAvailable(false)
+  }
+}
+
+export function startOpencodePolling(): void {
+  stopOpencodePolling()
+  opencodePollStopped = false
+  opencodePollFailCount = 0
+
+  async function poll() {
+    if (opencodePollStopped) return
+    await checkOpencodeStatus()
+    if (opencodePollStopped) return
+    if (opencodeAvailable()) {
+      stopOpencodePolling()
+      return
+    }
+    if (opencodePollFailCount >= 3) {
+      stopOpencodePolling()
+      return
+    }
+    opencodePollTimer = setTimeout(poll, 1000)
+  }
+
+  poll()
+}
+
+export function stopOpencodePolling(): void {
+  opencodePollStopped = true
+  if (opencodePollTimer) {
+    clearTimeout(opencodePollTimer)
+    opencodePollTimer = null
+  }
+}
+
+interface DownloadingInstanceInfo {
+  id: string
+  folder: string
+}
+export const [downloadingInstance, setDownloadingInstance] = createSignal<DownloadingInstanceInfo | null>(null)
+
 const MAX_LOG_ENTRIES = 1000
 
 const pendingDisposeRequests = new Map<string, Promise<boolean>>()
@@ -391,17 +456,32 @@ function handleWorkspaceEvent(event: WorkspaceEventPayload) {
   switch (event.type) {
     case "workspace.created":
       upsertWorkspace(event.workspace)
+      if (event.workspace.status === "downloading") {
+        setDownloadingInstance({ id: event.workspace.id, folder: event.workspace.path })
+      }
+      break
+    case "workspace.update":
+      upsertWorkspace(event.workspace)
+      if (event.workspace.status === "downloading") {
+        setDownloadingInstance({ id: event.workspace.id, folder: event.workspace.path })
+      } else {
+        setDownloadingInstance(null)
+      }
       break
     case "workspace.started":
       upsertWorkspace(event.workspace)
+      setDownloadingInstance(null)
+      stopOpencodePolling()
       break
     case "workspace.error":
       upsertWorkspace(event.workspace)
+      setDownloadingInstance(null)
       showWorkspaceLaunchError(event.workspace)
       break
     case "workspace.stopped":
       releaseInstanceResources(event.workspaceId)
       removeInstance(event.workspaceId)
+      setDownloadingInstance((prev) => (prev?.id === event.workspaceId ? null : prev))
       break
     case "workspace.log":
       handleWorkspaceLog(event.entry)

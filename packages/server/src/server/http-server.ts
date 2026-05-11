@@ -25,6 +25,7 @@ import { registerEventRoutes } from "./routes/events"
 import { registerStorageRoutes } from "./routes/storage"
 import { registerPluginRoutes } from "./routes/plugin"
 import { registerBackgroundProcessRoutes } from "./routes/background-processes"
+import { registerOpencodeStatusRoutes } from "./routes/opencode-status"
 import { registerWorktreeRoutes } from "./routes/worktrees"
 import { registerSpeechRoutes } from "./routes/speech"
 import { registerRemoteServerRoutes } from "./routes/remote-servers"
@@ -269,6 +270,7 @@ export function createHttpServer(deps: HttpServerDeps) {
 
   registerWorkspaceRoutes(app, { workspaceManager: deps.workspaceManager })
   registerSettingsRoutes(app, { settings: deps.settings, logger: apiLogger })
+  registerOpencodeStatusRoutes(app, { settings: deps.settings, logger: apiLogger })
   registerFilesystemRoutes(app, { fileSystemBrowser: deps.fileSystemBrowser })
   registerMetaRoutes(app, { serverMeta: deps.serverMeta })
   registerEventRoutes(app, {

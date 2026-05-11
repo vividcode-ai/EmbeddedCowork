@@ -1,7 +1,7 @@
 import path from "path"
 import os from "os"
 import { createHash } from "crypto"
-import { mkdirSync } from "fs"
+import { existsSync, mkdirSync } from "fs"
 import { execSync, spawnSync } from "child_process"
 import { connect } from "net"
 import { EventBus } from "../events/bus"
@@ -14,6 +14,7 @@ import { WorkspaceDescriptor, WorkspaceFileResponse, FileSystemEntry } from "../
 import { WorkspaceRuntime, ProcessExitInfo } from "./runtime"
 import { Logger } from "../logger"
 import { getOpencodeConfigDir } from "../opencode-config.js"
+import { BIN_DIR, BINARY_NAME, triggerBinaryDownload, resolveBinaryPathFromUserShell } from "../opencode-paths"
 import {
   buildOpencodeBasicAuthHeader,
   DEFAULT_OPENCODE_USERNAME,
@@ -24,69 +25,7 @@ import {
 
 const STARTUP_STABILITY_DELAY_MS = 1500
 
-function defaultShellPath(): string {
-  const configured = process.env.SHELL?.trim()
-  if (configured) {
-    return configured
-  }
 
-  return process.platform === "darwin" ? "/bin/zsh" : "/bin/bash"
-}
-
-function shellEscape(input: string): string {
-  if (!input) return "''"
-  return `'${input.replace(/'/g, `'\\''`)}'`
-}
-
-function wrapCommandForShell(command: string, shellPath: string): string {
-  const shellName = path.basename(shellPath).toLowerCase()
-
-  if (shellName.includes("bash")) {
-    return `if [ -f ~/.bashrc ]; then source ~/.bashrc >/dev/null 2>&1; fi; ${command}`
-  }
-
-  if (shellName.includes("zsh")) {
-    return `if [ -f ~/.zshrc ]; then source ~/.zshrc >/dev/null 2>&1; fi; ${command}`
-  }
-
-  return command
-}
-
-function buildShellArgs(shellPath: string, command: string): string[] {
-  const shellName = path.basename(shellPath).toLowerCase()
-  if (shellName.includes("zsh")) {
-    return ["-l", "-i", "-c", command]
-  }
-  return ["-l", "-c", command]
-}
-
-function resolveBinaryPathFromUserShell(identifier: string): string | null {
-  if (process.platform === "win32") {
-    return null
-  }
-
-  const shellPath = defaultShellPath()
-  const lookupCommand = wrapCommandForShell(`command -v ${shellEscape(identifier)}`, shellPath)
-  const result = spawnSync(shellPath, buildShellArgs(shellPath, lookupCommand), {
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      npm_config_prefix: undefined,
-      NPM_CONFIG_PREFIX: undefined,
-    },
-  })
-
-  if (result.status !== 0) {
-    return null
-  }
-
-  const resolved = String(result.stdout ?? "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find((line) => line.length > 0)
-
-  return resolved ?? null
-}
 
 interface WorkspaceManagerOptions {
   rootDir: string
@@ -192,7 +131,7 @@ export class WorkspaceManager {
     const workspacePath = path.isAbsolute(folder) ? folder : path.resolve(this.options.rootDir, folder)
     const id = this.computeWorkspaceId(workspacePath)
     const binary = this.options.binaryResolver.resolveDefault()
-    const resolvedBinaryPath = this.resolveBinaryPath(binary.path)
+    let resolvedBinaryPath = this.resolveBinaryPath(binary.path)
     clearWorkspaceSearchCache(workspacePath)
 
     this.options.logger.info({ workspaceId: id, folder: workspacePath, binary: resolvedBinaryPath }, "Creating workspace")
@@ -217,6 +156,18 @@ export class WorkspaceManager {
 
 
     this.options.eventBus.publish({ type: "workspace.created", workspace: descriptor })
+
+    if (!existsSync(resolvedBinaryPath)) {
+      this.options.logger.info({ workspaceId: id, binary: resolvedBinaryPath }, "Binary not found, waiting for download")
+      await triggerBinaryDownload(this.options.logger)
+      resolvedBinaryPath = this.resolveBinaryPath(binary.path)
+      if (!existsSync(resolvedBinaryPath)) {
+        throw new Error(`OpenCode binary still not found after auto-download: ${resolvedBinaryPath}`)
+      }
+      descriptor.binaryId = resolvedBinaryPath
+      descriptor.binaryLabel = "auto-downloaded"
+      this.options.logger.info({ workspaceId: id, path: resolvedBinaryPath }, "Binary ready after auto-download")
+    }
 
     const serverConfig = this.options.settings.getOwner("config", "server")
     const envVars = (serverConfig as any)?.environmentVariables
@@ -383,6 +334,12 @@ export class WorkspaceManager {
     if (shellResolved) {
       this.options.logger.debug({ identifier, resolved: shellResolved }, "Resolved binary path from user shell")
       return shellResolved
+    }
+
+    const installedPath = path.join(BIN_DIR, BINARY_NAME)
+    if (existsSync(installedPath)) {
+      this.options.logger.debug({ identifier, resolved: installedPath }, "Resolved binary path from installed directory")
+      return installedPath
     }
 
     return identifier

@@ -14,6 +14,7 @@ import { sessionMessages } from "./session"
 import { settingsMessages } from "./settings"
 import { timeMessages } from "./time"
 import { toolCallMessages } from "./toolCall"
+import { downloaderMessages } from "./downloader"
 import { mergeMessageParts } from "../merge"
 
 export const zhHansMessages = mergeMessageParts(
@@ -33,4 +34,5 @@ export const zhHansMessages = mergeMessageParts(
   settingsMessages,
   remoteAccessMessages,
   commandMessages,
+  downloaderMessages,
 )
