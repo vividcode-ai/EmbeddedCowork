@@ -26,7 +26,7 @@ export function usePromptResize(options: UsePromptResizeOptions) {
     function onPointerMove(moveEvent: PointerEvent) {
       const deltaY = startY - moveEvent.clientY
       currentHeight = Math.min(maxHeight, Math.max(minHeight, startHeight + deltaY))
-      textarea.style.height = `${currentHeight}px`
+      textarea!.style.height = `${currentHeight}px`
       setIsResizing(true)
     }
 

@@ -198,6 +198,7 @@ export const instanceMessages = {
   "versionPill.ui": "UI",
   "versionPill.uiWithVersion": "UI {version}",
   "versionPill.source": " ({source})",
+  "versionPill.agent": "Agent {version}",
 
   "opencodeBinarySelector.title": "OpenCode バイナリ",
   "opencodeBinarySelector.subtitle": "OpenCode を実行する実行ファイルを選択",

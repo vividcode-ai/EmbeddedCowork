@@ -207,6 +207,7 @@ export const instanceMessages = {
   "versionPill.ui": "ממשק",
   "versionPill.uiWithVersion": "ממשק {version}",
   "versionPill.source": " ({source})",
+  "versionPill.agent": "סוכן {version}",
 
   "opencodeBinarySelector.title": "קובץ בינארי של OpenCode",
   "opencodeBinarySelector.subtitle": "בחר איזה קובץ הרצה OpenCode ישתמש",

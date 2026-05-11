@@ -351,6 +351,7 @@ async function main() {
   })
 
   serverMeta.serverVersion = packageJson.version
+  serverMeta.opencodeVersion = binaryResolver.resolveDefault().version
   serverMeta.ui = {
     version: uiResolution.uiVersion,
     source: uiResolution.source,

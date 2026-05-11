@@ -429,6 +429,7 @@ export interface ServerMeta {
   /** Reachable addresses for this server, external first. */
   addresses: NetworkAddress[]
   serverVersion?: string
+  opencodeVersion?: string
   ui?: UiMeta
   support?: SupportMeta
   /** Optional update info (dev channel only). */

@@ -198,6 +198,7 @@ export const instanceMessages = {
   "versionPill.ui": "UI",
   "versionPill.uiWithVersion": "UI {version}",
   "versionPill.source": " （{source}）",
+  "versionPill.agent": "Agent {version}",
 
   "opencodeBinarySelector.title": "OpenCode 可执行文件",
   "opencodeBinarySelector.subtitle": "选择 OpenCode 要运行的可执行文件",

@@ -1,6 +1,7 @@
 import type { Accessor } from "solid-js"
 import type { Attachment } from "../../types/attachment"
 import type { ExpandState, PromptMode } from "./types"
+import { createPastedPlaceholderRegex, createImagePlaceholderRegex, createMentionRegex } from "./attachmentPlaceholders"
 
 export type UsePromptKeyDownOptions = {
   getTextarea: () => HTMLTextAreaElement | null

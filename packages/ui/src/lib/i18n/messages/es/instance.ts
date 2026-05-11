@@ -198,6 +198,7 @@ export const instanceMessages = {
   "versionPill.ui": "IU",
   "versionPill.uiWithVersion": "IU {version}",
   "versionPill.source": " ({source})",
+  "versionPill.agent": "Agent {version}",
 
   "opencodeBinarySelector.title": "Binario de OpenCode",
   "opencodeBinarySelector.subtitle": "Elige qué ejecutable de OpenCode debe ejecutarse",
