@@ -1,0 +1,38 @@
+name: stats
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # Run daily at 12:00 UTC
+  workflow_dispatch: # Allow manual trigger
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  stats:
+    if: github.repository == 'vividcode-ai/EmbeddedCowork'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install prettier
+        run: npm install -g prettier
+
+      - name: Run stats script
+        run: npx tsx script/stats.ts
+        env:
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+
+      - name: Commit stats
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add STATS.md
+          git diff --staged --quiet || git commit -m "ignore: update download stats $(date -I)"
+          git push
