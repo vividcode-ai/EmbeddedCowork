@@ -111,4 +111,5 @@ jobs:
       ref: ${{ inputs.ref || github.ref }}
       version: ${{ needs.prepare-release.outputs.version }}
       dist_tag: ${{ inputs.dist_tag }}
+      tag: ${{ needs.prepare-release.outputs.tag }}
     secrets: inherit

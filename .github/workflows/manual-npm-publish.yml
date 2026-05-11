@@ -25,12 +25,17 @@ on:
         required: false
         type: string
         default: latest
+      tag:
+        description: "Git tag to upload server binaries to (GitHub Release)"
+        required: false
+        type: string
+        default: ""
     secrets:
       NPM_TOKEN:
         required: false
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -82,6 +87,26 @@ jobs:
           fi
           echo "VERSION=$VERSION_INPUT" >> "$GITHUB_ENV"
           echo "DIST_TAG=${{ inputs.dist_tag || 'latest' }}" >> "$GITHUB_ENV"
+
+      - name: Upload server binaries to GitHub Release
+        if: ${{ inputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pkg in darwin-x64 darwin-arm64 win32-x64 linux-x64; do
+            bin_dir="packages/server/publish-packages/$pkg/bin"
+            src=$(ls "$bin_dir"/embeddedcowork-server* 2>/dev/null | head -1)
+            if [ -n "$src" ]; then
+              ext=""
+              [ "$pkg" = "win32-x64" ] && ext=".exe"
+              asset_name="embeddedcowork-server-${VERSION}-${pkg}${ext}"
+              cp "$src" "/tmp/$asset_name"
+              echo "Uploading $asset_name to release ${{ inputs.tag }}"
+              gh release upload "${{ inputs.tag }}" "/tmp/$asset_name" --clobber
+            fi
+          done
 
       - name: Bump package versions for publish
         run: node "$PINNED_NPM_CLI" version ${VERSION} --workspaces --include-workspace-root --no-git-tag-version --allow-same-version

@@ -18,7 +18,8 @@
   },
   "type": "module",
   "bin": {
-    "embeddedCowork": "bin/cli.js"
+    "embeddedCowork": "bin/cli.js",
+    "embcowork": "bin/cli.js"
   },
   "scripts": {
     "build": "npm run build:ui && npm run prepare-ui && tsc -p tsconfig.json && node ./scripts/copy-auth-pages.mjs && npm run prepare-config",

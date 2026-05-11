@@ -103,7 +103,7 @@
           ]
         }
       ],
-      "artifactName": "EmbeddedCowork-${version}-${os}-${arch}.${ext}",
+      "artifactName": "EmbeddedCowork-Desktop-Electron-${version}-${os}-${arch}.${ext}",
       "icon": "electron/resources/icon.icns"
     },
     "dmg": {
@@ -130,7 +130,7 @@
           ]
         }
       ],
-      "artifactName": "EmbeddedCowork-${version}-${os}-${arch}.${ext}",
+      "artifactName": "EmbeddedCowork-Desktop-Electron-${version}-${os}-${arch}.${ext}",
       "icon": "electron/resources/icon.ico"
     },
     "nsis": {
@@ -156,7 +156,7 @@
           ]
         }
       ],
-      "artifactName": "EmbeddedCowork-${version}-${os}-${arch}.${ext}",
+      "artifactName": "EmbeddedCowork-Desktop-Electron-${version}-${os}-${arch}.${ext}",
       "category": "Development",
       "icon": "electron/resources/icon.png"
     }
