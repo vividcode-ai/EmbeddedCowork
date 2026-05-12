@@ -212,7 +212,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
+          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage packages/electron-app/release/latest-mac.yml; do
             [ -f "$file" ] || continue
             echo "Uploading $file"
             gh release upload "$TAG" "$file" --clobber
@@ -263,7 +263,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
-          Get-ChildItem -Path "packages/electron-app/release" -Filter *.zip -File | ForEach-Object {
+          Get-ChildItem -Path "packages/electron-app/release" -Include "*.zip", "*.exe", "*.exe.blockmap", "*.yml" -File | ForEach-Object {
             Write-Host "Uploading $($_.FullName)"
             gh release upload $env:TAG $_.FullName --clobber
           }
@@ -313,7 +313,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
+          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage packages/electron-app/release/latest-linux.yml; do
             [ -f "$file" ] || continue
             echo "Uploading $file"
             gh release upload "$TAG" "$file" --clobber

@@ -1,4 +1,5 @@
-import { app, BrowserWindow, Menu, nativeImage, session, shell } from "electron"
+import { app, BrowserWindow, Menu, nativeImage, session, shell, dialog } from "electron"
+import { autoUpdater } from "electron-updater"
 import http from "node:http"
 import https from "node:https"
 import { existsSync, mkdirSync } from "fs"
@@ -571,6 +572,7 @@ cliManager.on("ready", (status) => {
   }
 
   void maybeExchangeAndNavigate(status.url)
+  autoUpdater.checkForUpdates()
 })
 
 cliManager.on("status", (status) => {
@@ -591,6 +593,9 @@ app.whenReady().then(() => {
   } catch {
     // ignore
   }
+
+  autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = true
 
   createLoadingWindow()
   createMainWindow()
@@ -633,6 +638,51 @@ app.whenReady().then(() => {
       createLoadingWindow()
     }
   })
+})
+
+autoUpdater.on("update-available", (info) => {
+  const btnIdx = dialog.showMessageBoxSync(mainWindow!, {
+    type: "info",
+    title: "更新可用",
+    message: `EmbeddedCowork v${info.version} 可用`,
+    detail: "是否下载并安装？",
+    buttons: ["下载", "稍后"],
+    defaultId: 0,
+    cancelId: 1,
+  })
+  if (btnIdx === 0) autoUpdater.downloadUpdate()
+})
+
+autoUpdater.on("update-not-available", () => {
+})
+
+autoUpdater.on("download-progress", (progress) => {
+  const pct = Math.round(progress.percent)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setProgressBar(progress.percent / 100)
+    mainWindow.webContents.send("update:progress", pct)
+  }
+})
+
+autoUpdater.on("update-downloaded", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setProgressBar(-1)
+  }
+
+  const btnIdx = dialog.showMessageBoxSync(mainWindow!, {
+    type: "info",
+    title: "更新已下载",
+    message: "新版本已就绪",
+    detail: "重启应用以完成安装。",
+    buttons: ["立即重启", "稍后"],
+    defaultId: 0,
+    cancelId: 1,
+  })
+  if (btnIdx === 0) setImmediate(() => autoUpdater.quitAndInstall())
+})
+
+autoUpdater.on("error", (error) => {
+  console.error("[autoUpdater]", error.message)
 })
 
 app.on("before-quit", async (event) => {
