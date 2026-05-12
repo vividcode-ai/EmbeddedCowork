@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, nativeImage, session, shell, dialog } from "electron"
-import { autoUpdater } from "electron-updater"
+import pkg from "electron-updater"
+const { autoUpdater } = pkg
 import http from "node:http"
 import https from "node:https"
 import { existsSync, mkdirSync } from "fs"
