@@ -15,7 +15,7 @@ const uiLoadingDest = path.resolve(root, "src-tauri", "resources", "ui-loading")
 const sources = ["dist", "public", "node_modules", "package.json"]
 
 const serverInstallCommand =
-  "npm install --omit=dev --ignore-scripts --workspaces=false --package-lock=false --install-strategy=shallow --fund=false --audit=false"
+  "npm install --omit=dev --omit=optional --ignore-scripts --workspaces=false --package-lock=false --install-strategy=shallow --fund=false --audit=false"
 const serverDevInstallCommand =
   "npm install --workspace @vividcodeai/embeddedcowork --include-workspace-root=false --install-strategy=nested --fund=false --audit=false"
 const uiDevInstallCommand =
@@ -128,7 +128,7 @@ function ensureServerDevDependencies() {
 
 function ensureServerDependencies() {
   console.log("[prebuild] pruning server to production dependencies...")
-  execSync("npm prune --omit=dev --ignore-scripts --workspaces=false --fund=false --audit=false", {
+  execSync("npm prune --omit=dev --omit=optional --ignore-scripts --workspaces=false --fund=false --audit=false", {
     cwd: serverRoot,
     stdio: "inherit",
   })

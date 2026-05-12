@@ -67,6 +67,7 @@ function ensureServerDependencies() {
   const npmArgs = [
     "install",
     "--omit=dev",
+    "--omit=optional",
     "--ignore-scripts",
     "--workspaces=false",
     "--package-lock=false",
