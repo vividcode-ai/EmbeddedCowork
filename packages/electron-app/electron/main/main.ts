@@ -56,6 +56,11 @@ if (isMac) {
   app.commandLine.appendSwitch("disable-spell-checking")
 }
 
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+}
+
 function getIconPath() {
   if (app.isPackaged) {
     return join(process.resourcesPath, "icon.png")
@@ -639,6 +644,13 @@ app.whenReady().then(() => {
       createLoadingWindow()
     }
   })
+
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
 })
 
 autoUpdater.on("update-available", (info) => {
@@ -686,10 +698,8 @@ autoUpdater.on("error", (error) => {
   console.error("[autoUpdater]", error.message)
 })
 
-app.on("before-quit", async (event) => {
-  event.preventDefault()
+app.on("before-quit", async () => {
   await cliManager.stop().catch(() => {})
-  app.exit(0)
 })
 
 app.on("window-all-closed", () => {
