@@ -263,7 +263,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
-          Get-ChildItem -Path "packages/electron-app/release/*" -Include "*.zip", "*.exe", "*.exe.blockmap", "*.yml" -File | ForEach-Object {
+          Get-ChildItem -Path "packages/electron-app/release/*" -Include "*.zip", "*.exe", "*.exe.blockmap", "latest.yml" -File | ForEach-Object {
             Write-Host "Uploading $($_.FullName)"
             gh release upload $env:TAG $_.FullName --clobber
           }
