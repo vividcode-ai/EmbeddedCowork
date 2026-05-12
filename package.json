@@ -1,6 +1,6 @@
 {
   "name": "Embedded-Cowork",
-  "version": "0.0.12",
+  "version": "0.0.11",
   "private": true,
   "description": "EmbeddedCowork monorepo workspace",
   "license": "MIT",
