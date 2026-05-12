@@ -64,6 +64,18 @@ export function resolveBinaryPathFromUserShell(identifier: string): string | nul
 }
 
 /**
+ * Check whether a file path has a Windows-recognized executable extension
+ * as defined by the PATHEXT environment variable.
+ */
+function hasExecutableExt(filePath: string): boolean {
+  if (process.platform !== "win32") return true
+  const pathextRaw = process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
+  const exts = pathextRaw.split(";").map((e) => e.trim().toLowerCase())
+  const ext = path.extname(filePath).toLowerCase()
+  return exts.includes(ext)
+}
+
+/**
  * Resolve an opencode binary identifier to an absolute path.
  * Order: absolute/relative → which/where → shell command -v → installed path → raw identifier
  */
@@ -81,6 +93,9 @@ export function resolveBinary(identifier: string): string {
         .map((line) => line.trim())
         .filter((line) => line.length > 0)
         .filter((line) => !/^INFO:/i.test(line))
+        // On Windows, reject candidates without a recognized executable extension
+        // (e.g. npm-installed `opencode` without .cmd) to avoid ENOENT on spawn.
+        .filter((line) => hasExecutableExt(line))
       if (candidates.length > 0) {
         return candidates[0]
       }
