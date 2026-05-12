@@ -1029,7 +1029,7 @@ impl CliProcessManager {
         Self::emit_status(app, &locked);
 
         // 后台静默检查 GitHub 更新
-        let app_clone = app.clone();
+        let _app_clone = app.clone();
         thread::spawn(move || {
             check_and_download_update();
         });
@@ -1431,7 +1431,7 @@ fn check_and_download_update() {
 fn download_with_retry(client: &reqwest::blocking::Client, url: &str, dest: &std::path::Path, max_retries: u32) -> anyhow::Result<()> {
     for attempt in 1..=max_retries {
         match client.get(url).send() {
-            Ok(response) => {
+            Ok(mut response) => {
                 if !response.status().is_success() {
                     let err_msg = format!("HTTP {}", response.status());
                     if attempt == max_retries {
