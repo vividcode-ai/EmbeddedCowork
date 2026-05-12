@@ -1,24 +1,59 @@
 import { FastifyInstance } from "fastify"
 import { ServerMeta } from "../../api-types"
- 
+import { BinaryResolver } from "../../settings/binaries"
+import { resolveBinary, getDownloadPromise } from "../../opencode-paths"
+import { probeBinaryVersion } from "../../workspaces/spawn"
+
 
 interface RouteDeps {
   serverMeta: ServerMeta
+  binaryResolver: BinaryResolver
 }
 
 export function registerMetaRoutes(app: FastifyInstance, deps: RouteDeps) {
-  app.get("/api/meta", async () => buildMetaResponse(deps.serverMeta))
+  app.get("/api/meta", async () => buildMetaResponse(deps.serverMeta, deps.binaryResolver))
 }
 
-function buildMetaResponse(meta: ServerMeta): ServerMeta {
+async function buildMetaResponse(meta: ServerMeta, binaryResolver: BinaryResolver): Promise<ServerMeta> {
   const localPort = resolveLocalPort(meta)
   const remote = resolveRemote(meta)
+
+  if (!meta.opencodeVersion) {
+    await probeOpencodeVersion(meta, binaryResolver)
+  }
 
   return {
     ...meta,
     localPort,
     remotePort: remote?.port,
     listeningMode: meta.host === "0.0.0.0" || !isLoopbackHost(meta.host) ? "all" : "local",
+  }
+}
+
+async function probeOpencodeVersion(meta: ServerMeta, resolver: BinaryResolver) {
+  try {
+    const defaultBinary = resolver.resolveDefault()
+    let binaryPath = resolveBinary(defaultBinary.path)
+    let result = probeBinaryVersion(binaryPath)
+
+    if (!result.valid || !result.version) {
+      const dlPromise = getDownloadPromise()
+      if (dlPromise) {
+        console.log("[meta] opencode not found, waiting for download...")
+        await dlPromise
+        binaryPath = resolveBinary(defaultBinary.path)
+        result = probeBinaryVersion(binaryPath)
+        console.log("[meta] after download, probe result:", { valid: result.valid, version: result.version })
+      } else {
+        console.log("[meta] opencode not found and no pending download, binaryPath:", binaryPath, "error:", result.error)
+      }
+    }
+
+    if (result.valid && result.version) {
+      meta.opencodeVersion = result.version
+    }
+  } catch (error) {
+    console.log("[meta] probeOpencodeVersion threw:", error)
   }
 }
 

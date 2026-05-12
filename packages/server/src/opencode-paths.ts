@@ -150,6 +150,10 @@ export function isBinaryAvailable(): boolean {
 
 let downloadPromise: Promise<void> | null = null
 
+export function getDownloadPromise(): Promise<void> | null {
+  return downloadPromise
+}
+
 export function triggerBinaryDownload(logger: Logger): Promise<void> {
   if (downloadPromise) return downloadPromise
   setDownloadPhase("downloading")

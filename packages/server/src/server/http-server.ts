@@ -43,6 +43,7 @@ import { PluginChannelManager } from "../plugins/channel"
 import { VoiceModeManager } from "../plugins/voice-mode"
 import type { SideCarManager } from "../sidecars/manager"
 import type { RemoteProxySessionManager } from "./remote-proxy"
+import { BinaryResolver } from "../settings/binaries"
 
 interface HttpServerDeps {
   bindHost: string
@@ -64,6 +65,7 @@ interface HttpServerDeps {
   pluginChannel: PluginChannelManager
   voiceModeManager: VoiceModeManager
   remoteProxySessionManager: RemoteProxySessionManager
+  binaryResolver: BinaryResolver
   uiStaticDir: string
   uiDevServerUrl?: string
   logger: Logger
@@ -272,7 +274,7 @@ export function createHttpServer(deps: HttpServerDeps) {
   registerSettingsRoutes(app, { settings: deps.settings, logger: apiLogger })
   registerOpencodeStatusRoutes(app, { settings: deps.settings, logger: apiLogger })
   registerFilesystemRoutes(app, { fileSystemBrowser: deps.fileSystemBrowser })
-  registerMetaRoutes(app, { serverMeta: deps.serverMeta })
+  registerMetaRoutes(app, { serverMeta: deps.serverMeta, binaryResolver: deps.binaryResolver })
   registerEventRoutes(app, {
     eventBus: deps.eventBus,
     registerClient: registerSseClient,

@@ -2,12 +2,13 @@ import { spawn, spawnSync, type ChildProcess } from "child_process"
 import { app, utilityProcess, type UtilityProcess } from "electron"
 import { createRequire } from "module"
 import { EventEmitter } from "events"
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "fs"
+import { existsSync, mkdirSync, readFileSync, chmodSync } from "fs"
 import os from "os"
 import path from "path"
 import { fileURLToPath } from "url"
 import { parse as parseYaml } from "yaml"
 import { buildUserShellCommand, getUserShellEnv, supportsUserShell } from "./user-shell"
+import { downloadFileWithRetry } from "../../../server/src/download-utils.ts"
 
 const nodeRequire = createRequire(import.meta.url)
 const mainFilename = fileURLToPath(import.meta.url)
@@ -764,11 +765,9 @@ export class CliProcessManager extends EventEmitter {
       const targetPath = path.join(binDir, binaryName)
 
       mkdirSync(binDir, { recursive: true })
-      const downloadResponse = await fetch(downloadUrl)
-      if (!downloadResponse.ok) return
 
-      const buffer = Buffer.from(await downloadResponse.arrayBuffer())
-      writeFileSync(targetPath, buffer)
+      await downloadFileWithRetry(downloadUrl, targetPath, { retries: 5 })
+
       if (process.platform !== "win32") {
         chmodSync(targetPath, 0o755)
       }

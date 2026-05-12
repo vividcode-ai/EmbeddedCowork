@@ -1428,6 +1428,50 @@ fn check_and_download_update() {
     }
 }
 
+fn download_with_retry(client: &reqwest::blocking::Client, url: &str, dest: &std::path::Path, max_retries: u32) -> anyhow::Result<()> {
+    for attempt in 1..=max_retries {
+        match client.get(url).send() {
+            Ok(response) => {
+                if !response.status().is_success() {
+                    let err_msg = format!("HTTP {}", response.status());
+                    if attempt == max_retries {
+                        anyhow::bail!(err_msg);
+                    }
+                    let delay = std::cmp::min(1000 * (1 << (attempt - 1)), 30000);
+                    thread::sleep(Duration::from_millis(delay));
+                    continue;
+                }
+
+                let result = (|| -> anyhow::Result<()> {
+                    let mut file = fs::File::create(dest)?;
+                    response.copy_to(&mut file)?;
+                    Ok(())
+                })();
+
+                match result {
+                    Ok(()) => return Ok(()),
+                    Err(e) => {
+                        let _ = fs::remove_file(dest);
+                        if attempt == max_retries {
+                            return Err(e);
+                        }
+                        let delay = std::cmp::min(1000 * (1 << (attempt - 1)), 30000);
+                        thread::sleep(Duration::from_millis(delay));
+                    }
+                }
+            }
+            Err(e) => {
+                if attempt == max_retries {
+                    return Err(e.into());
+                }
+                let delay = std::cmp::min(1000 * (1 << (attempt - 1)), 30000);
+                thread::sleep(Duration::from_millis(delay));
+            }
+        }
+    }
+    anyhow::bail!("download failed after {max_retries} attempts")
+}
+
 fn try_download_update() -> anyhow::Result<()> {
     let current_version = env!("CARGO_PKG_VERSION");
 
@@ -1481,15 +1525,7 @@ fn try_download_update() -> anyhow::Result<()> {
 
     fs::create_dir_all(&bin_dir)?;
 
-    let mut response = client.get(&download_url).send()?;
-    if !response.status().is_success() {
-        return Ok(());
-    }
-
-    {
-        let mut file = fs::File::create(&target_path)?;
-        response.copy_to(&mut file)?;
-    }
+    download_with_retry(&client, &download_url, &target_path, 5)?;
 
     #[cfg(unix)]
     {

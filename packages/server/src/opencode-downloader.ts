@@ -8,6 +8,7 @@ import { createGunzip } from "zlib"
 import tar from "tar"
 import { Logger } from "./logger"
 import { BIN_DIR, BINARY_NAME } from "./opencode-paths"
+import { downloadFileWithRetry } from "./download-utils"
 
 const GITHUB_API = "https://api.github.com/repos/anomalyco/opencode/releases/latest"
 const GITHUB_DL = "https://github.com/anomalyco/opencode/releases/latest/download"
@@ -140,52 +141,6 @@ export class OpencodeDownloader {
     return version
   }
 
-  private async downloadWithRetry(
-    url: string,
-    dest: string,
-    progressCb?: (current: number, total: number) => void,
-    retries = 5,
-  ): Promise<void> {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      let writer: import("fs").WriteStream | null = null
-      try {
-        const res = await fetch(url)
-        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-
-        const total = Number(res.headers.get("content-length") ?? 0)
-        let current = 0
-
-        const reader = res.body?.getReader()
-        if (!reader) throw new Error("Response body is not readable")
-
-        writer = createWriteStream(dest)
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          current += value.length
-          progressCb?.(current, total)
-          writer.write(value)
-        }
-        await new Promise<void>((resolve, reject) => {
-          writer!.end((err: Error | null) => (err ? reject(err) : resolve()))
-        })
-
-        return
-      } catch (err) {
-        if (writer) {
-          writer.destroy()
-          writer = null
-        }
-        try { import("fs/promises").then((fs) => fs.unlink(dest)).catch(() => {}) } catch {}
-        if (attempt === retries) throw err
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000)
-        this.logger?.warn({ attempt, retries, err }, `Download attempt ${attempt} failed, retrying in ${delay}ms`)
-        await new Promise((r) => setTimeout(r, delay))
-      }
-    }
-  }
-
   private async extractZip(zipPath: string, outDir: string): Promise<void> {
     return new Promise((resolve, reject) => {
       yauzl.open(zipPath, { lazyEntries: true }, (err: Error | null, zipfile?: yauzl.ZipFile) => {
@@ -299,11 +254,13 @@ export class OpencodeDownloader {
     try {
       statusCb?.({ type: "downloading", progress: { current: 0, total: 0 } })
 
-      await this.downloadWithRetry(
+      await downloadFileWithRetry(
         downloadUrl,
         archivePath,
-        (current, total) => {
-          statusCb?.({ type: "downloading", progress: { current, total } })
+        {
+          progressCb: (current, total) => {
+            statusCb?.({ type: "downloading", progress: { current, total } })
+          },
         },
       )
 
