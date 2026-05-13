@@ -1,8 +1,7 @@
 import { app, BrowserWindow, Menu, nativeImage, session, shell, dialog } from "electron"
 import pkg from "electron-updater"
 const { autoUpdater } = pkg
-import http from "node:http"
-import https from "node:https"
+
 import { existsSync, mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { fileURLToPath } from "url"
@@ -48,7 +47,6 @@ let loadingWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let currentCliUrl: string | null = null
 let pendingCliUrl: string | null = null
-let pendingBootstrapToken: string | null = null
 const remoteWindowOrigins = new Map<number, Set<string>>()
 const insecureWindowOrigins = new Map<number, Set<string>>()
 
@@ -443,82 +441,8 @@ async function openRemoteWindow(payload: { id: string; name: string; baseUrl: st
   }
 }
 
-let bootstrapExchangeInFlight = false
-
-function extractCookieValue(setCookieHeader: string | string[] | undefined, name: string): string | null {
-  const raw = Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader
-  if (!raw) return null
-
-  const first = raw.split(";")[0] ?? ""
-  const index = first.indexOf("=")
-  if (index < 0) return null
-
-  const key = first.slice(0, index).trim()
-  const value = first.slice(index + 1).trim()
-  if (key !== name || !value) return null
-
-  try {
-    return decodeURIComponent(value)
-  } catch {
-    return value
-  }
-}
-
-async function exchangeBootstrapToken(baseUrl: string, token: string): Promise<boolean> {
-  const sessionCookieName = cliManager.getAuthCookieName()
-  const target = new URL("/api/auth/token", baseUrl)
-  const body = JSON.stringify({ token })
-
-  const transport = target.protocol === "https:" ? https : http
-
-  const result = await new Promise<{ statusCode: number; setCookie: string | string[] | undefined }>((resolve, reject) => {
-    const req = transport.request(
-      target,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(body),
-        },
-      },
-      (res) => {
-        res.resume()
-        resolve({ statusCode: res.statusCode ?? 0, setCookie: res.headers["set-cookie"] })
-      },
-    )
-
-    req.on("error", reject)
-    req.write(body)
-    req.end()
-  })
-
-  if (result.statusCode !== 200) {
-    return false
-  }
-
-  const sessionId = extractCookieValue(result.setCookie, sessionCookieName)
-  if (!sessionId) {
-    return false
-  }
-
-  await session.defaultSession.cookies.set({
-    url: baseUrl,
-    name: sessionCookieName,
-    value: sessionId,
-    httpOnly: true,
-    path: "/",
-    sameSite: "lax",
-  })
-
-  return true
-}
-
 async function startCli() {
   try {
-    // In desktop dev workflows we always want the CLI to run in dev mode so it:
-    // - uses plain HTTP
-    // - proxies UI requests to the renderer dev server
-    // Monaco's AMD assets are served from that dev server.
     const devMode = !app.isPackaged
     console.info("[cli] start requested (dev mode:", devMode, ")")
     await cliManager.start({ dev: devMode })
@@ -531,53 +455,12 @@ async function startCli() {
   }
 }
 
-async function maybeExchangeAndNavigate(baseUrl: string) {
-  if (bootstrapExchangeInFlight) {
-    return
-  }
-
-  const token = pendingBootstrapToken
-  if (!token) {
-    startCliPreload(baseUrl)
-    return
-  }
-
-  bootstrapExchangeInFlight = true
-
-  try {
-    const ok = await exchangeBootstrapToken(baseUrl, token)
-    pendingBootstrapToken = null
-
-    if (!ok) {
-      startCliPreload(`${baseUrl}/login`)
-      return
-    }
-
-    startCliPreload(baseUrl)
-  } catch (error) {
-    console.error("[cli] bootstrap token exchange failed:", error)
-    pendingBootstrapToken = null
-    startCliPreload(`${baseUrl}/login`)
-  } finally {
-    bootstrapExchangeInFlight = false
-  }
-}
-
-cliManager.on("bootstrapToken", (token) => {
-  pendingBootstrapToken = token
-
-  const status = cliManager.getStatus()
-  if (status.url) {
-    void maybeExchangeAndNavigate(status.url)
-  }
-})
-
 cliManager.on("ready", (status) => {
   if (!status.url) {
     return
   }
 
-  void maybeExchangeAndNavigate(status.url)
+  startCliPreload(status.url)
   autoUpdater.checkForUpdates()
 })
 

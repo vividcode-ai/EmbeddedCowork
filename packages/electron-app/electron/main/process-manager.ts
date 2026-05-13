@@ -1,4 +1,5 @@
 import { spawn, spawnSync, type ChildProcess } from "child_process"
+import { createServer as createNetServer } from "net"
 import { app, utilityProcess, type UtilityProcess } from "electron"
 import { createRequire } from "module"
 import { EventEmitter } from "events"
@@ -13,9 +14,6 @@ const nodeRequire = createRequire(import.meta.url)
 const mainFilename = fileURLToPath(import.meta.url)
 const mainDirname = path.dirname(mainFilename)
 
-const BOOTSTRAP_TOKEN_PREFIX = "EMBEDDEDCOWORK_BOOTSTRAP_TOKEN:"
-const SESSION_COOKIE_NAME_PREFIX = "embeddedcowork_session"
-
 type CliState = "starting" | "ready" | "error" | "stopped"
 type ListeningMode = "local" | "all"
 
@@ -27,13 +25,9 @@ export interface CliStatus {
   error?: string
 }
 
-export interface CliLogEntry {
-  stream: "stdout" | "stderr"
-  message: string
-}
-
 interface StartOptions {
   dev: boolean
+  inProcess?: boolean
 }
 
 interface CliEntryResolution {
@@ -117,8 +111,6 @@ function readListeningModeFromConfig(): ListeningMode {
 export declare interface CliProcessManager {
   on(event: "status", listener: (status: CliStatus) => void): this
   on(event: "ready", listener: (status: CliStatus) => void): this
-  on(event: "bootstrapToken", listener: (token: string) => void): this
-  on(event: "log", listener: (entry: CliLogEntry) => void): this
   on(event: "exit", listener: (status: CliStatus) => void): this
   on(event: "error", listener: (error: Error) => void): this
 }
@@ -127,10 +119,6 @@ export class CliProcessManager extends EventEmitter {
   private child?: ManagedChild
   private childLaunchMode: ChildLaunchMode = "spawn"
   private status: CliStatus = { state: "stopped" }
-  private stdoutBuffer = ""
-  private stderrBuffer = ""
-  private bootstrapToken: string | null = null
-  private authCookieName = `${SESSION_COOKIE_NAME_PREFIX}_${process.pid}_${Date.now()}`
   private requestedStop = false
 
   async start(options: StartOptions): Promise<CliStatus> {
@@ -138,16 +126,18 @@ export class CliProcessManager extends EventEmitter {
       await this.stop()
     }
 
-    this.stdoutBuffer = ""
-    this.stderrBuffer = ""
-    this.bootstrapToken = null
-    this.authCookieName = `${SESSION_COOKIE_NAME_PREFIX}_${process.pid}_${Date.now()}`
     this.requestedStop = false
     this.updateStatus({ state: "starting", port: undefined, pid: undefined, url: undefined, error: undefined })
 
+    if (options.inProcess) {
+      return this.startInProcess(options)
+    }
+
     const listeningMode = this.resolveListeningMode()
     const host = resolveHostForMode(listeningMode)
-    const args = this.buildCliArgs(options, host)
+    const port = await this.findFreePort()
+    const password = this.generatePassword()
+    const args = this.buildCliArgs(options, host, port, password)
     const cliEntry = this.resolveCliEntry(options)
 
     let child: ManagedChild
@@ -213,12 +203,19 @@ export class CliProcessManager extends EventEmitter {
     this.child = child
     this.updateStatus({ pid: child.pid ?? undefined })
 
+    const baseUrl = `http://127.0.0.1:${port}`
     child.stdout?.on("data", (data: Buffer) => {
-      this.handleStream(data.toString(), "stdout")
+      const lines = data.toString().split("\n").filter((l) => l.trim())
+      for (const line of lines) {
+        console.info(`[cli][stdout] ${line.trim()}`)
+      }
     })
 
     child.stderr?.on("data", (data: Buffer) => {
-      this.handleStream(data.toString(), "stderr")
+      const lines = data.toString().split("\n").filter((l) => l.trim())
+      for (const line of lines) {
+        console.info(`[cli][stderr] ${line.trim()}`)
+      }
     })
 
     if (this.childLaunchMode === "utility") {
@@ -264,6 +261,19 @@ export class CliProcessManager extends EventEmitter {
       })
     }
 
+    // Health check + login in background
+    this.healthCheckAndLogin(baseUrl, password).then((ok) => {
+      if (ok) {
+        console.info(`[cli] ready on ${baseUrl}`)
+        this.updateStatus({ state: "ready", port, url: baseUrl })
+        this.emit("ready", this.status)
+      } else {
+        console.warn(`[cli] health check failed, navigating to login page`)
+        this.updateStatus({ state: "ready", port, url: baseUrl })
+        this.emit("ready", this.status)
+      }
+    })
+
     return new Promise<CliStatus>((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.handleTimeout()
@@ -285,6 +295,13 @@ export class CliProcessManager extends EventEmitter {
   async stop(): Promise<void> {
     const child = this.child
     if (!child) {
+      // In-process mode or already stopped
+      try {
+        const { stopServer } = await import("./server")
+        await stopServer()
+      } catch {
+        // not running in-process, ignore
+      }
       this.updateStatus({ state: "stopped" })
       return
     }
@@ -444,10 +461,6 @@ export class CliProcessManager extends EventEmitter {
     return { ...this.status }
   }
 
-  getAuthCookieName(): string {
-    return this.authCookieName
-  }
-
   private resolveListeningMode(): ListeningMode {
     return readListeningModeFromConfig()
   }
@@ -478,90 +491,28 @@ export class CliProcessManager extends EventEmitter {
     this.emit("error", new Error("CLI did not start in time"))
   }
 
-  private handleStream(chunk: string, stream: "stdout" | "stderr") {
-    if (stream === "stdout") {
-      this.stdoutBuffer += chunk
-      this.processBuffer("stdout")
-    } else {
-      this.stderrBuffer += chunk
-      this.processBuffer("stderr")
-    }
-  }
-
-  private processBuffer(stream: "stdout" | "stderr") {
-    const buffer = stream === "stdout" ? this.stdoutBuffer : this.stderrBuffer
-    const lines = buffer.split("\n")
-    const trailing = lines.pop() ?? ""
-
-    if (stream === "stdout") {
-      this.stdoutBuffer = trailing
-    } else {
-      this.stderrBuffer = trailing
-    }
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed) continue
-
-      if (trimmed.startsWith(BOOTSTRAP_TOKEN_PREFIX)) {
-        const token = trimmed.slice(BOOTSTRAP_TOKEN_PREFIX.length).trim()
-        if (token && !this.bootstrapToken) {
-          this.bootstrapToken = token
-          this.emit("bootstrapToken", token)
-        }
-        continue
-      }
-
-      console.info(`[cli][${stream}] ${trimmed}`)
-      this.emit("log", { stream, message: trimmed })
-
-      const localUrl = this.extractLocalUrl(trimmed)
-      if (localUrl && this.status.state === "starting") {
-        let port: number | undefined
-        try {
-          port = Number(new URL(localUrl).port) || undefined
-        } catch {
-          port = undefined
-        }
-        console.info(`[cli] ready on ${localUrl}`)
-        this.updateStatus({ state: "ready", port, url: localUrl })
-        this.emit("ready", this.status)
-      }
-    }
-  }
-
-  private extractLocalUrl(line: string): string | null {
-    const match = line.match(/^Local\s+Connection\s+URL\s*:\s*(https?:\/\/\S+)\s*$/i)
-    if (!match) {
-      return null
-    }
-    return match[1] ?? null
-  }
-
   private updateStatus(patch: Partial<CliStatus>) {
     this.status = { ...this.status, ...patch }
     this.emit("status", this.status)
   }
 
-  private buildCliArgs(options: StartOptions, host: string): string[] {
-    const args = ["serve", "--host", host, "--generate-token", "--auth-cookie-name", this.authCookieName, "--unrestricted-root"]
+  private buildCliArgs(options: StartOptions, host: string, port: number, password: string): string[] {
+    const args = [
+      "serve", "--host", host,
+      "--password", password,
+      "--http-port", String(port),
+      "--http", "true",
+      "--unrestricted-root",
+    ]
 
     if (options.dev) {
-      // Dev: run plain HTTP + Vite dev server proxy.
-      args.push("--https", "false", "--http", "true")
-      // Avoid collisions with an already-running server (and dual-stack ::/0.0.0.0 quirks)
-      // by forcing an ephemeral port in dev.
-      args.push("--http-port", "0")
-    } else {
-      // Prod desktop: always keep loopback HTTP enabled.
-      args.push("--https", "true", "--http", "true")
-    }
-
-    if (options.dev) {
+      args.push("--https", "false")
       const devServer = process.env.VITE_DEV_SERVER_URL || process.env.ELECTRON_RENDERER_URL || "http://localhost:3000"
       const rawLogLevel = (process.env.CLI_LOG_LEVEL ?? "info").trim()
       const logLevel = rawLogLevel.length > 0 ? rawLogLevel.toLowerCase() : "info"
       args.push("--ui-dev-server", devServer, "--log-level", logLevel)
+    } else {
+      args.push("--https", "false")
     }
 
     return args
@@ -719,6 +670,106 @@ export class CliProcessManager extends EventEmitter {
     }
 
     throw new Error("Unable to locate EmbeddedCowork CLI supervisor script.")
+  }
+
+  private async startInProcess(options: StartOptions): Promise<CliStatus> {
+    try {
+      const port = await this.findFreePort()
+      const password = this.generatePassword()
+      const baseUrl = `http://127.0.0.1:${port}`
+
+      console.info(`[cli] starting in-process server on ${baseUrl}`)
+      const { startInProcessServer } = await import("./server")
+      const handle = await startInProcessServer({ port, password, logLevel: options.dev ? "info" : "warn" })
+
+      this.updateStatus({ state: "ready", port, url: baseUrl })
+      this.emit("ready", this.status)
+
+      return this.status
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error("[cli] in-process server start failed:", message)
+      this.updateStatus({ state: "error", error: message })
+      this.emit("error", error instanceof Error ? error : new Error(message))
+      throw error
+    }
+  }
+
+  private async findFreePort(): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const server = createNetServer()
+      server.listen(0, "127.0.0.1", () => {
+        const address = server.address()
+        if (address && typeof address === "object") {
+          const port = address.port
+          server.close(() => resolve(port))
+        } else {
+          server.close(() => reject(new Error("Failed to get port")))
+        }
+      })
+      server.on("error", reject)
+    })
+  }
+
+  private generatePassword(): string {
+    return `${Date.now().toString(16)}_${process.pid.toString(16)}`
+  }
+
+  private async healthCheckAndLogin(baseUrl: string, password: string): Promise<boolean> {
+    const healthUrl = `${baseUrl}/api/health`
+    const loginUrl = `${baseUrl}/api/auth/login`
+    const startTime = Date.now()
+    const timeout = 60000
+
+    while (Date.now() - startTime < timeout) {
+      try {
+        const healthResp = await fetch(healthUrl)
+        if (!healthResp.ok) {
+          await this.sleep(200)
+          continue
+        }
+
+        const loginResp = await fetch(loginUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: "embeddedcowork", password }),
+        })
+
+        if (!loginResp.ok) {
+          console.warn(`[cli] login returned ${loginResp.status}`)
+          return false
+        }
+
+        const setCookieHeader = loginResp.headers.get("set-cookie")
+        if (setCookieHeader) {
+          const cookieParts = setCookieHeader.split(";")[0].trim()
+          const eqIdx = cookieParts.indexOf("=")
+          if (eqIdx > 0) {
+            const name = cookieParts.slice(0, eqIdx).trim()
+            const value = cookieParts.slice(eqIdx + 1).trim()
+            const { session } = await import("electron")
+            await session.defaultSession.cookies.set({
+              url: baseUrl,
+              name,
+              value,
+              httpOnly: true,
+              path: "/",
+              sameSite: "lax" as const,
+            })
+          }
+        }
+
+        return true
+      } catch (error) {
+        await this.sleep(200)
+      }
+    }
+
+    return false
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   private describeUtilityProcessError(error: unknown): string {
