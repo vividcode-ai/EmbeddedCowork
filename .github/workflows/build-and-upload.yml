@@ -623,7 +623,16 @@ jobs:
             librsvg2-dev \
             libfuse2t64 \
             desktop-file-utils \
-            zsync
+            zsync \
+            libgstreamer1.0-0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad \
+            gstreamer1.0-plugins-ugly \
+            gstreamer1.0-libav \
+            libgstreamer-plugins-base1.0-dev \
+            libgtk-3-0 \
+            libgdk-pixbuf2.0-0
 
       - name: Set workspace versions
         if: ${{ inputs.set_versions && inputs.version != '' }}
@@ -656,7 +665,7 @@ jobs:
         working-directory: packages/tauri-app
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
-        run: npm exec -- tauri build
+        run: npm exec -- tauri build --verbose
 
       - name: Package Tauri artifacts (Linux)
         if: ${{ inputs.upload || inputs.upload_actions_artifacts }}
