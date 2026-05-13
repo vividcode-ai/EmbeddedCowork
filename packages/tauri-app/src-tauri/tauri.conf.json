@@ -76,7 +76,8 @@
     "icon": [
       "icon.icns",
       "icon.ico",
-      "icon.png"
+      "icon.png",
+      "icons/linux/512x512.png"
     ],
     "targets": [
       "app",
