@@ -57,10 +57,79 @@ function copyUiLoadingAssets() {
   console.log(`[dev-prep] copied loader bundle from ${uiDist}`)
 }
 
+const RUST_TARGETS = {
+  "win32-x64": "x86_64-pc-windows-msvc",
+  "win32-arm64": "aarch64-pc-windows-msvc",
+  "darwin-x64": "x86_64-apple-darwin",
+  "darwin-arm64": "aarch64-apple-darwin",
+  "linux-x64": "x86_64-unknown-linux-gnu",
+  "linux-arm64": "aarch64-unknown-linux-gnu",
+}
+
+function ensureSidecar() {
+  const platformKey = `${process.platform}-${process.arch}`
+  const targetTriple = RUST_TARGETS[platformKey]
+  if (!targetTriple) return
+
+  const serverRoot = path.resolve(root, "..", "server")
+  const ext = process.platform === "win32" ? ".exe" : ""
+  const sidecarName = `embeddedcowork-server-${targetTriple}${ext}`
+  const sidecarsDir = path.resolve(root, "src-tauri", "sidecars")
+  const dest = path.join(sidecarsDir, sidecarName)
+
+  if (fs.existsSync(dest)) {
+    console.log(`[dev-prep] sidecar already exists: ${dest}`)
+    return
+  }
+
+  const builtBinary = path.join(serverRoot, "dist", `embeddedcowork-server${ext}`)
+  if (fs.existsSync(builtBinary)) {
+    fs.mkdirSync(sidecarsDir, { recursive: true })
+    fs.cpSync(builtBinary, dest)
+    console.log(`[dev-prep] copied sidecar from existing build: ${dest}`)
+    return
+  }
+
+  try {
+    console.log("[dev-prep] building standalone server executable...")
+    execSync("npm run build:standalone --workspace @vividcodeai/embeddedcowork", {
+      cwd: workspaceRoot,
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        PATH: `${path.join(workspaceRoot, "node_modules/.bin")}${path.delimiter}${process.env.PATH ?? ""}`,
+      },
+    })
+    if (fs.existsSync(builtBinary)) {
+      fs.mkdirSync(sidecarsDir, { recursive: true })
+      fs.cpSync(builtBinary, dest)
+      console.log(`[dev-prep] built and copied sidecar: ${dest}`)
+      return
+    }
+  } catch (e) {
+    console.warn("[dev-prep] standalone build failed; creating placeholder sidecar")
+  }
+
+  fs.mkdirSync(sidecarsDir, { recursive: true })
+  fs.writeFileSync(dest, "")
+  console.log(`[dev-prep] created placeholder sidecar for compilation: ${dest}`)
+}
+
+function ensureServerResources() {
+  const dest = path.resolve(root, "src-tauri", "resources", "server")
+  if (fs.existsSync(dest)) return
+
+  console.log("[dev-prep] creating placeholder resources/server directory")
+  fs.mkdirSync(dest, { recursive: true })
+  fs.writeFileSync(path.join(dest, "package.json"), JSON.stringify({ name: "placeholder" }))
+}
+
 ;(async () => {
   await ensureMonacoAssets()
   ensureUiBuild()
   copyUiLoadingAssets()
+  ensureSidecar()
+  ensureServerResources()
 })().catch((err) => {
   console.error("[dev-prep] failed:", err)
   process.exit(1)
