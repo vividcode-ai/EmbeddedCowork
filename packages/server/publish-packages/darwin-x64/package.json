@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork-darwin-x64",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Prebuilt binary for macOS Intel (x64) - EmbeddedCowork Server",
   "license": "MIT",
   "author": {
