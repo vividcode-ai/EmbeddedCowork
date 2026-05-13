@@ -803,7 +803,6 @@ impl CliProcessManager {
                 .map(BufReader::new);
 
             if let Some(reader) = stdout {
-                let _ = status_clone.clone();
                 thread::spawn(move || {
                     Self::process_stream(reader, "stdout");
                 });
