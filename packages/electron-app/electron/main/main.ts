@@ -698,8 +698,10 @@ autoUpdater.on("error", (error) => {
   console.error("[autoUpdater]", error.message)
 })
 
-app.on("before-quit", async () => {
+app.on("before-quit", async (event) => {
+  event.preventDefault()
   await cliManager.stop().catch(() => {})
+  app.exit(0)
 })
 
 app.on("window-all-closed", () => {
