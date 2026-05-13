@@ -652,6 +652,8 @@ jobs:
 
       - name: Build Linux bundle (Tauri)
         working-directory: packages/tauri-app
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
         run: npm exec -- tauri build
 
       - name: Package Tauri artifacts (Linux)
