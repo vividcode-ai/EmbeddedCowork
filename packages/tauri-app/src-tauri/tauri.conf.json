@@ -42,6 +42,9 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": [
+      "sidecars/embeddedcowork-server"
+    ],
     "linux": {
       "deb": {
         "files": {

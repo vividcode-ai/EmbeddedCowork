@@ -1,6 +1,5 @@
 use dirs::home_dir;
 use parking_lot::Mutex;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::VecDeque;
@@ -9,10 +8,10 @@ use std::env;
 use std::ffi::c_void;
 use std::ffi::OsStr;
 use std::fs;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader};
 #[cfg(windows)]
 use std::mem::{size_of, zeroed};
-use std::net::TcpStream;
+
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
@@ -21,7 +20,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tauri::{webview::cookie::Cookie, AppHandle, Emitter, Manager, Url};
+use tauri::{webview::cookie::Cookie, AppHandle, Emitter, Manager};
+use url::Url;
 
 #[cfg(windows)]
 use std::os::windows::io::AsRawHandle;
@@ -140,8 +140,6 @@ fn launch_cwd() -> Option<PathBuf> {
     std::env::current_dir().ok()
 }
 
-const SESSION_COOKIE_NAME_PREFIX: &str = "embeddedcowork_session";
-
 const CLI_STOP_GRACE_SECS: u64 = 30;
 #[cfg(windows)]
 const CLI_WINDOWS_FORCE_GRACE_MS: u64 = 2_000;
@@ -203,102 +201,164 @@ fn navigate_main(app: &AppHandle, url: &str) {
     }
 }
 
-fn extract_cookie_value(set_cookie: &str, name: &str) -> Option<String> {
-    let prefix = format!("{name}=");
-    let cookie_kv = set_cookie.split(';').next()?.trim();
-    if !cookie_kv.starts_with(&prefix) {
-        return None;
-    }
-    let value = cookie_kv.trim_start_matches(&prefix).trim();
-    if value.is_empty() {
-        return None;
-    }
-    Some(value.to_string())
+fn find_free_port() -> anyhow::Result<u16> {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+    let port = listener.local_addr()?.port();
+    // Drop the listener so the port becomes available immediately.
+    drop(listener);
+    Ok(port)
 }
 
-fn exchange_bootstrap_token(
-    base_url: &str,
-    token: &str,
-    cookie_name: &str,
-) -> anyhow::Result<Option<String>> {
-    let parsed = Url::parse(base_url)?;
-    let host = parsed.host_str().unwrap_or("127.0.0.1");
-    let port = parsed.port_or_known_default().unwrap_or(80);
-
-    // This is only used for local bootstrap; we assume plain HTTP.
-    let mut stream = TcpStream::connect((host, port))?;
-
-    let body = format!("{{\"token\":\"{}\"}}", token);
-    let request = format!(
-        "POST /api/auth/token HTTP/1.1\r\nHost: {host}:{port}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-        body.as_bytes().len(),
-        body
-    );
-
-    stream.write_all(request.as_bytes())?;
-    stream.flush()?;
-
-    let mut response = String::new();
-    stream.read_to_string(&mut response)?;
-
-    let (raw_headers, _rest) = response
-        .split_once("\r\n\r\n")
-        .or_else(|| response.split_once("\n\n"))
-        .unwrap_or((response.as_str(), ""));
-
-    let mut lines = raw_headers.lines();
-    let status_line = lines.next().unwrap_or("");
-    if !status_line.contains(" 200 ") {
-        return Ok(None);
-    }
-
-    for line in lines {
-        // handle case-insensitive header name
-        if let Some(value) = line.strip_prefix("Set-Cookie:") {
-            if let Some(session_id) = extract_cookie_value(value.trim(), cookie_name) {
-                return Ok(Some(session_id));
-            }
-        } else if let Some(value) = line.strip_prefix("set-cookie:") {
-            if let Some(session_id) = extract_cookie_value(value.trim(), cookie_name) {
-                return Ok(Some(session_id));
-            }
-        }
-    }
-
-    Ok(None)
+fn generate_password() -> String {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let pid = std::process::id();
+    format!("{:016x}_{:08x}", nanos, pid)
 }
 
-fn set_session_cookie(
+fn login_and_set_cookie(
     app: &AppHandle,
     base_url: &str,
-    cookie_name: &str,
-    session_id: &str,
-) -> anyhow::Result<()> {
-    let parsed = Url::parse(base_url)?;
-    let domain = parsed.host_str().unwrap_or("127.0.0.1").to_string();
+    password: &str,
+) -> anyhow::Result<bool> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()?;
 
-    let cookie = Cookie::build((cookie_name.to_string(), session_id.to_string()))
-        .domain(domain)
-        .path("/")
-        .http_only(true)
-        .same_site(tauri::webview::cookie::SameSite::Lax)
-        .build();
+    let login_body = serde_json::json!({
+        "username": "embeddedcowork",
+        "password": password,
+    });
 
+    let login_url = format!("{}/api/auth/login", base_url);
+    let resp = client.post(&login_url).json(&login_body).send()?;
+
+    if !resp.status().is_success() {
+        return Ok(false);
+    }
+
+    // Extract Set-Cookie header from the response
+    let set_cookie_header = resp
+        .headers()
+        .get(reqwest::header::SET_COOKIE)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    let Some(cookie_str) = set_cookie_header else {
+        return Ok(false);
+    };
+
+    // Parse cookie name=value from Set-Cookie
+    let cookie_kv = cookie_str.split(';').next().unwrap_or("").trim();
+    if cookie_kv.is_empty() {
+        return Ok(false);
+    }
+
+    let eq_idx = cookie_kv.find('=').ok_or_else(|| anyhow::anyhow!("invalid Set-Cookie: {}", cookie_kv))?;
+    let cookie_name = cookie_kv[..eq_idx].trim().to_string();
+    let cookie_value = cookie_kv[eq_idx + 1..].trim().to_string();
+
+    // Set cookie on the webview
     if let Some(win) = app.webview_windows().get("main") {
+        let parsed = Url::parse(base_url)?;
+        let domain = parsed.host_str().unwrap_or("127.0.0.1").to_string();
+
+        let cookie = Cookie::build((cookie_name, cookie_value))
+            .domain(domain)
+            .path("/")
+            .http_only(true)
+            .same_site(tauri::webview::cookie::SameSite::Lax)
+            .build();
         win.set_cookie(cookie)?;
     }
 
-    Ok(())
+    Ok(true)
 }
 
-fn generate_auth_cookie_name() -> String {
-    let pid = std::process::id();
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
-        .unwrap_or(0);
+fn health_check_and_login(
+    app: &AppHandle,
+    status: &Arc<Mutex<CliStatus>>,
+    ready: &Arc<AtomicBool>,
+    base_url: &str,
+    password: &str,
+) {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(3))
+        .build()
+        .unwrap();
 
-    format!("{SESSION_COOKIE_NAME_PREFIX}_{pid}_{timestamp}")
+    let health_url = format!("{}/api/health", base_url);
+    let started = Instant::now();
+    let timeout = Duration::from_secs(60);
+
+    loop {
+        if started.elapsed() > timeout {
+            log_line("health check timed out");
+            let mut locked = status.lock();
+            locked.state = CliState::Error;
+            locked.error = Some("Server did not become ready in time".to_string());
+            let _ = app.emit("cli:error", json!({"message": "Server did not become ready in time"}));
+            return;
+        }
+
+        // Also check if the process has exited
+        if ready.load(Ordering::SeqCst) {
+            return;
+        }
+
+        match client.get(&health_url).send() {
+            Ok(resp) if resp.status().is_success() => {
+                log_line(&format!("health check passed on {base_url}"));
+
+                // Now login with the known password
+                match login_and_set_cookie(app, base_url, password) {
+                    Ok(true) => {
+                        log_line("password login successful");
+                        ready.store(true, Ordering::SeqCst);
+                        let mut locked = status.lock();
+                        locked.state = CliState::Ready;
+                        locked.url = Some(base_url.to_string());
+                        locked.error = None;
+                        let snapshot = locked.clone();
+                        drop(locked);
+                        navigate_main(app, base_url);
+                        let _ = app.emit("cli:ready", snapshot);
+                        // Background auto-update check
+                        thread::spawn(move || {
+                            check_and_download_update();
+                        });
+                        return;
+                    }
+                    Ok(false) => {
+                        log_line("password login failed (invalid credentials)");
+                        ready.store(true, Ordering::SeqCst);
+                        let mut locked = status.lock();
+                        locked.state = CliState::Ready;
+                        locked.url = Some(base_url.to_string());
+                        locked.error = None;
+                        let snapshot = locked.clone();
+                        drop(locked);
+                        navigate_main(app, &format!("{base_url}/login"));
+                        let _ = app.emit("cli:ready", snapshot);
+                        return;
+                    }
+                    Err(err) => {
+                        log_line(&format!("password login error: {err}, retrying..."));
+                    }
+                }
+            }
+            Ok(resp) => {
+                log_line(&format!("health check returned {}, retrying...", resp.status()));
+            }
+            Err(err) => {
+                log_line(&format!("health check failed: {err}, retrying..."));
+            }
+        }
+
+        thread::sleep(Duration::from_millis(200));
+    }
 }
 
 const DEFAULT_CONFIG_PATH: &str = "~/.config/embeddedcowork/config.json";
@@ -458,7 +518,6 @@ pub struct CliProcessManager {
     #[cfg(windows)]
     job: Arc<Mutex<Option<WindowsJobObject>>>,
     ready: Arc<AtomicBool>,
-    bootstrap_token: Arc<Mutex<Option<String>>>,
 }
 
 impl CliProcessManager {
@@ -469,7 +528,6 @@ impl CliProcessManager {
             #[cfg(windows)]
             job: Arc::new(Mutex::new(None)),
             ready: Arc::new(AtomicBool::new(false)),
-            bootstrap_token: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -477,7 +535,6 @@ impl CliProcessManager {
         log_line(&format!("start requested (dev={dev})"));
         self.stop()?;
         self.ready.store(false, Ordering::SeqCst);
-        *self.bootstrap_token.lock() = None;
         {
             let mut status = self.status.lock();
             status.state = CliState::Starting;
@@ -493,7 +550,6 @@ impl CliProcessManager {
         #[cfg(windows)]
         let job_arc = self.job.clone();
         let ready_flag = self.ready.clone();
-        let token_arc = self.bootstrap_token.clone();
         thread::spawn(move || {
             if let Err(err) = Self::spawn_cli(
                 app.clone(),
@@ -502,7 +558,6 @@ impl CliProcessManager {
                 #[cfg(windows)]
                 job_arc,
                 ready_flag,
-                token_arc,
                 dev,
             ) {
                 log_line(&format!("cli spawn failed: {err}"));
@@ -611,18 +666,18 @@ impl CliProcessManager {
         child_holder: Arc<Mutex<Option<Child>>>,
         #[cfg(windows)] job_holder: Arc<Mutex<Option<WindowsJobObject>>>,
         ready: Arc<AtomicBool>,
-        bootstrap_token: Arc<Mutex<Option<String>>>,
         dev: bool,
     ) -> anyhow::Result<()> {
         log_line("resolving CLI entry");
         let resolution = CliEntry::resolve(&app, dev)?;
         let host = resolve_listening_host();
+        let port = find_free_port()?;
+        let password = generate_password();
         log_line(&format!(
-            "resolved CLI entry runner={:?} entry={} host={}",
-            resolution.runner, resolution.entry, host
+            "resolved CLI entry runner={:?} entry={} host={} port={}",
+            resolution.runner, resolution.entry, host, port
         ));
-        let auth_cookie_name = Arc::new(generate_auth_cookie_name());
-        let args = resolution.build_args(dev, &host, auth_cookie_name.as_str());
+        let args = resolution.build_args(dev, &host, port, &password);
         log_line(&format!("CLI args: {:?}", args));
         if dev {
             log_line("development mode: will prefer tsx + source if present");
@@ -733,11 +788,7 @@ impl CliProcessManager {
         }
 
         let child_clone = child_holder.clone();
-        let status_clone = status.clone();
-        let app_clone = app.clone();
-        let ready_clone = ready.clone();
-        let token_clone = bootstrap_token.clone();
-        let auth_cookie_name_clone = auth_cookie_name.clone();
+        let base_url = format!("http://127.0.0.1:{}", port);
 
         thread::spawn(move || {
             let stdout = child_clone
@@ -752,90 +803,57 @@ impl CliProcessManager {
                 .map(BufReader::new);
 
             if let Some(reader) = stdout {
-                let app = app_clone.clone();
-                let status = status_clone.clone();
-                let ready = ready_clone.clone();
-                let token = token_clone.clone();
-                let auth_cookie_name = auth_cookie_name_clone.clone();
+                let _ = status_clone.clone();
                 thread::spawn(move || {
-                    Self::process_stream(
-                        reader,
-                        "stdout",
-                        &app,
-                        &status,
-                        &ready,
-                        &token,
-                        auth_cookie_name.as_str(),
-                    );
+                    Self::process_stream(reader, "stdout");
                 });
             }
 
             if let Some(reader) = stderr {
-                let app = app_clone.clone();
-                let status = status_clone.clone();
-                let ready = ready_clone.clone();
-                let token = token_clone.clone();
-                let auth_cookie_name = auth_cookie_name_clone.clone();
                 thread::spawn(move || {
-                    Self::process_stream(
-                        reader,
-                        "stderr",
-                        &app,
-                        &status,
-                        &ready,
-                        &token,
-                        auth_cookie_name.as_str(),
-                    );
+                    Self::process_stream(reader, "stderr");
                 });
             }
         });
 
-        let app_clone = app.clone();
-        let status_clone = status.clone();
-        let ready_clone = ready.clone();
-        let child_holder_clone = child_holder.clone();
-        #[cfg(windows)]
-        let job_holder_clone = job_holder.clone();
+        // Health check + login thread
+        let app_hc = app.clone();
+        let status_hc = status.clone();
+        let ready_hc = ready.clone();
+        let base_url_hc = base_url.clone();
+        let password_hc = password.clone();
+        let child_holder_hc = child_holder.clone();
         thread::spawn(move || {
-            let timeout = Duration::from_secs(60);
-            thread::sleep(timeout);
-            if ready_clone.load(Ordering::SeqCst) {
-                return;
-            }
-            let mut locked = status_clone.lock();
-            locked.state = CliState::Error;
-            locked.error = Some("CLI did not start in time".to_string());
-            log_line("timeout waiting for CLI readiness");
-            if let Some(child) = child_holder_clone.lock().as_mut() {
-                #[cfg(unix)]
-                unsafe {
-                    let pid = child.id() as i32;
-                    let group_res = libc::kill(-pid, libc::SIGKILL);
-                    if group_res != 0 {
-                        let _ = libc::kill(pid, libc::SIGKILL);
+            health_check_and_login(&app_hc, &status_hc, &ready_hc, &base_url_hc, &password_hc);
+            if !ready_hc.load(Ordering::SeqCst) {
+                // Health check timed out or failed; kill the child process
+                if let Some(child) = child_holder_hc.lock().as_mut() {
+                    #[cfg(unix)]
+                    unsafe {
+                        let pid = child.id() as i32;
+                        let group_res = libc::kill(-pid, libc::SIGKILL);
+                        if group_res != 0 {
+                            let _ = libc::kill(pid, libc::SIGKILL);
+                        }
                     }
-                }
-                #[cfg(windows)]
-                {
-                    if !kill_process_tree_windows(child.id(), true) {
+                    #[cfg(windows)]
+                    {
+                        if !kill_process_tree_windows(child.id(), true) {
+                            let _ = child.kill();
+                        }
+                    }
+                    #[cfg(not(any(unix, windows)))]
+                    {
                         let _ = child.kill();
                     }
                 }
-                #[cfg(not(any(unix, windows)))]
-                {
-                    let _ = child.kill();
-                }
+                let _ = app_hc.emit("cli:error", json!({"message": "CLI did not start in time"}));
             }
-            let _ = app_clone.emit("cli:error", json!({"message": "CLI did not start in time"}));
-            Self::emit_status(&app_clone, &locked);
         });
 
-        let status_clone = status.clone();
-        let app_clone = app.clone();
+        let status_exit = status.clone();
+        let app_exit = app.clone();
         thread::spawn(move || {
-            // Do not hold the child mutex while waiting for process exit.
-            // Holding the lock across `wait()` deadlocks `stop()`, which needs the
-            // same lock to send SIGTERM/SIGKILL when the user quits the app.
             let code = loop {
                 let maybe_exited = {
                     let mut guard = child_holder.lock();
@@ -847,12 +865,10 @@ impl CliProcessManager {
                         .and_then(|child| child.try_wait().ok().flatten())
                     {
                         Some(status) => {
-                            // Drop the handle after the process exits so other callers
-                            // don't attempt to stop/kill a finished process.
                             *guard = None;
                             #[cfg(windows)]
                             {
-                                let _ = job_holder_clone.lock().take();
+                                let _ = job_holder.lock().take();
                             }
                             Some(status)
                         }
@@ -866,7 +882,7 @@ impl CliProcessManager {
                 thread::sleep(Duration::from_millis(100));
             };
 
-            let mut locked = status_clone.lock();
+            let mut locked = status_exit.lock();
             let failed = locked.state != CliState::Ready;
             let err_msg = if failed {
                 Some(match code {
@@ -886,7 +902,7 @@ impl CliProcessManager {
                     "cli process exited before ready: {:?}",
                     locked.error
                 ));
-                let _ = app_clone.emit(
+                let _ = app_exit.emit(
                     "cli:error",
                     json!({"message": locked.error.clone().unwrap_or_default()}),
                 );
@@ -895,26 +911,14 @@ impl CliProcessManager {
                 log_line("cli process stopped cleanly");
             }
 
-            Self::emit_status(&app_clone, &locked);
+            Self::emit_status(&app_exit, &locked);
         });
 
         Ok(())
     }
 
-    fn process_stream<R: BufRead>(
-        mut reader: R,
-        stream: &str,
-        app: &AppHandle,
-        status: &Arc<Mutex<CliStatus>>,
-        ready: &Arc<AtomicBool>,
-        bootstrap_token: &Arc<Mutex<Option<String>>>,
-        auth_cookie_name: &str,
-    ) {
+    fn process_stream<R: BufRead>(mut reader: R, stream: &str) {
         let mut buffer = String::new();
-        let local_url_regex =
-            Regex::new(r"^Local\s+Connection\s+URL\s*:\s*(https?://\S+)\s*$").ok();
-        let token_prefix = "CODENOMAD_BOOTSTRAP_TOKEN:";
-
         loop {
             buffer.clear();
             match reader.read_line(&mut buffer) {
@@ -922,117 +926,15 @@ impl CliProcessManager {
                 Ok(_) => {
                     let line = buffer.trim_end();
                     if !line.is_empty() {
-                        if line.starts_with(token_prefix) {
-                            let token = line.trim_start_matches(token_prefix).trim();
-                            if !token.is_empty() {
-                                let mut guard = bootstrap_token.lock();
-                                if guard.is_none() {
-                                    *guard = Some(token.to_string());
-                                }
-                            }
+                        if line.starts_with(MISSING_NODE_PREFIX) {
                             continue;
                         }
-
                         log_line(&format!("[cli][{}] {}", stream, line));
-
-                        if ready.load(Ordering::SeqCst) {
-                            continue;
-                        }
-
-                        if let Some(node_binary) = line.strip_prefix(MISSING_NODE_PREFIX) {
-                            let mut locked = status.lock();
-                            if locked.error.is_none() {
-                                locked.error = Some(format!(
-                                    "Node binary '{}' not found in the desktop shell environment. EmbeddedCowork development mode requires Node.js installed on the system, or set NODE_BINARY to a valid runtime path.",
-                                    node_binary.trim()
-                                ));
-                            }
-                            continue;
-                        }
-
-                        if let Some(url) = local_url_regex
-                            .as_ref()
-                            .and_then(|re| re.captures(line).and_then(|c| c.get(1)))
-                            .map(|m| m.as_str().to_string())
-                        {
-                            Self::mark_ready(
-                                app,
-                                status,
-                                ready,
-                                bootstrap_token,
-                                auth_cookie_name,
-                                url,
-                            );
-                            continue;
-                        }
                     }
                 }
                 Err(_) => break,
             }
         }
-    }
-
-    fn mark_ready(
-        app: &AppHandle,
-        status: &Arc<Mutex<CliStatus>>,
-        ready: &Arc<AtomicBool>,
-        bootstrap_token: &Arc<Mutex<Option<String>>>,
-        auth_cookie_name: &str,
-        base_url: String,
-    ) {
-        ready.store(true, Ordering::SeqCst);
-        let port = Url::parse(&base_url)
-            .ok()
-            .and_then(|u| u.port_or_known_default())
-            .map(|p| p as u16);
-        let mut locked = status.lock();
-        locked.port = port;
-        locked.url = Some(base_url.clone());
-        locked.state = CliState::Ready;
-        locked.error = None;
-        log_line(&format!("cli ready on {base_url}"));
-
-        let token = bootstrap_token.lock().take();
-
-        if let Some(token) = token {
-            // Token exchange is only implemented for loopback HTTP. If localUrl is HTTPS,
-            // skip the exchange and let the user authenticate normally.
-            let scheme = Url::parse(&base_url).ok().map(|u| u.scheme().to_string());
-            if scheme.as_deref() != Some("http") {
-                navigate_main(app, &base_url);
-            } else {
-                match exchange_bootstrap_token(&base_url, &token, &auth_cookie_name) {
-                    Ok(Some(session_id)) => {
-                        if let Err(err) =
-                            set_session_cookie(app, &base_url, &auth_cookie_name, &session_id)
-                        {
-                            log_line(&format!("failed to set session cookie: {err}"));
-                            navigate_main(app, &format!("{base_url}/login"));
-                        } else {
-                            navigate_main(app, &base_url);
-                        }
-                    }
-                    Ok(None) => {
-                        log_line("bootstrap token exchange failed (invalid token)");
-                        navigate_main(app, &format!("{base_url}/login"));
-                    }
-                    Err(err) => {
-                        log_line(&format!("bootstrap token exchange failed: {err}"));
-                        navigate_main(app, &format!("{base_url}/login"));
-                    }
-                }
-            }
-        } else {
-            navigate_main(app, &base_url);
-        }
-        let _ = app.emit("cli:ready", locked.clone());
-        Self::emit_status(app, &locked);
-
-        // 后台静默检查 GitHub 更新
-        let _app_clone = app.clone();
-        thread::spawn(move || {
-            check_and_download_update();
-        });
     }
 
     fn emit_status(app: &AppHandle, status: &CliStatus) {
@@ -1118,20 +1020,21 @@ impl CliEntry {
         ))
     }
 
-    fn build_args(&self, dev: bool, host: &str, auth_cookie_name: &str) -> Vec<String> {
+    fn build_args(&self, dev: bool, host: &str, port: u16, password: &str) -> Vec<String> {
         let mut args = vec![
             "serve".to_string(),
             "--host".to_string(),
             host.to_string(),
-            "--auth-cookie-name".to_string(),
-            auth_cookie_name.to_string(),
-            "--generate-token".to_string(),
+            "--password".to_string(),
+            password.to_string(),
+            "--http-port".to_string(),
+            port.to_string(),
+            "--http".to_string(),
+            "true".to_string(),
             "--unrestricted-root".to_string(),
         ];
 
         if dev {
-            // Dev: keep loopback HTTP for the Vite proxy, but also enable HTTPS so
-            // remote proxy sessions can still spin up secure local windows.
             let ui_dev_server = std::env::var("VITE_DEV_SERVER_URL")
                 .ok()
                 .filter(|value| !value.trim().is_empty())
@@ -1149,20 +1052,13 @@ impl CliEntry {
 
             args.push("--https".to_string());
             args.push("true".to_string());
-            args.push("--http".to_string());
-            args.push("true".to_string());
-            args.push("--http-port".to_string());
-            args.push("0".to_string());
             args.push("--ui-dev-server".to_string());
             args.push(ui_dev_server);
             args.push("--log-level".to_string());
             args.push(log_level);
         } else {
-            // Prod desktop: always keep loopback HTTP enabled.
             args.push("--https".to_string());
-            args.push("true".to_string());
-            args.push("--http".to_string());
-            args.push("true".to_string());
+            args.push("false".to_string());
         }
         args
     }
@@ -1269,36 +1165,40 @@ fn resolve_standalone_entry(_app: &AppHandle) -> Option<String> {
     } else {
         "embeddedcowork-server"
     };
-    let base = workspace_root();
-    let mut candidates = vec![base
-        .as_ref()
-        .map(|p| p.join("packages/server/dist").join(executable_name))];
 
+    // Production sidecar: externalBin places the binary next to the app executable
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            candidates.push(Some(
-                dir.join("resources/server/dist").join(executable_name),
-            ));
+            let sidecar_path = dir.join(&executable_name);
+            if sidecar_path.exists() {
+                return Some(normalize_path(sidecar_path));
+            }
 
+            // macOS: sidecar may be in ../Resources/ alongside the .app bundle
             let resources = dir.join("../Resources");
-            candidates.push(Some(resources.join("server/dist").join(executable_name)));
-            candidates.push(Some(
-                resources
-                    .join("resources/server/dist")
-                    .join(executable_name),
-            ));
+            let resources_sidecar = resources.join(&executable_name);
+            if resources_sidecar.exists() {
+                return Some(normalize_path(resources_sidecar));
+            }
 
-            let linux_resource_roots = [dir.join("../lib/embeddedcowork"), dir.join("../lib/embeddedcowork")];
-            for root in linux_resource_roots {
-                candidates.push(Some(root.join("server/dist").join(executable_name)));
-                candidates.push(Some(
-                    root.join("resources/server/dist").join(executable_name),
-                ));
+            // Fallback: check the old resources/server/dist path
+            let legacy = dir.join("resources/server/dist").join(&executable_name);
+            if legacy.exists() {
+                return Some(normalize_path(legacy));
             }
         }
     }
 
-    first_existing(candidates)
+    // Dev mode fallback: check workspace dist
+    let base = workspace_root();
+    if let Some(ws) = base {
+        let dev_path = ws.join("packages/server/dist").join(&executable_name);
+        if dev_path.exists() {
+            return Some(normalize_path(dev_path));
+        }
+    }
+
+    None
 }
 
 fn build_shell_command_string(
