@@ -9,6 +9,30 @@ import { setupCliIPC } from "./ipc"
 import { configureMediaPermissionHandlers } from "./permissions"
 import { CliProcessManager } from "./process-manager"
 
+// Windows GUI 应用 stderr 可能是断开的 pipe，console.xxx 写入会抛 EPIPE 导致主进程崩溃
+// 在最早时机捕获，不让它传播为未捕获异常
+process.on("uncaughtException", (error) => {
+  const nodeError = error as NodeJS.ErrnoException
+  if (nodeError?.code === "EPIPE") {
+    return
+  }
+  console.error("Uncaught exception:", error)
+})
+
+// 修补 console 方法，确保任何 console 写入都不被 EPIPE 击穿
+const consoleMethods = ["log", "info", "warn", "error"] as const
+for (const method of consoleMethods) {
+  const original = console[method]
+  console[method] = (...args: unknown[]) => {
+    try {
+      original(...args)
+    } catch (e: unknown) {
+      const nodeError = e as NodeJS.ErrnoException
+      if (nodeError?.code !== "EPIPE") throw e
+    }
+  }
+}
+
 const mainFilename = fileURLToPath(import.meta.url)
 const mainDirname = dirname(mainFilename)
 
