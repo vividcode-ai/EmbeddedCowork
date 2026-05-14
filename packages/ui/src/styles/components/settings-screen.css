@@ -504,6 +504,80 @@
   justify-content: flex-end;
 }
 
+/* Tailscale — status indicator, IP display, icon utilities */
+.settings-field-value-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.settings-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.settings-status-dot[data-status="connected"] {
+  background: #22c55e;
+}
+
+.settings-status-dot[data-status="warning"] {
+  background: #eab308;
+}
+
+.settings-status-dot[data-status="disconnected"] {
+  background: var(--text-muted);
+}
+
+.settings-ip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.settings-ip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.5rem;
+  font-size: var(--font-size-xs);
+  font-family: ui-monospace, monospace;
+  background: var(--surface-code);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+}
+
+.settings-icon-spin {
+  animation: settings-spin 1s linear infinite;
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes settings-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.settings-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-muted);
+  transition: color 140ms ease;
+}
+
+.settings-icon-button:hover {
+  color: var(--text-primary);
+}
+
 @media (max-width: 900px) {
   .modal-surface.settings-screen-shell {
     min-height: min(760px, calc(100vh - 1rem));

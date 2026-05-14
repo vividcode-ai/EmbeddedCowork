@@ -27,6 +27,16 @@ export const tailscaleMessages = {
   "tailscale.settings.controlUrl.placeholder": "https://headscale.example.com",
   "tailscale.settings.hostname": "Nom d'hôte du nœud",
   "tailscale.settings.hostname.placeholder": "embeddedcowork-{name}",
+
+  "tailscale.settings.controlUrls": "URL du serveur de contrôle",
+  "tailscale.settings.controlUrls.add": "Ajouter",
+  "tailscale.settings.controlUrls.remove": "Supprimer",
+  "tailscale.settings.controlUrls.apply": "Enregistrer et redémarrer Sidecar",
+  "tailscale.settings.controlUrls.active": "Actif",
+  "tailscale.settings.controlUrls.empty": "Aucune URL configurée. Le serveur Tailscale par défaut sera utilisé.",
+  "tailscale.settings.controlUrls.placeholder": "https://your-control-server",
+  "tailscale.settings.controlUrls.saved": "Enregistré, redémarrage du Sidecar…",
+
   "tailscale.error.overview": "Erreur : {error}",
   "tailscale.copy": "Copier",
   "tailscale.refresh": "Actualiser",

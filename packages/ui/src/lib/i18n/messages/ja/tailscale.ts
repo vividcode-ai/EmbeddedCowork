@@ -27,6 +27,16 @@ export const tailscaleMessages = {
   "tailscale.settings.controlUrl.placeholder": "https://headscale.example.com",
   "tailscale.settings.hostname": "ノードホスト名",
   "tailscale.settings.hostname.placeholder": "embeddedcowork-{name}",
+
+  "tailscale.settings.controlUrls": "コントロールサーバーURL",
+  "tailscale.settings.controlUrls.add": "追加",
+  "tailscale.settings.controlUrls.remove": "削除",
+  "tailscale.settings.controlUrls.apply": "保存してSidecarを再起動",
+  "tailscale.settings.controlUrls.active": "アクティブ",
+  "tailscale.settings.controlUrls.empty": "URLが設定されていません。デフォルトのTailscaleサーバーが使用されます。",
+  "tailscale.settings.controlUrls.placeholder": "https://your-control-server",
+  "tailscale.settings.controlUrls.saved": "保存しました。Sidecarを再起動中…",
+
   "tailscale.error.overview": "エラー: {error}",
   "tailscale.copy": "コピー",
   "tailscale.refresh": "更新",

@@ -292,7 +292,7 @@ export function createHttpServer(deps: HttpServerDeps) {
   })
   registerRemoteServerRoutes(app, { logger: apiLogger })
   registerRemoteProxyRoutes(app, { logger: proxyLogger, sessionManager: deps.remoteProxySessionManager })
-  registerTailscaleRoutes(app, { logger: proxyLogger, tailscaleIntegration: deps.tailscaleIntegration })
+  registerTailscaleRoutes(app, { logger: proxyLogger, tailscaleIntegration: deps.tailscaleIntegration, settings: deps.settings })
   registerSpeechRoutes(app, { speechService: deps.speechService })
   registerSideCarRoutes(app, { sidecarManager: deps.sidecarManager })
   registerSideCarProxyRoutes(app, { sidecarManager: deps.sidecarManager, logger: proxyLogger })

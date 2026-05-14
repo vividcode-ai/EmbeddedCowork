@@ -320,6 +320,21 @@
   @apply opacity-50 cursor-not-allowed;
 }
 
+.selector-button-danger {
+  background-color: var(--button-danger-bg) !important;
+  color: var(--button-danger-text) !important;
+  border-color: var(--button-danger-bg) !important;
+}
+
+.selector-button-danger:hover:not(:disabled) {
+  background-color: var(--button-danger-hover-bg) !important;
+}
+
+.selector-button-danger:disabled {
+  @apply opacity-50 cursor-not-allowed;
+  background-color: var(--surface-muted);
+}
+
 .selector-empty-state {
   @apply p-4 text-center text-sm;
   color: var(--text-muted);

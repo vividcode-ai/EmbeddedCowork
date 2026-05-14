@@ -427,10 +427,15 @@ async function main() {
   let tailscaleIntegration: TailscaleIntegration | undefined
 
   if (options.tailscale) {
+    const persistedTailscale = (settings.getOwner("config", "server").tailscale ?? {}) as {
+      activeControlUrl?: string
+    }
+    const controlURL = options.tailscaleControlUrl ?? persistedTailscale.activeControlUrl
+
     tailscaleIntegration = new TailscaleIntegration({
       sidecarPath: resolveTailscaleSidecarPath(),
       stateDir: path.join(configDir, "tailscale"),
-      controlURL: options.tailscaleControlUrl,
+      controlURL,
       authKey: process.env.TS_AUTHKEY,
       hostname: options.tailscaleHostname,
       apiPort: options.tailscaleSidecarPort,

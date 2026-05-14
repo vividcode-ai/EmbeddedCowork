@@ -32,6 +32,15 @@ export const tailscaleMessages = {
   "tailscale.settings.hostname": "Node Hostname",
   "tailscale.settings.hostname.placeholder": "embeddedcowork-{name}",
 
+  "tailscale.settings.controlUrls": "Control Server URLs",
+  "tailscale.settings.controlUrls.add": "Add",
+  "tailscale.settings.controlUrls.remove": "Remove",
+  "tailscale.settings.controlUrls.apply": "Save & Restart Sidecar",
+  "tailscale.settings.controlUrls.active": "Active",
+  "tailscale.settings.controlUrls.empty": "No control URLs configured. Default Tailscale server will be used.",
+  "tailscale.settings.controlUrls.placeholder": "https://your-control-server",
+  "tailscale.settings.controlUrls.saved": "Saved, restarting sidecar…",
+
   "tailscale.status.label": "Status",
 
   "tailscale.error.overview": "Error: {error}",

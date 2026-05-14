@@ -312,16 +312,15 @@ func (n *TailscaleNode) pollStatus() {
 
 	if !ip.IsUnspecified() && ip.IsValid() {
 		n.status.TailscaleIPs = []string{ip.String()}
+		n.status.Connected = true
+		n.status.AuthNeeded = false
+		n.status.Error = ""
 	} else {
 		n.status.TailscaleIPs = nil
+		n.status.Connected = false
 	}
 
 	n.status.Online = n.status.Connected
-
-	if n.status.Connected {
-		n.status.AuthNeeded = false
-		n.status.Error = ""
-	}
 
 	if n.status.LoginURL != "" && !n.status.Connected {
 		n.status.AuthNeeded = true

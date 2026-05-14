@@ -276,6 +276,14 @@ export class TailscaleIntegration {
     }
   }
 
+  async setControlUrl(url: string): Promise<void> {
+    if (this.options.controlURL === url) return
+    this.logger.info({ from: this.options.controlURL, to: url }, "changing tailscale control URL")
+    this.options.controlURL = url
+    await this.stop()
+    await this.start()
+  }
+
   isRunning(): boolean {
     return this.process !== null && this.currentStatus.ok
   }

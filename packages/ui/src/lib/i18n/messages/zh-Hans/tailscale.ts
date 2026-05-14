@@ -27,6 +27,16 @@ export const tailscaleMessages = {
   "tailscale.settings.controlUrl.placeholder": "https://headscale.example.com",
   "tailscale.settings.hostname": "节点主机名",
   "tailscale.settings.hostname.placeholder": "embeddedcowork-{name}",
+
+  "tailscale.settings.controlUrls": "协调服务器地址",
+  "tailscale.settings.controlUrls.add": "添加",
+  "tailscale.settings.controlUrls.remove": "删除",
+  "tailscale.settings.controlUrls.apply": "保存并重启 Sidecar",
+  "tailscale.settings.controlUrls.active": "当前使用",
+  "tailscale.settings.controlUrls.empty": "未配置协调服务器地址，将使用默认 Tailscale 服务器",
+  "tailscale.settings.controlUrls.placeholder": "https://your-control-server",
+  "tailscale.settings.controlUrls.saved": "已保存，正在重启 Sidecar…",
+
   "tailscale.error.overview": "错误：{error}",
   "tailscale.copy": "复制",
   "tailscale.refresh": "刷新",

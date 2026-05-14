@@ -1,5 +1,5 @@
 import { Switch } from "@kobalte/core/switch"
-import { createSignal, onMount, type Component, Show } from "solid-js"
+import { createMemo, createSignal, onMount, type Component, For, Show } from "solid-js"
 import { Copy, ExternalLink, Loader2, Network, RefreshCw, QrCode } from "lucide-solid"
 import { toDataURL } from "qrcode"
 import { useI18n } from "../../lib/i18n"
@@ -30,6 +30,59 @@ export const TailscaleSettingsSection: Component = () => {
   const [loginUrl, setLoginUrl] = createSignal<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = createSignal<string | null>(null)
   const [error, setError] = createSignal<string | null>(null)
+  const [controlUrls, setControlUrls] = createSignal<string[]>([])
+  const [activeUrl, setActiveUrl] = createSignal("")
+  const [newUrl, setNewUrl] = createSignal("")
+  const [savingUrls, setSavingUrls] = createSignal(false)
+  const [urlsError, setUrlsError] = createSignal<string | null>(null)
+
+  const fetchControlUrls = async () => {
+    try {
+      const data = await tailscaleApi("/control-urls")
+      const urls: string[] = data.urls ?? []
+      if (urls.length === 0) {
+        urls.push("https://control.tailscale.com")
+      }
+      setControlUrls(urls)
+      setActiveUrl(data.activeUrl || urls[0])
+    } catch {
+      setControlUrls(["https://control.tailscale.com"])
+      setActiveUrl("https://control.tailscale.com")
+    }
+  }
+
+  const handleAddUrl = () => {
+    const url = newUrl().trim()
+    if (!url) return
+    if (controlUrls().includes(url)) return
+    setControlUrls([...controlUrls(), url])
+    setNewUrl("")
+  }
+
+  const handleRemoveUrl = (url: string) => {
+    const next = controlUrls().filter((u) => u !== url)
+    setControlUrls(next)
+    if (activeUrl() === url) {
+      setActiveUrl(next[0] ?? "")
+    }
+  }
+
+  const handleSaveControlUrls = async () => {
+    setSavingUrls(true)
+    setUrlsError(null)
+    try {
+      await tailscaleApi("/control-urls", {
+        method: "PUT",
+        body: JSON.stringify({ urls: controlUrls(), activeUrl: activeUrl() }),
+      })
+      await fetchControlUrls()
+      await fetchStatus()
+    } catch (err) {
+      setUrlsError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSavingUrls(false)
+    }
+  }
 
   const fetchStatus = async () => {
     setLoading(true)
@@ -54,6 +107,7 @@ export const TailscaleSettingsSection: Component = () => {
 
   onMount(() => {
     void fetchStatus()
+    void fetchControlUrls()
   })
 
   const handleSaveAuthKey = async () => {
@@ -80,6 +134,7 @@ export const TailscaleSettingsSection: Component = () => {
   }
 
   const handleCopyLoginUrl = async () => {
+    setQrDataUrl(null)
     const url = loginUrl()
     if (url) {
       try {
@@ -108,6 +163,7 @@ export const TailscaleSettingsSection: Component = () => {
   }
 
   const handleOpenLoginUrl = () => {
+    setQrDataUrl(null)
     const url = loginUrl()
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer")
@@ -124,93 +180,177 @@ export const TailscaleSettingsSection: Component = () => {
     await fetchStatus()
   }
 
-  const s = status()
+  const s = createMemo(() => status())
 
   return (
-    <div class="settings-section">
-      <div class="settings-section-header">
-        <Network class="settings-section-header-icon" />
-        <div>
-          <h3 class="settings-section-title">{t("tailscale.title")}</h3>
-          <p class="settings-section-description">{t("tailscale.description")}</p>
-        </div>
-      </div>
-
+    <div class="settings-section-stack">
       <Show when={error()}>
-        <div class="settings-error">
+        <div class="settings-error-message">
           {t("tailscale.error.overview", { error: error() })}
         </div>
       </Show>
 
       <div class="settings-card">
-        <div class="settings-field-row">
-          <span class="settings-field-label">{t("tailscale.status.label")}</span>
-          <span class="settings-field-value">
-            <Show when={loading()}>
-              <Loader2 class="settings-icon-spin" />
-            </Show>
-            <Show when={!loading() && s}>
-              <span
-                class="settings-status-dot"
-                data-status={s?.connected ? "connected" : s?.authNeeded ? "warning" : "disconnected"}
-              />
-              <Show when={s?.connected} fallback={
-                <Show when={s?.authNeeded} fallback={t("tailscale.status.disconnected")}>
-                  {t("tailscale.status.authNeeded")}
-                </Show>
-              }>
-                {t("tailscale.status.connected")}
-              </Show>
-            </Show>
-            <Show when={!loading() && !s}>
-              {t("tailscale.status.disconnected")}
-            </Show>
-          </span>
-        </div>
-
-        <Show when={s?.connected}>
-          <div class="settings-field-row">
-            <span class="settings-field-label">{t("tailscale.ips")}</span>
-            <div class="settings-ip-list">
-              {s!.tailscaleIPs.map((ip) => (
-                <code class="settings-ip-chip">
-                  {ip}
-                  <button
-                    type="button"
-                    class="settings-icon-button"
-                    onClick={() => navigator.clipboard.writeText(ip)}
-                    title={t("tailscale.copy")}
-                  >
-                    <Copy class="w-3 h-3" />
-                  </button>
-                </code>
-              ))}
+        <div class="settings-card-header">
+          <div class="settings-card-heading-with-icon">
+            <Network class="settings-card-heading-icon" />
+            <div>
+              <h3 class="settings-card-title">{t("tailscale.title")}</h3>
+              <p class="settings-card-subtitle">{t("tailscale.description")}</p>
             </div>
           </div>
+        </div>
 
-          <Show when={s?.hostname}>
-            <div class="settings-field-row">
-              <span class="settings-field-label">{t("tailscale.hostname")}</span>
-              <span class="settings-field-value">{s!.hostname}</span>
-            </div>
+        <div class="settings-stack">
+          <div class="settings-toggle-row">
+            <span class="settings-toggle-title">{t("tailscale.status.label")}</span>
+            <span class="settings-field-value-inline">
+              <Show when={loading()}>
+                <Loader2 class="settings-icon-spin" />
+              </Show>
+              <Show when={!loading() && s()}>
+                <span
+                  class="settings-status-dot"
+                  data-status={s()?.connected ? "connected" : s()?.authNeeded ? "warning" : "disconnected"}
+                />
+                <Show when={s()?.connected} fallback={
+                  <Show when={s()?.authNeeded} fallback={t("tailscale.status.disconnected")}>
+                    {t("tailscale.status.authNeeded")}
+                  </Show>
+                }>
+                  {t("tailscale.status.connected")}
+                </Show>
+              </Show>
+              <Show when={!loading() && !s()}>
+                {t("tailscale.status.disconnected")}
+              </Show>
+            </span>
+          </div>
+
+          <Show when={!loading() && s()?.error}>
+            <div class="settings-error-message">{s()!.error}</div>
           </Show>
-        </Show>
+
+          <Show when={s()?.connected}>
+            <div class="settings-toggle-row">
+              <span class="settings-toggle-title">{t("tailscale.ips")}</span>
+              <div class="settings-ip-list">
+                {s()!.tailscaleIPs.map((ip) => (
+                  <code class="settings-ip-chip">
+                    {ip}
+                    <button
+                      type="button"
+                      class="settings-icon-button"
+                      onClick={() => navigator.clipboard.writeText(ip)}
+                      title={t("tailscale.copy")}
+                    >
+                      <Copy class="w-3 h-3" />
+                    </button>
+                  </code>
+                ))}
+              </div>
+            </div>
+
+            <Show when={s()?.hostname}>
+              <div class="settings-toggle-row">
+                <span class="settings-toggle-title">{t("tailscale.hostname")}</span>
+                <span class="settings-field-value-inline">{s()!.hostname}</span>
+              </div>
+            </Show>
+          </Show>
+        </div>
       </div>
 
-      <Show when={s?.authNeeded}>
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <div class="settings-card-heading-with-icon">
+            <Network class="settings-card-heading-icon" />
+            <div>
+              <h3 class="settings-card-title">{t("tailscale.settings.controlUrls")}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-stack">
+          <Show when={controlUrls().length === 0}>
+            <p class="settings-help-text">{t("tailscale.settings.controlUrls.empty")}</p>
+          </Show>
+
+          <For each={controlUrls()}>
+            {(url) => (
+              <div class="settings-toggle-row">
+                <label class="settings-checkbox-toggle">
+                  <input
+                    type="radio"
+                    name="controlUrl"
+                    checked={activeUrl() === url}
+                    onChange={() => setActiveUrl(url)}
+                  />
+                  <span class="settings-toggle-title" style="font-size:var(--font-size-xs);word-break:break-all">{url}</span>
+                </label>
+                <button
+                  type="button"
+                  class="selector-button selector-button-secondary w-auto"
+                  style="width:auto;padding:0.25rem 0.5rem;font-size:var(--font-size-xs)"
+                  onClick={() => handleRemoveUrl(url)}
+                >
+                  {t("tailscale.settings.controlUrls.remove")}
+                </button>
+              </div>
+            )}
+          </For>
+
+          <div class="selector-input-group">
+            <input
+              type="text"
+              class="selector-input"
+              placeholder={t("tailscale.settings.controlUrls.placeholder")}
+              value={newUrl()}
+              onInput={(e) => setNewUrl(e.currentTarget.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddUrl()}
+            />
+            <button
+              type="button"
+              class="selector-button selector-button-secondary w-auto"
+              disabled={!newUrl().trim()}
+              onClick={handleAddUrl}
+            >
+              {t("tailscale.settings.controlUrls.add")}
+            </button>
+          </div>
+
+          <Show when={urlsError()}>
+            <p class="settings-error-message">{urlsError()}</p>
+          </Show>
+
+          <button
+            type="button"
+            class="selector-button selector-button-primary"
+            disabled={savingUrls() || controlUrls().length === 0}
+            onClick={handleSaveControlUrls}
+          >
+            <Show when={savingUrls()} fallback={t("tailscale.settings.controlUrls.apply")}>
+              <Loader2 class="settings-icon-spin" />
+              {t("tailscale.settings.controlUrls.saved")}
+            </Show>
+          </button>
+        </div>
+      </div>
+
+      <Show when={s()?.authNeeded}>
         <div class="settings-card">
           <h4 class="settings-card-title">{t("tailscale.auth.authKey.label")}</h4>
-          <div class="settings-field-row">
+          <div class="selector-input-group">
             <input
               type="password"
-              class="text-input"
+              class="selector-input"
               placeholder={t("tailscale.auth.authKey.placeholder")}
               value={authKey()}
               onInput={(e) => setAuthKey(e.currentTarget.value)}
             />
             <button
               type="button"
-              class="selector-button selector-button-primary"
+              class="selector-button selector-button-primary w-auto"
               disabled={authKeySaving() || !authKey().trim()}
               onClick={handleSaveAuthKey}
             >
@@ -220,17 +360,17 @@ export const TailscaleSettingsSection: Component = () => {
             </button>
           </div>
           <Show when={authKeyError()}>
-            <p class="settings-error">{t("tailscale.auth.authKey.error", { error: authKeyError() })}</p>
+            <p class="settings-error-message">{t("tailscale.auth.authKey.error", { error: authKeyError() })}</p>
           </Show>
         </div>
 
         <Show when={loginUrl()}>
           <div class="settings-card">
             <h4 class="settings-card-title">{t("tailscale.auth.interactive.label")}</h4>
-            <div class="settings-field-row">
+            <div class="settings-toolbar-inline" style="margin-top: 0.75rem">
               <button
                 type="button"
-                class="selector-button selector-button-secondary"
+                class="selector-button selector-button-secondary w-auto"
                 onClick={handleOpenLoginUrl}
               >
                 <ExternalLink class="w-4 h-4" />
@@ -238,7 +378,7 @@ export const TailscaleSettingsSection: Component = () => {
               </button>
               <button
                 type="button"
-                class="selector-button selector-button-secondary"
+                class="selector-button selector-button-secondary w-auto"
                 onClick={handleCopyLoginUrl}
               >
                 <Copy class="w-4 h-4" />
@@ -246,7 +386,7 @@ export const TailscaleSettingsSection: Component = () => {
               </button>
               <button
                 type="button"
-                class="selector-button selector-button-secondary"
+                class="selector-button selector-button-secondary w-auto"
                 onClick={handleShowQr}
               >
                 <QrCode class="w-4 h-4" />
@@ -254,8 +394,8 @@ export const TailscaleSettingsSection: Component = () => {
               </button>
             </div>
             <Show when={qrDataUrl()}>
-              <div class="settings-qr-container">
-                <img src={qrDataUrl()!} alt="QR Code" class="settings-qr-image" />
+              <div class="remote-qr" style="margin-top: 0.75rem">
+                <img src={qrDataUrl()!} alt="QR Code" class="remote-qr-img" />
               </div>
             </Show>
           </div>
@@ -263,11 +403,11 @@ export const TailscaleSettingsSection: Component = () => {
       </Show>
 
       <div class="settings-card">
-        <div class="settings-field-row">
-          <Show when={s?.connected}>
+        <div class="settings-toolbar-inline" style="justify-content: flex-end">
+          <Show when={s()?.connected}>
             <button
               type="button"
-              class="selector-button selector-button-danger"
+              class="selector-button selector-button-danger w-auto"
               onClick={handleStop}
             >
               {t("tailscale.disconnect")}
@@ -275,7 +415,7 @@ export const TailscaleSettingsSection: Component = () => {
           </Show>
           <button
             type="button"
-            class="selector-button selector-button-secondary"
+            class="selector-button selector-button-secondary w-auto"
             onClick={fetchStatus}
             disabled={loading()}
           >

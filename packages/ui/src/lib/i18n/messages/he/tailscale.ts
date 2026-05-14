@@ -27,6 +27,16 @@ export const tailscaleMessages = {
   "tailscale.settings.controlUrl.placeholder": "https://headscale.example.com",
   "tailscale.settings.hostname": "שם מארח הצומת",
   "tailscale.settings.hostname.placeholder": "embeddedcowork-{name}",
+
+  "tailscale.settings.controlUrls": "כתובות שרת שליטה",
+  "tailscale.settings.controlUrls.add": "הוסף",
+  "tailscale.settings.controlUrls.remove": "הסר",
+  "tailscale.settings.controlUrls.apply": "שמור והפעל מחדש Sidecar",
+  "tailscale.settings.controlUrls.active": "פעיל",
+  "tailscale.settings.controlUrls.empty": "לא הוגדרו כתובות. נעשה שימוש בשררת Tailscale ברירת המחדל.",
+  "tailscale.settings.controlUrls.placeholder": "https://your-control-server",
+  "tailscale.settings.controlUrls.saved": "נשמר, מאתחל Sidecar מחדש…",
+
   "tailscale.error.overview": "שגיאה: {error}",
   "tailscale.copy": "העתק",
   "tailscale.refresh": "רענן",
