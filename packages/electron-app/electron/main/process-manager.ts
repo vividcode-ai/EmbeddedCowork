@@ -792,8 +792,8 @@ export class CliProcessManager extends EventEmitter {
   private getPlatformKey(): string {
     const map: Record<string, Record<string, string>> = {
       darwin: { x64: "darwin-x64", arm64: "darwin-arm64" },
-      win32: { x64: "win32-x64" },
-      linux: { x64: "linux-x64" },
+      win32: { x64: "win32-x64", arm64: "win32-arm64" },
+      linux: { x64: "linux-x64", arm64: "linux-arm64" },
     }
     return map[process.platform]?.[process.arch] ?? ""
   }
