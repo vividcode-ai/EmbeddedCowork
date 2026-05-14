@@ -913,7 +913,7 @@ impl CliProcessManager {
         let mut buffer = String::new();
         let local_url_regex =
             Regex::new(r"^Local\s+Connection\s+URL\s*:\s*(https?://\S+)\s*$").ok();
-        let token_prefix = "CODENOMAD_BOOTSTRAP_TOKEN:";
+        let token_prefix = "EMBEDDEDCOWORK_BOOTSTRAP_TOKEN:";
 
         loop {
             buffer.clear();
