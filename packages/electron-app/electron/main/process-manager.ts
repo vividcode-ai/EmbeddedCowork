@@ -115,11 +115,14 @@ export declare interface CliProcessManager {
   on(event: "error", listener: (error: Error) => void): this
 }
 
+const MAX_CAPTURED_LINES = 50
+
 export class CliProcessManager extends EventEmitter {
   private child?: ManagedChild
   private childLaunchMode: ChildLaunchMode = "spawn"
   private status: CliStatus = { state: "stopped" }
   private requestedStop = false
+  private capturedOutput: string[] = []
 
   async start(options: StartOptions): Promise<CliStatus> {
     if (this.child) {
@@ -127,6 +130,7 @@ export class CliProcessManager extends EventEmitter {
     }
 
     this.requestedStop = false
+    this.capturedOutput = []
     this.updateStatus({ state: "starting", port: undefined, pid: undefined, url: undefined, error: undefined })
 
     if (options.inProcess) {
@@ -205,16 +209,30 @@ export class CliProcessManager extends EventEmitter {
 
     const baseUrl = `http://127.0.0.1:${port}`
     child.stdout?.on("data", (data: Buffer) => {
-      const lines = data.toString().split("\n").filter((l) => l.trim())
+      const raw = data.toString()
+      const lines = raw.split("\n").filter((l) => l.trim())
+      this.captureOutput(raw)
       for (const line of lines) {
         console.info(`[cli][stdout] ${line.trim()}`)
       }
     })
+    child.stdout?.on("error", (err) => {
+      if ((err as NodeJS.ErrnoException).code !== "EPIPE") {
+        console.error("[cli] stdout stream error:", err)
+      }
+    })
 
     child.stderr?.on("data", (data: Buffer) => {
-      const lines = data.toString().split("\n").filter((l) => l.trim())
+      const raw = data.toString()
+      const lines = raw.split("\n").filter((l) => l.trim())
+      this.captureOutput(raw)
       for (const line of lines) {
         console.info(`[cli][stderr] ${line.trim()}`)
+      }
+    })
+    child.stderr?.on("error", (err) => {
+      if ((err as NodeJS.ErrnoException).code !== "EPIPE") {
+        console.error("[cli] stderr stream error:", err)
       }
     })
 
@@ -230,7 +248,7 @@ export class CliProcessManager extends EventEmitter {
 
       utilityChild.on("exit", (code) => {
         const failed = this.status.state !== "ready"
-        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}` : undefined
+        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${this.formatLastOutput()}` : undefined
         console.info(`[cli] exit (code=${code ?? ""})${error ? ` error=${error}` : ""}`)
         this.updateStatus({ state: failed ? "error" : "stopped", error })
         if (failed && error) {
@@ -250,7 +268,7 @@ export class CliProcessManager extends EventEmitter {
 
       spawnedChild.on("exit", (code, signal) => {
         const failed = this.status.state !== "ready"
-        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${signal ? ` (${signal})` : ""}` : undefined
+        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${signal ? ` (${signal})` : ""}${this.formatLastOutput()}` : undefined
         console.info(`[cli] exit (code=${code}, signal=${signal || ""})${error ? ` error=${error}` : ""}`)
         this.updateStatus({ state: failed ? "error" : "stopped", error })
         if (failed && error) {
@@ -770,6 +788,20 @@ export class CliProcessManager extends EventEmitter {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  private captureOutput(text: string) {
+    if (this.capturedOutput.length >= MAX_CAPTURED_LINES) {
+      this.capturedOutput.shift()
+    }
+    this.capturedOutput.push(text)
+  }
+
+  private formatLastOutput(): string {
+    if (this.capturedOutput.length === 0) return ""
+    const tail = this.capturedOutput.slice(-20).join("").trim()
+    if (tail.length === 0) return ""
+    return `\nLast output:\n${tail.slice(0, 2000)}`
   }
 
   private describeUtilityProcessError(error: unknown): string {

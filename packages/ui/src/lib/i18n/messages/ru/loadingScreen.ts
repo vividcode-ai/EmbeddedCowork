@@ -2,6 +2,7 @@ export const loadingScreenMessages = {
   "loadingScreen.logoAlt": "Логотип EmbeddedCowork",
   "loadingScreen.status.issue": "Возникла проблема",
   "loadingScreen.actions.showAnother": "Показать другое",
+  "loadingScreen.actions.retry": "Повторить",
   "loadingScreen.errors.missingRoot": "Корневой элемент загрузки не найден",
 
   "loadingScreen.phrases.neurons": "Разогреваем нейроны AI…",

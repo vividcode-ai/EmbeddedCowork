@@ -4,6 +4,7 @@ import iconUrl from "../../images/EmbeddedCowork-Icon.png"
 import { tGlobal } from "../../lib/i18n"
 import { runtimeEnv, isTauriHost, isDesktopHost } from "../../lib/runtime-env"
 import { preloadLocaleMessages } from "../../lib/i18n"
+import { restartCli } from "../../lib/native/cli"
 import "../../index.css"
 import "./loading.css"
 
@@ -52,8 +53,17 @@ function LoadingApp() {
   const [phraseKey, setPhraseKey] = createSignal<PhraseKey>(pickPhraseKey())
   const [error, setError] = createSignal<string | null>(null)
   const [statusKey, setStatusKey] = createSignal<string | null>(null)
+  const [retrying, setRetrying] = createSignal(false)
 
   const changePhrase = () => setPhraseKey(pickPhraseKey(phraseKey()))
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    setError(null)
+    setStatusKey(null)
+    await restartCli()
+    setRetrying(false)
+  }
 
   onMount(() => {
     annotateDocument()
@@ -187,6 +197,11 @@ function LoadingApp() {
           <span>{tGlobal(phraseKey())}</span>
         </div>
         {error() && <div class="loading-error">{error()}</div>}
+        {error() && !retrying() && (
+          <button class="loading-retry" onClick={handleRetry}>
+            {tGlobal("loadingScreen.actions.retry")}
+          </button>
+        )}
       </div>
     </div>
   )

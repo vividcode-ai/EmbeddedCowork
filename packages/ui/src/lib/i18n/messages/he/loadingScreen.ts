@@ -2,6 +2,7 @@ export const loadingScreenMessages = {
   "loadingScreen.logoAlt": "לוגו EmbeddedCowork",
   "loadingScreen.status.issue": "נתקלנו בבעיה",
   "loadingScreen.actions.showAnother": "הצג עוד",
+  "loadingScreen.actions.retry": "נסה שוב",
   "loadingScreen.errors.missingRoot": "אלמנט השורש לטעינה לא נמצא",
 
   "loadingScreen.phrases.neurons": "מחמם את הנוירונים של ה-AI…",

@@ -2,6 +2,7 @@ export const loadingScreenMessages = {
   "loadingScreen.logoAlt": "EmbeddedCowork 徽标",
   "loadingScreen.status.issue": "遇到问题",
   "loadingScreen.actions.showAnother": "换一句",
+  "loadingScreen.actions.retry": "重试",
   "loadingScreen.errors.missingRoot": "未找到加载根元素",
 
   "loadingScreen.phrases.neurons": "正在热身 AI 神经元…",

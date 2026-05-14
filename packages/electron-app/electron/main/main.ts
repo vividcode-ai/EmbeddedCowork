@@ -42,6 +42,9 @@ function configureDevStoragePaths() {
 
 configureDevStoragePaths()
 
+process.stdout?.on("error", () => {})
+process.stderr?.on("error", () => {})
+
 const cliManager = new CliProcessManager()
 let loadingWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
@@ -442,15 +445,32 @@ async function openRemoteWindow(payload: { id: string; name: string; baseUrl: st
 }
 
 async function startCli() {
-  try {
-    const devMode = !app.isPackaged
-    console.info("[cli] start requested (dev mode:", devMode, ")")
-    await cliManager.start({ dev: devMode })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error("[cli] start failed:", message)
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("cli:error", { message })
+  const devMode = !app.isPackaged
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.info(`[cli] start requested (attempt ${attempt}/3, dev mode: ${devMode})`)
+      await cliManager.start({ dev: devMode })
+      return
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(`[cli] start failed (attempt ${attempt}/3):`, message)
+
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+      } else {
+        console.warn("[cli] all external attempts failed, trying in-process fallback")
+        try {
+          await cliManager.start({ dev: devMode, inProcess: true })
+          return
+        } catch (inProcessError) {
+          const fallbackMsg = inProcessError instanceof Error ? inProcessError.message : String(inProcessError)
+          console.error("[cli] in-process fallback also failed:", fallbackMsg)
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("cli:error", { message })
+          }
+        }
+      }
     }
   }
 }
