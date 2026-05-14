@@ -151,6 +151,8 @@ export const instanceMessages = {
   "instanceShell.filesShell.viewerTitle": "更改查看器",
   "instanceShell.filesShell.viewerPlaceholder": "详细更改渲染将在下一步中添加。",
   "instanceShell.filesShell.viewerEmpty": "未选择文件。",
+  "instanceShell.filesShell.previewMarkdown": "预览 Markdown",
+  "instanceShell.filesShell.showCode": "显示代码",
 
   "instanceShell.plan.noSessionSelected": "选择会话以查看计划。",
   "instanceShell.plan.empty": "暂无计划。",

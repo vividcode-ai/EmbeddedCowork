@@ -151,6 +151,8 @@ export const instanceMessages = {
   "instanceShell.filesShell.viewerTitle": "Visor de cambios",
   "instanceShell.filesShell.viewerPlaceholder": "La vista detallada se agregará en el siguiente paso.",
   "instanceShell.filesShell.viewerEmpty": "Ningún archivo seleccionado.",
+  "instanceShell.filesShell.previewMarkdown": "Preview Markdown",
+  "instanceShell.filesShell.showCode": "Show Code",
 
   "instanceShell.plan.noSessionSelected": "Selecciona una sesión para ver el plan.",
   "instanceShell.plan.empty": "Aún no hay nada planificado.",

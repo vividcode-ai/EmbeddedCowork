@@ -1,12 +1,16 @@
-import { For, Show, Suspense, lazy, type Accessor, type Component, type JSX } from "solid-js"
+import { For, Show, Suspense, lazy, createMemo, createSignal, type Accessor, type Component, type JSX } from "solid-js"
 import type { FileNode } from "@opencode-ai/sdk/v2/client"
 
-import { RefreshCw, Save } from "lucide-solid"
+import { Eye, FileCode, RefreshCw, Save } from "lucide-solid"
 
 import SplitFilePanel from "../components/SplitFilePanel"
 
 const LazyMonacoFileViewer = lazy(() =>
   import("../../../../file-viewer/monaco-file-viewer").then((module) => ({ default: module.MonacoFileViewer })),
+)
+
+const LazyMarkdownFileViewer = lazy(() =>
+  import("../../../../file-viewer/markdown-file-viewer").then((module) => ({ default: module.MarkdownFileViewer })),
 )
 
 interface FilesTabProps {
@@ -42,6 +46,15 @@ interface FilesTabProps {
 }
 
 const FilesTab: Component<FilesTabProps> = (props) => {
+  const [showMarkdownPreview, setShowMarkdownPreview] = createSignal(false)
+
+  const isMarkdownFile = createMemo(() => {
+    const path = props.browserSelectedPath()
+    if (!path) return false
+    const ext = path.split(".").pop()?.toLowerCase()
+    return ext === "md" || ext === "markdown"
+  })
+
   const handleSave = () => {
     const content = props.browserSelectedContent()
     if (content !== undefined && content !== null) {
@@ -68,9 +81,12 @@ const FilesTab: Component<FilesTabProps> = (props) => {
       return props.t("instanceShell.filesShell.viewerEmpty")
     }
 
-    const renderViewer = () => (
+    const renderViewer = () => {
+      const showPreview = isMarkdownFile() && showMarkdownPreview()
+
+      return (
       <div class="file-viewer-panel flex-1">
-        <div class="file-viewer-content file-viewer-content--monaco">
+        <div class={`file-viewer-content ${showPreview ? "file-viewer-content--markdown" : "file-viewer-content--monaco"}`}>
           <Show
             when={props.browserSelectedLoading()}
             fallback={
@@ -97,13 +113,20 @@ const FilesTab: Component<FilesTabProps> = (props) => {
                           </div>
                         }
                       >
-                        <LazyMonacoFileViewer
-                          scopeKey={props.scopeKey()}
-                          path={payload().path}
-                          content={payload().content}
-                          onSave={props.onSave}
-                          onContentChange={props.onContentChange}
-                        />
+                        <Show when={showPreview} fallback={
+                          <LazyMonacoFileViewer
+                            scopeKey={props.scopeKey()}
+                            path={payload().path}
+                            content={payload().content}
+                            onSave={props.onSave}
+                            onContentChange={props.onContentChange}
+                          />
+                        }>
+                          <LazyMarkdownFileViewer
+                            content={payload().content}
+                            onSave={handleSave}
+                          />
+                        </Show>
                       </Suspense>
                     )}
                   </Show>
@@ -123,7 +146,8 @@ const FilesTab: Component<FilesTabProps> = (props) => {
           </Show>
         </div>
       </div>
-    )
+      )
+    }
 
     const renderList = () => (
       <>
@@ -198,6 +222,20 @@ const FilesTab: Component<FilesTabProps> = (props) => {
                 <RefreshCw class="h-4 w-4 animate-spin" />
               </Show>
             </button>
+            <Show when={isMarkdownFile()}>
+              <button
+                type="button"
+                class="files-header-icon-button"
+                classList={{ active: showMarkdownPreview() }}
+                title={showMarkdownPreview() ? props.t("instanceShell.filesShell.showCode") : props.t("instanceShell.filesShell.previewMarkdown")}
+                aria-label={showMarkdownPreview() ? props.t("instanceShell.filesShell.showCode") : props.t("instanceShell.filesShell.previewMarkdown")}
+                onClick={() => setShowMarkdownPreview((v) => !v)}
+              >
+                <Show when={showMarkdownPreview()} fallback={<Eye class="h-4 w-4" />}>
+                  <FileCode class="h-4 w-4" />
+                </Show>
+              </button>
+            </Show>
             <button
               type="button"
               class="files-header-icon-button"

@@ -16,11 +16,9 @@ import { Logger } from "../logger"
 import { getOpencodeConfigDir } from "../opencode-config.js"
 import { BIN_DIR, BINARY_NAME, triggerBinaryDownload, resolveBinaryPathFromUserShell } from "../opencode-paths"
 import {
-  buildOpencodeBasicAuthHeader,
-  DEFAULT_OPENCODE_USERNAME,
-  generateOpencodeServerPassword,
   OPENCODE_SERVER_PASSWORD_ENV,
   OPENCODE_SERVER_USERNAME_ENV,
+  resolveOpencodeServerAuth,
 } from "./opencode-auth"
 
 const STARTUP_STABILITY_DELAY_MS = 1500
@@ -173,13 +171,8 @@ export class WorkspaceManager {
     const envVars = (serverConfig as any)?.environmentVariables
     const userEnvironment = envVars && typeof envVars === "object" && !Array.isArray(envVars) ? (envVars as any) : {}
 
-    const opencodeUsername = DEFAULT_OPENCODE_USERNAME
-    const opencodePassword = generateOpencodeServerPassword()
-    const authorization = buildOpencodeBasicAuthHeader({ username: opencodeUsername, password: opencodePassword })
-    if (!authorization) {
-      throw new Error("Failed to build OpenCode auth header")
-    }
-    this.opencodeAuth.set(id, { username: opencodeUsername, password: opencodePassword, authorization })
+    const opencodeAuth = resolveOpencodeServerAuth({ userEnvironment })
+    this.opencodeAuth.set(id, opencodeAuth)
 
     // Determine session database path based on user preference.
     //   - "project": place DB inside the workspace folder so it travels with the project
@@ -202,8 +195,8 @@ export class WorkspaceManager {
       EMBEDDEDCOWORK_INSTANCE_ID: id,
       EMBEDDEDCOWORK_BASE_URL: this.options.getServerBaseUrl(),
       ...(this.options.nodeExtraCaCertsPath ? { NODE_EXTRA_CA_CERTS: this.options.nodeExtraCaCertsPath } : {}),
-      [OPENCODE_SERVER_USERNAME_ENV]: opencodeUsername,
-      [OPENCODE_SERVER_PASSWORD_ENV]: opencodePassword,
+      [OPENCODE_SERVER_USERNAME_ENV]: opencodeAuth.username,
+      [OPENCODE_SERVER_PASSWORD_ENV]: opencodeAuth.password,
     }
 
     const logLevel = (serverConfig as any)?.logLevel

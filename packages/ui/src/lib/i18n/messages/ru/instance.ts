@@ -151,6 +151,8 @@ export const instanceMessages = {
   "instanceShell.filesShell.viewerTitle": "Просмотр изменений",
   "instanceShell.filesShell.viewerPlaceholder": "Подробный рендер изменений будет добавлен на следующем этапе.",
   "instanceShell.filesShell.viewerEmpty": "Файл не выбран.",
+  "instanceShell.filesShell.previewMarkdown": "Preview Markdown",
+  "instanceShell.filesShell.showCode": "Show Code",
 
   "instanceShell.plan.noSessionSelected": "Выберите сессию, чтобы просмотреть план.",
   "instanceShell.plan.empty": "Пока ничего не запланировано.",

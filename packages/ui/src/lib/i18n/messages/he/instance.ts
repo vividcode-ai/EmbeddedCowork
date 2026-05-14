@@ -136,6 +136,8 @@ export const instanceMessages = {
   "instanceShell.filesShell.viewerTitle": "מציג שינויים",
   "instanceShell.filesShell.viewerPlaceholder": "תצוגת שינויים מפורטת תתווסף בשלב הבא.",
   "instanceShell.filesShell.viewerEmpty": "לא נבחר קובץ.",
+  "instanceShell.filesShell.previewMarkdown": "Preview Markdown",
+  "instanceShell.filesShell.showCode": "Show Code",
   "instanceShell.filesShell.hideFiles": "הסתר קבצים",
   "instanceShell.filesShell.showFiles": "הצג קבצים",
   "instanceShell.gitChanges.noSessionSelected": "בחר סשן לצפייה בשינויי Git.",

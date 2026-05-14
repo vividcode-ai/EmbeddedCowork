@@ -152,6 +152,8 @@ export const instanceMessages = {
   "instanceShell.filesShell.viewerTitle": "Change viewer",
   "instanceShell.filesShell.viewerPlaceholder": "Detailed change rendering will be added in the next step.",
   "instanceShell.filesShell.viewerEmpty": "No file selected.",
+  "instanceShell.filesShell.previewMarkdown": "Preview Markdown",
+  "instanceShell.filesShell.showCode": "Show Code",
   "instanceShell.filesShell.hideFiles": "Hide files",
   "instanceShell.filesShell.showFiles": "Show files",
   "instanceShell.diff.hideUnchanged": "Hide unchanged regions",
