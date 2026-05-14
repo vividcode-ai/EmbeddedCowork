@@ -11,8 +11,9 @@ export function resolveNetworkAddresses(args: {
   host: string
   protocol: "http" | "https"
   port: number
+  tailscaleIPs?: string[]
 }): NetworkAddress[] {
-  const { host, protocol, port } = args
+  const { host, protocol, port, tailscaleIPs } = args
   const interfaces = os.networkInterfaces()
   const seen = new Set<string>()
   const results: NetworkAddress[] = []
@@ -57,6 +58,18 @@ export function resolveNetworkAddresses(args: {
   if (isIPv4Address(host) && host !== "0.0.0.0") {
     const isLoopback = host.startsWith("127.")
     addAddress(host, isLoopback ? "loopback" : "external")
+  }
+
+  if (tailscaleIPs) {
+    for (const ip of tailscaleIPs) {
+      if (ip && ip !== "0.0.0.0") {
+        const key = `ts-${ip}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          results.push({ ip, family: "ipv4", scope: "external", remoteUrl: `${protocol}://${ip}:${port}` })
+        }
+      }
+    }
   }
 
   const scopeWeight: Record<NetworkAddress["scope"], number> = { external: 0, internal: 1, loopback: 2 }

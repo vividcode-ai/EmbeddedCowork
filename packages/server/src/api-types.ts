@@ -407,6 +407,18 @@ export interface SupportMeta {
   latestServerUrl?: string
 }
 
+export interface TailscaleStatus {
+  ok: boolean
+  connected: boolean
+  tailscaleIPs: string[]
+  hostname: string
+  authNeeded: boolean
+  authMethod: string
+  loginURL?: string
+  online: boolean
+  error?: string
+}
+
 export interface ServerMeta {
   /** URL desktop apps should use to connect (prefers loopback HTTP when enabled). */
   localUrl: string
@@ -433,6 +445,10 @@ export interface ServerMeta {
   support?: SupportMeta
   /** Optional update info (dev channel only). */
   update?: LatestReleaseInfo | null
+  /** Tailscale integration status. */
+  tailscale?: TailscaleStatus
+  /** Tailscale remote URL (e.g., https://100.x.x.x:9898). */
+  tailscaleUrl?: string
 }
 
 export type BackgroundProcessStatus = "running" | "stopped" | "error"

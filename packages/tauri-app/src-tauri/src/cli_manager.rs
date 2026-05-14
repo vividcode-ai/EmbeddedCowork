@@ -307,6 +307,7 @@ const DEFAULT_CONFIG_PATH: &str = "~/.config/embeddedcowork/config.json";
 struct PreferencesConfig {
     #[serde(rename = "listeningMode")]
     listening_mode: Option<String>,
+    tailscale: Option<TailscalePreferences>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -419,6 +420,45 @@ fn resolve_listening_host() -> String {
     } else {
         "0.0.0.0".to_string()
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct TailscalePreferences {
+    enabled: Option<bool>,
+    #[serde(rename = "controlUrl")]
+    control_url: Option<String>,
+    hostname: Option<String>,
+}
+
+fn read_tailscale_config() -> (bool, Option<String>, Option<String>) {
+    // First check environment variables
+    let env_enabled = std::env::var("CLI_TAILSCALE").ok()
+        .map(|v| v == "true" || v == "1")
+        .unwrap_or(false);
+    let env_control_url = std::env::var("TS_CONTROL_URL").ok()
+        .filter(|v| !v.trim().is_empty());
+    let env_hostname = std::env::var("TS_HOSTNAME").ok()
+        .filter(|v| !v.trim().is_empty());
+
+    if env_enabled {
+        return (true, env_control_url, env_hostname);
+    }
+
+    // Then check config file
+    let (yaml_path, _) = resolve_config_locations();
+    if let Ok(content) = fs::read_to_string(&yaml_path) {
+        if let Ok(config) = serde_yaml::from_str::<AppConfig>(&content) {
+            if let Some(prefs) = config.preferences {
+                if let Some(ts) = prefs.tailscale {
+                    if ts.enabled.unwrap_or(false) {
+                        return (true, ts.control_url, ts.hostname);
+                    }
+                }
+            }
+        }
+    }
+
+    (false, None, None)
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -1147,6 +1187,21 @@ impl CliEntry {
             args.push("--http".to_string());
             args.push("true".to_string());
         }
+
+        args.push("--tailscale".to_string());
+        if let Ok(url) = std::env::var("TS_CONTROL_URL") {
+            if !url.is_empty() {
+                args.push("--tailscale-control-url".to_string());
+                args.push(url);
+            }
+        }
+        if let Ok(name) = std::env::var("TS_HOSTNAME") {
+            if !name.is_empty() {
+                args.push("--tailscale-hostname".to_string());
+                args.push(name);
+            }
+        }
+
         args
     }
 

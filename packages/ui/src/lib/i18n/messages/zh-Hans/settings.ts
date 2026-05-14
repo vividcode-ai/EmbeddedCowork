@@ -84,6 +84,7 @@ export const settingsMessages = {
   "settings.nav.notifications": "通知",
   "settings.nav.remote": "远程访问",
   "settings.nav.speech": "语音",
+  "settings.nav.tailscale": "Tailscale",
   "settings.nav.opencode": "OpenCode",
   "settings.scope.device": "本设备",
   "settings.scope.server": "服务器设置",

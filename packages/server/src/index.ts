@@ -22,6 +22,7 @@ import { resolveUi } from "./ui/remote-ui"
 import { AuthManager, BOOTSTRAP_TOKEN_STDOUT_PREFIX, DEFAULT_AUTH_COOKIE_NAME, DEFAULT_AUTH_USERNAME } from "./auth/manager"
 import { resolveHttpsOptions } from "./server/tls"
 import { RemoteProxySessionManager } from "./server/remote-proxy"
+import { TailscaleIntegration, resolveTailscaleSidecarPath } from "./server/tailscale-integration"
 import { resolveNetworkAddresses, resolveRemoteAddresses } from "./server/network-addresses"
 import { startDevReleaseMonitor } from "./releases/dev-release-monitor"
 import { SpeechService } from "./speech/service"
@@ -65,6 +66,10 @@ interface CliOptions {
   authCookieName: string
   generateToken: boolean
   dangerouslySkipAuth: boolean
+  tailscale: boolean
+  tailscaleControlUrl?: string
+  tailscaleHostname?: string
+  tailscaleSidecarPort?: number
 }
 
 const DEFAULT_HOST = "127.0.0.1"
@@ -126,6 +131,24 @@ function parseCliOptions(argv: string[]): CliOptions {
         .env("EmbeddedCowork_SKIP_AUTH")
         .default(false),
     )
+    .addOption(
+      new Option("--tailscale", "Enable Tailscale/Headscale mesh VPN integration")
+        .env("CLI_TAILSCALE")
+        .default(true),
+    )
+    .addOption(
+      new Option("--tailscale-control-url <url>", "Tailscale control server URL (e.g., https://headscale.example.com)")
+        .env("TS_CONTROL_URL"),
+    )
+    .addOption(
+      new Option("--tailscale-hostname <name>", "Tailscale node hostname")
+        .env("TS_HOSTNAME"),
+    )
+    .addOption(
+      new Option("--tailscale-sidecar-port <number>", "Tailscale sidecar API port (default: auto-assign)")
+        .env("CLI_TAILSCALE_SIDECAR_PORT")
+        .argParser(parsePort),
+    )
 
   program.parse(argv, { from: "user" })
   const parsed = program.opts<{
@@ -155,6 +178,10 @@ function parseCliOptions(argv: string[]): CliOptions {
     authCookieName: string
     generateToken?: boolean
     dangerouslySkipAuth?: boolean
+    tailscale?: boolean
+    tailscaleControlUrl?: string
+    tailscaleHostname?: string
+    tailscaleSidecarPort?: string
   }>()
 
   const parseBooleanEnv = (value: string | undefined): boolean => {
@@ -202,6 +229,10 @@ function parseCliOptions(argv: string[]): CliOptions {
     authCookieName: parsed.authCookieName,
     generateToken: Boolean(parsed.generateToken),
     dangerouslySkipAuth: Boolean(parsed.dangerouslySkipAuth),
+    tailscale: Boolean(parsed.tailscale),
+    tailscaleControlUrl: parsed.tailscaleControlUrl || undefined,
+    tailscaleHostname: parsed.tailscaleHostname || undefined,
+    tailscaleSidecarPort: parsed.tailscaleSidecarPort ? Number(parsed.tailscaleSidecarPort) : undefined,
   }
 }
 
@@ -393,6 +424,40 @@ async function main() {
     logger: logger.child({ component: "voice-mode" }),
   })
 
+  let tailscaleIntegration: TailscaleIntegration | undefined
+
+  if (options.tailscale) {
+    tailscaleIntegration = new TailscaleIntegration({
+      sidecarPath: resolveTailscaleSidecarPath(),
+      stateDir: path.join(configDir, "tailscale"),
+      controlURL: options.tailscaleControlUrl,
+      authKey: process.env.TS_AUTHKEY,
+      hostname: options.tailscaleHostname,
+      apiPort: options.tailscaleSidecarPort,
+      logger: logger.child({ component: "tailscale" }),
+    })
+
+    await tailscaleIntegration.start().catch((err) => {
+      logger.warn({ err }, "Tailscale sidecar failed to start, continuing without it")
+      tailscaleIntegration = undefined
+    })
+
+    if (tailscaleIntegration?.isRunning()) {
+      const tsStatus = await tailscaleIntegration.getStatus()
+      if (tsStatus.connected && tsStatus.tailscaleIPs.length > 0) {
+        serverMeta.tailscale = {
+          ok: true,
+          connected: true,
+          tailscaleIPs: tsStatus.tailscaleIPs,
+          hostname: tsStatus.hostname,
+          authNeeded: false,
+          authMethod: tsStatus.authMethod,
+          online: true,
+        }
+      }
+    }
+  }
+
   const httpsPortExplicit = programHasArg(process.argv.slice(2), "--https-port") || Boolean(process.env.CLI_HTTPS_PORT)
   const httpPortExplicit = programHasArg(process.argv.slice(2), "--http-port") || Boolean(process.env.CLI_HTTP_PORT)
 
@@ -427,6 +492,8 @@ async function main() {
         pluginChannel,
         voiceModeManager,
         remoteProxySessionManager,
+        tailscaleIntegration,
+        binaryResolver,
         uiStaticDir: uiResolution.uiStaticDir ?? DEFAULT_UI_STATIC_DIR,
         uiDevServerUrl: uiResolution.uiDevServerUrl,
         logger,
@@ -453,6 +520,8 @@ async function main() {
         pluginChannel,
         voiceModeManager,
         remoteProxySessionManager,
+        tailscaleIntegration,
+        binaryResolver,
         uiStaticDir: uiResolution.uiStaticDir ?? DEFAULT_UI_STATIC_DIR,
         uiDevServerUrl: undefined,
         logger,
@@ -513,6 +582,39 @@ async function main() {
       : resolveNetworkAddresses({ host: options.host, protocol: remoteProtocol, port: serverMeta.remotePort })
   } else {
     serverMeta.addresses = []
+  }
+
+  if (tailscaleIntegration?.isRunning()) {
+    const forwardPort = serverMeta.remotePort ?? serverMeta.localPort
+    await tailscaleIntegration.startForwarding(forwardPort)
+
+    const tsStatus = await tailscaleIntegration.getStatus()
+    if (tsStatus.connected && tsStatus.tailscaleIPs.length > 0) {
+      serverMeta.tailscale = {
+        ok: true,
+        connected: true,
+        tailscaleIPs: tsStatus.tailscaleIPs,
+        hostname: tsStatus.hostname,
+        authNeeded: false,
+        authMethod: tsStatus.authMethod,
+        online: true,
+      }
+
+      for (const ip of tsStatus.tailscaleIPs) {
+        const addrProtocol = remoteProtocol ?? "https"
+        const addrPort = serverMeta.remotePort ?? serverMeta.localPort
+        serverMeta.addresses.push({
+          ip,
+          family: "ipv4",
+          scope: "external",
+          remoteUrl: `${addrProtocol}://${ip}:${addrPort}`,
+        })
+      }
+
+      serverMeta.tailscaleUrl = serverMeta.addresses
+        .filter((a) => tsStatus.tailscaleIPs.includes(a.ip))
+        [0]?.remoteUrl
+    }
   }
 
   if (!isBinaryAvailable()) {
@@ -577,6 +679,16 @@ async function main() {
         logger.info("Workspace manager shutdown complete")
       } catch (error) {
         logger.error({ err: error }, "Workspace manager shutdown failed")
+      }
+
+      if (tailscaleIntegration) {
+        try {
+          await tailscaleIntegration.stopForwarding()
+          await tailscaleIntegration.stop()
+          logger.info("Tailscale sidecar shutdown complete")
+        } catch (error) {
+          logger.error({ err: error }, "Tailscale sidecar shutdown failed")
+        }
       }
     })()
 

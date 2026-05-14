@@ -13,7 +13,7 @@
     ]
   },
   "scripts": {
-    "dev": "npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "dev": "node scripts/build-tailscale-sidecar.js && npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
     "dev:electron": "npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
     "dev:tauri": "npm run dev --workspace @embeddedcowork/tauri-app",
     "rust-dev": "node scripts/rust-dev.mjs",
@@ -23,6 +23,10 @@
     "build:ui": "npm run build --workspace @embeddedcowork/ui",
     "build:mac-x64": "npm run build:mac-x64 --workspace @vividcodeAI/embeddedcowork-electron-app",
     "build:binaries": "npm run build:binaries --workspace @vividcodeAI/embeddedcowork-electron-app",
+    "build:tailscale-sidecar": "node scripts/build-tailscale-sidecar.js",
+    "build:tailscale-sidecar:win": "cd packages/tailscale-sidecar && GOOS=windows GOARCH=amd64 go build -o bin/tailscale-sidecar.exe .",
+    "build:tailscale-sidecar:mac": "cd packages/tailscale-sidecar && GOOS=darwin GOARCH=arm64 go build -o bin/tailscale-sidecar .",
+    "build:tailscale-sidecar:linux": "cd packages/tailscale-sidecar && GOOS=linux GOARCH=amd64 go build -o bin/tailscale-sidecar .",
     "typecheck": "npm run typecheck --workspace @embeddedcowork/ui && npm run typecheck --workspace @vividcodeAI/embeddedcowork-electron-app",
     "bumpVersion": "node ./scripts/bump-version.js"
   },

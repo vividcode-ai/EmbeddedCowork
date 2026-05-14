@@ -56,6 +56,10 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": [
+      "sidecars/embeddedcowork-server",
+      "sidecars/tailscale-sidecar"
+    ],
     "linux": {
       "deb": {
         "files": {
@@ -82,7 +86,8 @@
     },
     "resources": [
       "resources/server",
-      "resources/ui-loading"
+      "resources/ui-loading",
+      "resources/sidecar"
     ],
     "icon": [
       "icon.icns",

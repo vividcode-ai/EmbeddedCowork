@@ -15,6 +15,7 @@ import { settingsMessages } from "./settings"
 import { timeMessages } from "./time"
 import { toolCallMessages } from "./toolCall"
 import { downloaderMessages } from "./downloader"
+import { tailscaleMessages } from "./tailscale"
 import { mergeMessageParts } from "../merge"
 
 export const enMessages = mergeMessageParts(
@@ -35,4 +36,5 @@ export const enMessages = mergeMessageParts(
   remoteAccessMessages,
   commandMessages,
   downloaderMessages,
+  tailscaleMessages,
 )

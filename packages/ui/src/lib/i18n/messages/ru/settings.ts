@@ -84,6 +84,7 @@ export const settingsMessages = {
   "settings.nav.notifications": "Уведомления",
   "settings.nav.remote": "Удалённый доступ",
   "settings.nav.speech": "Речь",
+  "settings.nav.tailscale": "Tailscale",
   "settings.nav.opencode": "OpenCode",
   "settings.scope.device": "Это устройство",
   "settings.scope.server": "Настройка сервера",

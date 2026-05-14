@@ -619,6 +619,16 @@ export class CliProcessManager extends EventEmitter {
       args.push("--ui-dev-server", devServer, "--log-level", logLevel)
     }
 
+    args.push("--tailscale")
+    const tsControlUrl = process.env.TS_CONTROL_URL
+    if (tsControlUrl) {
+      args.push("--tailscale-control-url", tsControlUrl)
+    }
+    const tsHostname = process.env.TS_HOSTNAME
+    if (tsHostname) {
+      args.push("--tailscale-hostname", tsHostname)
+    }
+
     return args
   }
 

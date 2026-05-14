@@ -31,6 +31,7 @@ import { registerSpeechRoutes } from "./routes/speech"
 import { registerRemoteServerRoutes } from "./routes/remote-servers"
 import { registerRemoteProxyRoutes } from "./routes/remote-proxy"
 import { registerSideCarRoutes } from "./routes/sidecars"
+import { registerTailscaleRoutes } from "./routes/tailscale"
 import { ServerMeta } from "../api-types"
 import { InstanceStore } from "../storage/instance-store"
 import { BackgroundProcessManager } from "../background-processes/manager"
@@ -43,6 +44,8 @@ import { PluginChannelManager } from "../plugins/channel"
 import { VoiceModeManager } from "../plugins/voice-mode"
 import type { SideCarManager } from "../sidecars/manager"
 import type { RemoteProxySessionManager } from "./remote-proxy"
+import type { TailscaleIntegration } from "./tailscale-integration"
+import { BinaryResolver } from "../settings/binaries"
 
 interface HttpServerDeps {
   bindHost: string
@@ -64,6 +67,8 @@ interface HttpServerDeps {
   pluginChannel: PluginChannelManager
   voiceModeManager: VoiceModeManager
   remoteProxySessionManager: RemoteProxySessionManager
+  tailscaleIntegration?: TailscaleIntegration
+  binaryResolver: BinaryResolver
   uiStaticDir: string
   uiDevServerUrl?: string
   logger: Logger
@@ -287,6 +292,7 @@ export function createHttpServer(deps: HttpServerDeps) {
   })
   registerRemoteServerRoutes(app, { logger: apiLogger })
   registerRemoteProxyRoutes(app, { logger: proxyLogger, sessionManager: deps.remoteProxySessionManager })
+  registerTailscaleRoutes(app, { logger: proxyLogger, tailscaleIntegration: deps.tailscaleIntegration })
   registerSpeechRoutes(app, { speechService: deps.speechService })
   registerSideCarRoutes(app, { sidecarManager: deps.sidecarManager })
   registerSideCarProxyRoutes(app, { sidecarManager: deps.sidecarManager, logger: proxyLogger })
