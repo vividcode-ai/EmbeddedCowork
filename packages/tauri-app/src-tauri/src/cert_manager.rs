@@ -346,7 +346,7 @@ fn macos_cert_is_trusted(cert_der: &[u8]) -> Result<bool, String> {
     let keychain_path = resolve_macos_user_keychain()?;
     let fingerprint = macos_cert_sha256(&temp_path)?;
     let find_output = Command::new("/usr/bin/security")
-        .args(["find-certificate", "-a", "-Z", "-c", "EmbeddedCowork Local CA"])
+        .args(["find-certificate", "-a", "-Z", "-c", "CodeNomad Local CA"])
         .arg(&keychain_path)
         .output()
         .map_err(|e| format!("Failed to query macOS keychain certificates: {e}"))?;

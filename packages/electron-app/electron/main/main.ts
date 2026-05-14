@@ -1,7 +1,6 @@
-import { app, BrowserWindow, Menu, nativeImage, session, shell, dialog } from "electron"
-import pkg from "electron-updater"
-const { autoUpdater } = pkg
-
+import { app, BrowserWindow, Menu, nativeImage, session, shell } from "electron"
+import http from "node:http"
+import https from "node:https"
 import { existsSync, mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { fileURLToPath } from "url"
@@ -42,24 +41,17 @@ function configureDevStoragePaths() {
 
 configureDevStoragePaths()
 
-process.stdout?.on("error", () => {})
-process.stderr?.on("error", () => {})
-
 const cliManager = new CliProcessManager()
 let loadingWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let currentCliUrl: string | null = null
 let pendingCliUrl: string | null = null
+let pendingBootstrapToken: string | null = null
 const remoteWindowOrigins = new Map<number, Set<string>>()
 const insecureWindowOrigins = new Map<number, Set<string>>()
 
 if (isMac) {
   app.commandLine.appendSwitch("disable-spell-checking")
-}
-
-const gotTheLock = app.requestSingleInstanceLock()
-if (!gotTheLock) {
-  app.quit()
 }
 
 function getIconPath() {
@@ -444,44 +436,141 @@ async function openRemoteWindow(payload: { id: string; name: string; baseUrl: st
   }
 }
 
+let bootstrapExchangeInFlight = false
+
+function extractCookieValue(setCookieHeader: string | string[] | undefined, name: string): string | null {
+  const raw = Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader
+  if (!raw) return null
+
+  const first = raw.split(";")[0] ?? ""
+  const index = first.indexOf("=")
+  if (index < 0) return null
+
+  const key = first.slice(0, index).trim()
+  const value = first.slice(index + 1).trim()
+  if (key !== name || !value) return null
+
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+async function exchangeBootstrapToken(baseUrl: string, token: string): Promise<boolean> {
+  const sessionCookieName = cliManager.getAuthCookieName()
+  const target = new URL("/api/auth/token", baseUrl)
+  const body = JSON.stringify({ token })
+
+  const transport = target.protocol === "https:" ? https : http
+
+  const result = await new Promise<{ statusCode: number; setCookie: string | string[] | undefined }>((resolve, reject) => {
+    const req = transport.request(
+      target,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(body),
+        },
+      },
+      (res) => {
+        res.resume()
+        resolve({ statusCode: res.statusCode ?? 0, setCookie: res.headers["set-cookie"] })
+      },
+    )
+
+    req.on("error", reject)
+    req.write(body)
+    req.end()
+  })
+
+  if (result.statusCode !== 200) {
+    return false
+  }
+
+  const sessionId = extractCookieValue(result.setCookie, sessionCookieName)
+  if (!sessionId) {
+    return false
+  }
+
+  await session.defaultSession.cookies.set({
+    url: baseUrl,
+    name: sessionCookieName,
+    value: sessionId,
+    httpOnly: true,
+    path: "/",
+    sameSite: "lax",
+  })
+
+  return true
+}
+
 async function startCli() {
-  const devMode = !app.isPackaged
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      console.info(`[cli] start requested (attempt ${attempt}/3, dev mode: ${devMode})`)
-      await cliManager.start({ dev: devMode })
-      return
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.error(`[cli] start failed (attempt ${attempt}/3):`, message)
-
-      if (attempt < 3) {
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-      } else {
-        console.warn("[cli] all external attempts failed, trying in-process fallback")
-        try {
-          await cliManager.start({ dev: devMode, inProcess: true })
-          return
-        } catch (inProcessError) {
-          const fallbackMsg = inProcessError instanceof Error ? inProcessError.message : String(inProcessError)
-          console.error("[cli] in-process fallback also failed:", fallbackMsg)
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send("cli:error", { message })
-          }
-        }
-      }
+  try {
+    // In desktop dev workflows we always want the CLI to run in dev mode so it:
+    // - uses plain HTTP
+    // - proxies UI requests to the renderer dev server
+    // Monaco's AMD assets are served from that dev server.
+    const devMode = !app.isPackaged
+    console.info("[cli] start requested (dev mode:", devMode, ")")
+    await cliManager.start({ dev: devMode })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("[cli] start failed:", message)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cli:error", { message })
     }
   }
 }
+
+async function maybeExchangeAndNavigate(baseUrl: string) {
+  if (bootstrapExchangeInFlight) {
+    return
+  }
+
+  const token = pendingBootstrapToken
+  if (!token) {
+    startCliPreload(baseUrl)
+    return
+  }
+
+  bootstrapExchangeInFlight = true
+
+  try {
+    const ok = await exchangeBootstrapToken(baseUrl, token)
+    pendingBootstrapToken = null
+
+    if (!ok) {
+      startCliPreload(`${baseUrl}/login`)
+      return
+    }
+
+    startCliPreload(baseUrl)
+  } catch (error) {
+    console.error("[cli] bootstrap token exchange failed:", error)
+    pendingBootstrapToken = null
+    startCliPreload(`${baseUrl}/login`)
+  } finally {
+    bootstrapExchangeInFlight = false
+  }
+}
+
+cliManager.on("bootstrapToken", (token) => {
+  pendingBootstrapToken = token
+
+  const status = cliManager.getStatus()
+  if (status.url) {
+    void maybeExchangeAndNavigate(status.url)
+  }
+})
 
 cliManager.on("ready", (status) => {
   if (!status.url) {
     return
   }
 
-  startCliPreload(status.url)
-  autoUpdater.checkForUpdates()
+  void maybeExchangeAndNavigate(status.url)
 })
 
 cliManager.on("status", (status) => {
@@ -502,9 +591,6 @@ app.whenReady().then(() => {
   } catch {
     // ignore
   }
-
-  autoUpdater.autoDownload = false
-  autoUpdater.autoInstallOnAppQuit = true
 
   createLoadingWindow()
   createMainWindow()
@@ -547,58 +633,6 @@ app.whenReady().then(() => {
       createLoadingWindow()
     }
   })
-
-  app.on("second-instance", () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.focus()
-    }
-  })
-})
-
-autoUpdater.on("update-available", (info) => {
-  const btnIdx = dialog.showMessageBoxSync(mainWindow!, {
-    type: "info",
-    title: "更新可用",
-    message: `EmbeddedCowork v${info.version} 可用`,
-    detail: "是否下载并安装？",
-    buttons: ["下载", "稍后"],
-    defaultId: 0,
-    cancelId: 1,
-  })
-  if (btnIdx === 0) autoUpdater.downloadUpdate()
-})
-
-autoUpdater.on("update-not-available", () => {
-})
-
-autoUpdater.on("download-progress", (progress) => {
-  const pct = Math.round(progress.percent)
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setProgressBar(progress.percent / 100)
-    mainWindow.webContents.send("update:progress", pct)
-  }
-})
-
-autoUpdater.on("update-downloaded", () => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setProgressBar(-1)
-  }
-
-  const btnIdx = dialog.showMessageBoxSync(mainWindow!, {
-    type: "info",
-    title: "更新已下载",
-    message: "新版本已就绪",
-    detail: "重启应用以完成安装。",
-    buttons: ["立即重启", "稍后"],
-    defaultId: 0,
-    cancelId: 1,
-  })
-  if (btnIdx === 0) setImmediate(() => autoUpdater.quitAndInstall())
-})
-
-autoUpdater.on("error", (error) => {
-  console.error("[autoUpdater]", error.message)
 })
 
 app.on("before-quit", async (event) => {

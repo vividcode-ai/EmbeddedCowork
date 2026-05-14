@@ -212,7 +212,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage packages/electron-app/release/latest-mac.yml; do
+          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
             [ -f "$file" ] || continue
             echo "Uploading $file"
             gh release upload "$TAG" "$file" --clobber
@@ -263,7 +263,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
-          Get-ChildItem -Path "packages/electron-app/release/*" -Include "*.zip", "*.exe", "*.exe.blockmap", "latest.yml" -File | ForEach-Object {
+          Get-ChildItem -Path "packages/electron-app/release" -Filter *.zip -File | ForEach-Object {
             Write-Host "Uploading $($_.FullName)"
             gh release upload $env:TAG $_.FullName --clobber
           }
@@ -313,7 +313,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage packages/electron-app/release/latest-linux.yml; do
+          for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
             [ -f "$file" ] || continue
             echo "Uploading $file"
             gh release upload "$TAG" "$file" --clobber
@@ -620,11 +620,7 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libsoup-3.0-dev \
             libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libfuse2t64 \
-            desktop-file-utils \
-            zsync \
-            patchelf
+            librsvg2-dev
 
       - name: Set workspace versions
         if: ${{ inputs.set_versions && inputs.version != '' }}
@@ -639,8 +635,6 @@ jobs:
       - name: Prebuild (Tauri)
         run: npm run prebuild --workspace @embeddedcowork/tauri-app
 
-      # Tauri CLI >=2.10 regresses Linux AppImage bundling in CI;
-      # keep Linux on the last known-good CLI.
       - name: Ensure tauri native binary
         working-directory: packages/tauri-app
         run: |
@@ -649,6 +643,7 @@ jobs:
             if [ "$attempt" -gt 1 ]; then
               echo "Retrying Tauri CLI install (attempt $attempt)..."
             fi
+            # Tauri CLI 2.10.1 regresses Linux AppImage bundling in CI; keep Linux on the last known-good CLI.
             npm install @tauri-apps/cli@2.9.4 @tauri-apps/cli-linux-x64-gnu@2.9.4 --no-save --no-audit --no-fund --workspaces=false
             node -e "require('@tauri-apps/cli'); console.log('Tauri CLI loaded')" && exit 0
           done
@@ -657,7 +652,7 @@ jobs:
 
       - name: Build Linux bundle (Tauri)
         working-directory: packages/tauri-app
-        run: npm exec -- tauri build --verbose
+        run: npm exec -- tauri build
 
       - name: Package Tauri artifacts (Linux)
         if: ${{ inputs.upload || inputs.upload_actions_artifacts }}

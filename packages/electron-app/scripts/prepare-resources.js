@@ -199,27 +199,6 @@ async function main() {
   ensureStandaloneServerBuild()
   ensureServerDependencies()
   ensureEsbuildPlatformBinary()
-  // Build Node.js bundle for in-process Electron server
-  {
-    log("building Node.js bundle for in-process server usage")
-    const result = spawnSync(
-      "npm",
-      ["run", "build:node", "--workspace", "@vividcodeai/embeddedcowork"],
-      {
-        cwd: workspaceRoot,
-        stdio: "inherit",
-        env: {
-          ...process.env,
-          PATH: `${join(workspaceRoot, "node_modules", ".bin")}${path.delimiter}${process.env.PATH ?? ""}`,
-        },
-        shell: process.platform === "win32",
-      },
-    )
-    if (result.status !== 0) {
-      throw new Error(`build:node exited with code ${result.status ?? 1}`)
-    }
-    log("Node.js bundle built")
-  }
   copyServerArtifacts()
   stripNodeModuleBins()
 }

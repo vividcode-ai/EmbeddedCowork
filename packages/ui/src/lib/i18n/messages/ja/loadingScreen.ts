@@ -2,7 +2,6 @@ export const loadingScreenMessages = {
   "loadingScreen.logoAlt": "EmbeddedCowork ロゴ",
   "loadingScreen.status.issue": "問題が発生しました",
   "loadingScreen.actions.showAnother": "別のメッセージを表示",
-  "loadingScreen.actions.retry": "再試行",
   "loadingScreen.errors.missingRoot": "読み込み用のルート要素が見つかりません",
 
   "loadingScreen.phrases.neurons": "AI のニューロンをウォームアップ中…",

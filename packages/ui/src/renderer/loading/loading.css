@@ -109,26 +109,6 @@ button {
   font-size: 0.95rem;
 }
 
-.loading-retry {
-  margin-top: 14px;
-  padding: 8px 22px;
-  border-radius: 10px;
-  background: var(--accent-primary, #0066ff);
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.loading-retry:hover {
-  opacity: 0.85;
-}
-
-.loading-retry:active {
-  opacity: 0.7;
-}
-
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;

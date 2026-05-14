@@ -1,18 +1,21 @@
 import { spawn, spawnSync, type ChildProcess } from "child_process"
-import { createServer as createNetServer } from "net"
 import { app, utilityProcess, type UtilityProcess } from "electron"
 import { createRequire } from "module"
 import { EventEmitter } from "events"
-import { existsSync, mkdirSync, readFileSync } from "fs"
+import { existsSync, mkdirSync, readFileSync, chmodSync } from "fs"
 import os from "os"
 import path from "path"
 import { fileURLToPath } from "url"
 import { parse as parseYaml } from "yaml"
 import { buildUserShellCommand, getUserShellEnv, supportsUserShell } from "./user-shell"
+import { downloadFileWithRetry } from "../../../server/src/download-utils.ts"
 
 const nodeRequire = createRequire(import.meta.url)
 const mainFilename = fileURLToPath(import.meta.url)
 const mainDirname = path.dirname(mainFilename)
+
+const BOOTSTRAP_TOKEN_PREFIX = "EMBEDDEDCOWORK_BOOTSTRAP_TOKEN:"
+const SESSION_COOKIE_NAME_PREFIX = "embeddedcowork_session"
 
 type CliState = "starting" | "ready" | "error" | "stopped"
 type ListeningMode = "local" | "all"
@@ -25,9 +28,13 @@ export interface CliStatus {
   error?: string
 }
 
+export interface CliLogEntry {
+  stream: "stdout" | "stderr"
+  message: string
+}
+
 interface StartOptions {
   dev: boolean
-  inProcess?: boolean
 }
 
 interface CliEntryResolution {
@@ -111,37 +118,37 @@ function readListeningModeFromConfig(): ListeningMode {
 export declare interface CliProcessManager {
   on(event: "status", listener: (status: CliStatus) => void): this
   on(event: "ready", listener: (status: CliStatus) => void): this
+  on(event: "bootstrapToken", listener: (token: string) => void): this
+  on(event: "log", listener: (entry: CliLogEntry) => void): this
   on(event: "exit", listener: (status: CliStatus) => void): this
   on(event: "error", listener: (error: Error) => void): this
 }
-
-const MAX_CAPTURED_LINES = 50
 
 export class CliProcessManager extends EventEmitter {
   private child?: ManagedChild
   private childLaunchMode: ChildLaunchMode = "spawn"
   private status: CliStatus = { state: "stopped" }
+  private stdoutBuffer = ""
+  private stderrBuffer = ""
+  private bootstrapToken: string | null = null
+  private authCookieName = `${SESSION_COOKIE_NAME_PREFIX}_${process.pid}_${Date.now()}`
   private requestedStop = false
-  private capturedOutput: string[] = []
 
   async start(options: StartOptions): Promise<CliStatus> {
     if (this.child) {
       await this.stop()
     }
 
+    this.stdoutBuffer = ""
+    this.stderrBuffer = ""
+    this.bootstrapToken = null
+    this.authCookieName = `${SESSION_COOKIE_NAME_PREFIX}_${process.pid}_${Date.now()}`
     this.requestedStop = false
-    this.capturedOutput = []
     this.updateStatus({ state: "starting", port: undefined, pid: undefined, url: undefined, error: undefined })
-
-    if (options.inProcess) {
-      return this.startInProcess(options)
-    }
 
     const listeningMode = this.resolveListeningMode()
     const host = resolveHostForMode(listeningMode)
-    const port = await this.findFreePort()
-    const password = this.generatePassword()
-    const args = this.buildCliArgs(options, host, port, password)
+    const args = this.buildCliArgs(options, host)
     const cliEntry = this.resolveCliEntry(options)
 
     let child: ManagedChild
@@ -207,33 +214,12 @@ export class CliProcessManager extends EventEmitter {
     this.child = child
     this.updateStatus({ pid: child.pid ?? undefined })
 
-    const baseUrl = `http://127.0.0.1:${port}`
     child.stdout?.on("data", (data: Buffer) => {
-      const raw = data.toString()
-      const lines = raw.split("\n").filter((l) => l.trim())
-      this.captureOutput(raw)
-      for (const line of lines) {
-        console.info(`[cli][stdout] ${line.trim()}`)
-      }
-    })
-    child.stdout?.on("error", (err) => {
-      if ((err as NodeJS.ErrnoException).code !== "EPIPE") {
-        console.error("[cli] stdout stream error:", err)
-      }
+      this.handleStream(data.toString(), "stdout")
     })
 
     child.stderr?.on("data", (data: Buffer) => {
-      const raw = data.toString()
-      const lines = raw.split("\n").filter((l) => l.trim())
-      this.captureOutput(raw)
-      for (const line of lines) {
-        console.info(`[cli][stderr] ${line.trim()}`)
-      }
-    })
-    child.stderr?.on("error", (err) => {
-      if ((err as NodeJS.ErrnoException).code !== "EPIPE") {
-        console.error("[cli] stderr stream error:", err)
-      }
+      this.handleStream(data.toString(), "stderr")
     })
 
     if (this.childLaunchMode === "utility") {
@@ -248,7 +234,7 @@ export class CliProcessManager extends EventEmitter {
 
       utilityChild.on("exit", (code) => {
         const failed = this.status.state !== "ready"
-        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${this.formatLastOutput()}` : undefined
+        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}` : undefined
         console.info(`[cli] exit (code=${code ?? ""})${error ? ` error=${error}` : ""}`)
         this.updateStatus({ state: failed ? "error" : "stopped", error })
         if (failed && error) {
@@ -268,7 +254,7 @@ export class CliProcessManager extends EventEmitter {
 
       spawnedChild.on("exit", (code, signal) => {
         const failed = this.status.state !== "ready"
-        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${signal ? ` (${signal})` : ""}${this.formatLastOutput()}` : undefined
+        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${signal ? ` (${signal})` : ""}` : undefined
         console.info(`[cli] exit (code=${code}, signal=${signal || ""})${error ? ` error=${error}` : ""}`)
         this.updateStatus({ state: failed ? "error" : "stopped", error })
         if (failed && error) {
@@ -279,19 +265,6 @@ export class CliProcessManager extends EventEmitter {
       })
     }
 
-    // Health check + login in background
-    this.healthCheckAndLogin(baseUrl, password).then((ok) => {
-      if (ok) {
-        console.info(`[cli] ready on ${baseUrl}`)
-        this.updateStatus({ state: "ready", port, url: baseUrl })
-        this.emit("ready", this.status)
-      } else {
-        console.warn(`[cli] health check failed, navigating to login page`)
-        this.updateStatus({ state: "ready", port, url: baseUrl })
-        this.emit("ready", this.status)
-      }
-    })
-
     return new Promise<CliStatus>((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.handleTimeout()
@@ -300,6 +273,8 @@ export class CliProcessManager extends EventEmitter {
 
       this.once("ready", (status) => {
         clearTimeout(timeout)
+        // 后台静默检查 GitHub 更新
+        this.checkAndDownloadUpdate().catch(() => {})
         resolve(status)
       })
 
@@ -313,13 +288,6 @@ export class CliProcessManager extends EventEmitter {
   async stop(): Promise<void> {
     const child = this.child
     if (!child) {
-      // In-process mode or already stopped
-      try {
-        const { stopServer } = await import("./server")
-        await stopServer()
-      } catch {
-        // not running in-process, ignore
-      }
       this.updateStatus({ state: "stopped" })
       return
     }
@@ -479,6 +447,10 @@ export class CliProcessManager extends EventEmitter {
     return { ...this.status }
   }
 
+  getAuthCookieName(): string {
+    return this.authCookieName
+  }
+
   private resolveListeningMode(): ListeningMode {
     return readListeningModeFromConfig()
   }
@@ -509,28 +481,90 @@ export class CliProcessManager extends EventEmitter {
     this.emit("error", new Error("CLI did not start in time"))
   }
 
+  private handleStream(chunk: string, stream: "stdout" | "stderr") {
+    if (stream === "stdout") {
+      this.stdoutBuffer += chunk
+      this.processBuffer("stdout")
+    } else {
+      this.stderrBuffer += chunk
+      this.processBuffer("stderr")
+    }
+  }
+
+  private processBuffer(stream: "stdout" | "stderr") {
+    const buffer = stream === "stdout" ? this.stdoutBuffer : this.stderrBuffer
+    const lines = buffer.split("\n")
+    const trailing = lines.pop() ?? ""
+
+    if (stream === "stdout") {
+      this.stdoutBuffer = trailing
+    } else {
+      this.stderrBuffer = trailing
+    }
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+
+      if (trimmed.startsWith(BOOTSTRAP_TOKEN_PREFIX)) {
+        const token = trimmed.slice(BOOTSTRAP_TOKEN_PREFIX.length).trim()
+        if (token && !this.bootstrapToken) {
+          this.bootstrapToken = token
+          this.emit("bootstrapToken", token)
+        }
+        continue
+      }
+
+      console.info(`[cli][${stream}] ${trimmed}`)
+      this.emit("log", { stream, message: trimmed })
+
+      const localUrl = this.extractLocalUrl(trimmed)
+      if (localUrl && this.status.state === "starting") {
+        let port: number | undefined
+        try {
+          port = Number(new URL(localUrl).port) || undefined
+        } catch {
+          port = undefined
+        }
+        console.info(`[cli] ready on ${localUrl}`)
+        this.updateStatus({ state: "ready", port, url: localUrl })
+        this.emit("ready", this.status)
+      }
+    }
+  }
+
+  private extractLocalUrl(line: string): string | null {
+    const match = line.match(/^Local\s+Connection\s+URL\s*:\s*(https?:\/\/\S+)\s*$/i)
+    if (!match) {
+      return null
+    }
+    return match[1] ?? null
+  }
+
   private updateStatus(patch: Partial<CliStatus>) {
     this.status = { ...this.status, ...patch }
     this.emit("status", this.status)
   }
 
-  private buildCliArgs(options: StartOptions, host: string, port: number, password: string): string[] {
-    const args = [
-      "serve", "--host", host,
-      "--password", password,
-      "--http-port", String(port),
-      "--http", "true",
-      "--unrestricted-root",
-    ]
+  private buildCliArgs(options: StartOptions, host: string): string[] {
+    const args = ["serve", "--host", host, "--generate-token", "--auth-cookie-name", this.authCookieName, "--unrestricted-root"]
 
     if (options.dev) {
-      args.push("--https", "false")
+      // Dev: run plain HTTP + Vite dev server proxy.
+      args.push("--https", "false", "--http", "true")
+      // Avoid collisions with an already-running server (and dual-stack ::/0.0.0.0 quirks)
+      // by forcing an ephemeral port in dev.
+      args.push("--http-port", "0")
+    } else {
+      // Prod desktop: always keep loopback HTTP enabled.
+      args.push("--https", "true", "--http", "true")
+    }
+
+    if (options.dev) {
       const devServer = process.env.VITE_DEV_SERVER_URL || process.env.ELECTRON_RENDERER_URL || "http://localhost:3000"
       const rawLogLevel = (process.env.CLI_LOG_LEVEL ?? "info").trim()
       const logLevel = rawLogLevel.length > 0 ? rawLogLevel.toLowerCase() : "info"
       args.push("--ui-dev-server", devServer, "--log-level", logLevel)
-    } else {
-      args.push("--https", "false")
     }
 
     return args
@@ -690,120 +724,6 @@ export class CliProcessManager extends EventEmitter {
     throw new Error("Unable to locate EmbeddedCowork CLI supervisor script.")
   }
 
-  private async startInProcess(options: StartOptions): Promise<CliStatus> {
-    try {
-      const port = await this.findFreePort()
-      const password = this.generatePassword()
-      const baseUrl = `http://127.0.0.1:${port}`
-
-      console.info(`[cli] starting in-process server on ${baseUrl}`)
-      const { startInProcessServer } = await import("./server")
-      const handle = await startInProcessServer({ port, password, logLevel: options.dev ? "info" : "warn" })
-
-      this.updateStatus({ state: "ready", port, url: baseUrl })
-      this.emit("ready", this.status)
-
-      return this.status
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.error("[cli] in-process server start failed:", message)
-      this.updateStatus({ state: "error", error: message })
-      this.emit("error", error instanceof Error ? error : new Error(message))
-      throw error
-    }
-  }
-
-  private async findFreePort(): Promise<number> {
-    return new Promise((resolve, reject) => {
-      const server = createNetServer()
-      server.listen(0, "127.0.0.1", () => {
-        const address = server.address()
-        if (address && typeof address === "object") {
-          const port = address.port
-          server.close(() => resolve(port))
-        } else {
-          server.close(() => reject(new Error("Failed to get port")))
-        }
-      })
-      server.on("error", reject)
-    })
-  }
-
-  private generatePassword(): string {
-    return `${Date.now().toString(16)}_${process.pid.toString(16)}`
-  }
-
-  private async healthCheckAndLogin(baseUrl: string, password: string): Promise<boolean> {
-    const healthUrl = `${baseUrl}/api/health`
-    const loginUrl = `${baseUrl}/api/auth/login`
-    const startTime = Date.now()
-    const timeout = 60000
-
-    while (Date.now() - startTime < timeout) {
-      try {
-        const healthResp = await fetch(healthUrl)
-        if (!healthResp.ok) {
-          await this.sleep(200)
-          continue
-        }
-
-        const loginResp = await fetch(loginUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: "embeddedcowork", password }),
-        })
-
-        if (!loginResp.ok) {
-          console.warn(`[cli] login returned ${loginResp.status}`)
-          return false
-        }
-
-        const setCookieHeader = loginResp.headers.get("set-cookie")
-        if (setCookieHeader) {
-          const cookieParts = setCookieHeader.split(";")[0].trim()
-          const eqIdx = cookieParts.indexOf("=")
-          if (eqIdx > 0) {
-            const name = cookieParts.slice(0, eqIdx).trim()
-            const value = cookieParts.slice(eqIdx + 1).trim()
-            const { session } = await import("electron")
-            await session.defaultSession.cookies.set({
-              url: baseUrl,
-              name,
-              value,
-              httpOnly: true,
-              path: "/",
-              sameSite: "lax" as const,
-            })
-          }
-        }
-
-        return true
-      } catch (error) {
-        await this.sleep(200)
-      }
-    }
-
-    return false
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
-  private captureOutput(text: string) {
-    if (this.capturedOutput.length >= MAX_CAPTURED_LINES) {
-      this.capturedOutput.shift()
-    }
-    this.capturedOutput.push(text)
-  }
-
-  private formatLastOutput(): string {
-    if (this.capturedOutput.length === 0) return ""
-    const tail = this.capturedOutput.slice(-20).join("").trim()
-    if (tail.length === 0) return ""
-    return `\nLast output:\n${tail.slice(0, 2000)}`
-  }
-
   private describeUtilityProcessError(error: unknown): string {
     if (error instanceof Error && error.message) {
       return error.message
@@ -819,4 +739,61 @@ export class CliProcessManager extends EventEmitter {
     return String(error)
   }
 
+  private async checkAndDownloadUpdate(): Promise<void> {
+    try {
+      const currentVersion = app.getVersion()
+
+      const response = await fetch(
+        "https://api.github.com/repos/vividcode-ai/EmbeddedCowork/releases/latest",
+        { headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "EmbeddedCowork" } },
+      )
+      if (!response.ok) return
+      const data = (await response.json()) as { tag_name: string }
+      const latestTag = data.tag_name
+      const latestVersion = latestTag.startsWith("v") ? latestTag.slice(1) : latestTag
+
+      if (this.compareVersions(latestVersion, currentVersion) <= 0) return
+
+      const platform = this.getPlatformKey()
+      if (!platform) return
+      const ext = process.platform === "win32" ? ".exe" : ""
+      const assetName = `embeddedcowork-server-${latestVersion}-${platform}${ext}`
+      const downloadUrl = `https://github.com/vividcode-ai/EmbeddedCowork/releases/download/${latestTag}/${assetName}`
+
+      const binDir = path.join(os.homedir(), ".embeddedcowork", "bin")
+      const binaryName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
+      const targetPath = path.join(binDir, binaryName)
+
+      mkdirSync(binDir, { recursive: true })
+
+      await downloadFileWithRetry(downloadUrl, targetPath, { retries: 5 })
+
+      if (process.platform !== "win32") {
+        chmodSync(targetPath, 0o755)
+      }
+
+      console.info(`[cli] server updated to v${latestVersion} → ${targetPath}`)
+    } catch {
+      // 静默失败，不影响正在运行的 server
+    }
+  }
+
+  private compareVersions(a: string, b: string): number {
+    const pa = a.split(".").map(Number)
+    const pb = b.split(".").map(Number)
+    for (let i = 0; i < 3; i++) {
+      const diff = (pa[i] ?? 0) - (pb[i] ?? 0)
+      if (diff !== 0) return diff
+    }
+    return 0
+  }
+
+  private getPlatformKey(): string {
+    const map: Record<string, Record<string, string>> = {
+      darwin: { x64: "darwin-x64", arm64: "darwin-arm64" },
+      win32: { x64: "win32-x64" },
+      linux: { x64: "linux-x64" },
+    }
+    return map[process.platform]?.[process.arch] ?? ""
+  }
 }

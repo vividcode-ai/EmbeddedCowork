@@ -37,25 +37,7 @@ function prepareMonacoPublicAssets() {
 
 export default defineConfig({
   main: {
-    plugins: [
-      externalizeDepsPlugin(),
-      {
-        name: "embeddedcowork-server-virtual",
-        resolveId(source: string) {
-          if (source === "virtual:embeddedcowork-server") {
-            return "\0virtual:embeddedcowork-server"
-          }
-          return undefined
-        },
-        load(id: string) {
-          if (id === "\0virtual:embeddedcowork-server") {
-            const serverEntry = resolve(__dirname, "../server/dist/node/node-entry.mjs")
-            return `export { startServer } from ${JSON.stringify(serverEntry)}`
-          }
-          return undefined
-        },
-      },
-    ],
+    plugins: [externalizeDepsPlugin()],
     build: {
       outDir: "dist/main",
       lib: {

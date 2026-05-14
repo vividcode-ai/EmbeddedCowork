@@ -2,7 +2,6 @@ export const loadingScreenMessages = {
   "loadingScreen.logoAlt": "EmbeddedCowork logo",
   "loadingScreen.status.issue": "Encountered an issue",
   "loadingScreen.actions.showAnother": "Show another",
-  "loadingScreen.actions.retry": "Retry",
   "loadingScreen.errors.missingRoot": "Loading root element not found",
 
   "loadingScreen.phrases.neurons": "Warming up the AI neurons…",

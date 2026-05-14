@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork-darwin-arm64",
-  "version": "0.0.18",
+  "version": "0.0.10",
   "description": "Prebuilt binary for macOS Apple Silicon (ARM64) - EmbeddedCowork Server",
   "license": "MIT",
   "author": {

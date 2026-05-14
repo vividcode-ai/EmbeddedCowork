@@ -52,10 +52,6 @@ function getTokenHtml(): string {
 }
 
 export function registerAuthRoutes(app: FastifyInstance, deps: RouteDeps) {
-  app.get("/api/health", async (_request, reply) => {
-    reply.send({ status: "ok" })
-  })
-
   app.get("/login", async (request, reply) => {
     // If already authenticated, don't show the login page.
     const session = deps.authManager.getSessionFromRequest(request)

@@ -25,15 +25,8 @@ function clearShutdownTimer() {
 function forwardStream(stream, target) {
   if (!stream) return
   stream.on("data", (chunk) => {
-    try {
-      target.write(chunk)
-    } catch (error) {
-      if (error.code !== "EPIPE") {
-        console.error(`[cli-supervisor] write error:`, error)
-      }
-    }
+    target.write(chunk)
   })
-  stream.on("error", () => {})
 }
 
 function terminateChild(force) {

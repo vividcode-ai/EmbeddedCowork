@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork",
-  "version": "0.0.18",
+  "version": "0.0.10",
   "description": "EmbeddedCowork Server",
   "license": "MIT",
   "author": {
@@ -25,7 +25,6 @@
     "build": "npm run build:ui && npm run prepare-ui && tsc -p tsconfig.json && node ./scripts/copy-auth-pages.mjs && npm run prepare-config",
     "build:standalone": "node ./scripts/build-standalone.mjs",
     "build:platforms": "node ./scripts/build-platforms.mjs",
-    "build:node": "node ./scripts/build-node.mjs",
     "build:ui": "npm run build --prefix ../ui",
     "prepare-ui": "node ./scripts/copy-ui-dist.mjs",
     "prepare-config": "node ./scripts/copy-opencode-config.mjs",

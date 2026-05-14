@@ -2,9 +2,8 @@ import { Show, createSignal, onCleanup, onMount } from "solid-js"
 import { render } from "solid-js/web"
 import iconUrl from "../../images/EmbeddedCowork-Icon.png"
 import { tGlobal } from "../../lib/i18n"
-import { runtimeEnv, isTauriHost, isDesktopHost } from "../../lib/runtime-env"
+import { runtimeEnv, isTauriHost } from "../../lib/runtime-env"
 import { preloadLocaleMessages } from "../../lib/i18n"
-import { restartCli } from "../../lib/native/cli"
 import "../../index.css"
 import "./loading.css"
 
@@ -53,17 +52,8 @@ function LoadingApp() {
   const [phraseKey, setPhraseKey] = createSignal<PhraseKey>(pickPhraseKey())
   const [error, setError] = createSignal<string | null>(null)
   const [statusKey, setStatusKey] = createSignal<string | null>(null)
-  const [retrying, setRetrying] = createSignal(false)
 
   const changePhrase = () => setPhraseKey(pickPhraseKey(phraseKey()))
-
-  const handleRetry = async () => {
-    setRetrying(true)
-    setError(null)
-    setStatusKey(null)
-    await restartCli()
-    setRetrying(false)
-  }
 
   onMount(() => {
     annotateDocument()
@@ -121,53 +111,8 @@ function LoadingApp() {
       }
     }
 
-    function bootstrapElectron() {
-      const api = (window as Window & { electronAPI?: ElectronAPI }).electronAPI
-      if (!api?.onCliError) return
-
-      const unsubError = api.onCliError((data: unknown) => {
-        const payload = (data as CliStatus) || {}
-        if (payload.error) {
-          setError(payload.error)
-          setStatusKey("loadingScreen.status.issue")
-        }
-      })
-      unsubscribers.push(unsubError)
-
-      if (api.onCliStatus) {
-        const unsubStatus = api.onCliStatus((data: unknown) => {
-          const payload = (data as CliStatus) || {}
-          if (payload.state === "error" && payload.error) {
-            setError(payload.error)
-            setStatusKey("loadingScreen.status.issue")
-            return
-          }
-          if (payload.state && payload.state !== "ready") {
-            setError(null)
-            setStatusKey(null)
-          }
-        })
-        unsubscribers.push(unsubStatus)
-      }
-
-      if (api.getCliStatus) {
-        api.getCliStatus().then((data: unknown) => {
-          const status = data as CliStatus
-          if (status?.state === "error" && status?.error) {
-            setError(status.error)
-            setStatusKey("loadingScreen.status.issue")
-          }
-        }).catch((err: unknown) => {
-          setError(String(err))
-          setStatusKey("loadingScreen.status.issue")
-        })
-      }
-    }
-
     if (isTauriHost()) {
       void bootstrapTauri()
-    } else if (isDesktopHost()) {
-      bootstrapElectron()
     }
 
     onCleanup(() => {
@@ -197,11 +142,6 @@ function LoadingApp() {
           <span>{tGlobal(phraseKey())}</span>
         </div>
         {error() && <div class="loading-error">{error()}</div>}
-        {error() && !retrying() && (
-          <button class="loading-retry" onClick={handleRetry}>
-            {tGlobal("loadingScreen.actions.retry")}
-          </button>
-        )}
       </div>
     </div>
   )

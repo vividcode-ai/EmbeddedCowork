@@ -2,7 +2,6 @@ export const loadingScreenMessages = {
   "loadingScreen.logoAlt": "Logo de EmbeddedCowork",
   "loadingScreen.status.issue": "Se produjo un problema",
   "loadingScreen.actions.showAnother": "Mostrar otra",
-  "loadingScreen.actions.retry": "Reintentar",
   "loadingScreen.errors.missingRoot": "No se encontró el elemento raíz de carga",
 
   "loadingScreen.phrases.neurons": "Calentando las neuronas de la IA…",
