@@ -306,39 +306,6 @@ function copyUiLoadingAssets() {
   console.log(`[prebuild] prepared UI loading assets from ${uiDist}`)
 }
 
-const RUST_TARGETS = {
-  "win32-x64": "x86_64-pc-windows-msvc",
-  "win32-arm64": "aarch64-pc-windows-msvc",
-  "darwin-x64": "x86_64-apple-darwin",
-  "darwin-arm64": "aarch64-apple-darwin",
-  "linux-x64": "x86_64-unknown-linux-gnu",
-  "linux-arm64": "aarch64-unknown-linux-gnu",
-}
-
-function copySidecarBinary() {
-  const platformKey = `${process.platform}-${process.arch}`
-  const targetTriple = RUST_TARGETS[platformKey]
-  if (!targetTriple) {
-    console.warn(`[prebuild] unknown platform ${platformKey}; skipping sidecar copy`)
-    return
-  }
-
-  const ext = process.platform === "win32" ? ".exe" : ""
-  const binaryName = `embeddedcowork-server${ext}`
-  const sidecarName = `embeddedcowork-server-${targetTriple}${ext}`
-  const source = path.join(serverRoot, "dist", binaryName)
-  const sidecarsDir = path.resolve(root, "src-tauri", "sidecars")
-  const dest = path.join(sidecarsDir, sidecarName)
-
-  if (!fs.existsSync(source)) {
-    throw new Error(`[prebuild] standalone binary not found at ${source}`)
-  }
-
-  fs.mkdirSync(sidecarsDir, { recursive: true })
-  fs.cpSync(source, dest, { force: true })
-  console.log(`[prebuild] copied sidecar: ${source} -> ${dest}`)
-}
-
 ;(async () => {
   ensureServerDevDependencies()
   ensureUiDevDependencies()
@@ -347,7 +314,6 @@ function copySidecarBinary() {
   ensureEsbuildPlatformBinary()
   ensureServerBuild()
   ensureStandaloneServerBuild()
-  copySidecarBinary()
   ensureServerDependencies()
   ensureUiBuild()
   syncServerUiBundle()

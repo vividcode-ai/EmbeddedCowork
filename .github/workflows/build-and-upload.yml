@@ -639,22 +639,25 @@ jobs:
       - name: Prebuild (Tauri)
         run: npm run prebuild --workspace @embeddedcowork/tauri-app
 
-      # Fixes AppImage build issues, can be removed when https://github.com/tauri-apps/tauri/pull/12491 is released
-      - name: Resolve tauri portable SHA
-        run: echo "TAURI_PORTABLE_SHA=$(git ls-remote https://github.com/tauri-apps/tauri.git refs/heads/feat/truly-portable-appimage | cut -f1)" >> "$GITHUB_ENV"
-
-      - name: Install tauri-cli from portable appimage branch
-        uses: taiki-e/cache-cargo-install-action@v3
-        with:
-          tool: tauri-cli
-          git: https://github.com/tauri-apps/tauri
-          rev: ${{ env.TAURI_PORTABLE_SHA }}
+      # Tauri CLI >=2.10 regresses Linux AppImage bundling in CI;
+      # keep Linux on the last known-good CLI.
+      - name: Ensure tauri native binary
+        working-directory: packages/tauri-app
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if [ "$attempt" -gt 1 ]; then
+              echo "Retrying Tauri CLI install (attempt $attempt)..."
+            fi
+            npm install @tauri-apps/cli@2.9.4 @tauri-apps/cli-linux-x64-gnu@2.9.4 --no-save --no-audit --no-fund --workspaces=false
+            node -e "require('@tauri-apps/cli'); console.log('Tauri CLI loaded')" && exit 0
+          done
+          echo "Tauri CLI failed to load after retries" >&2
+          exit 1
 
       - name: Build Linux bundle (Tauri)
         working-directory: packages/tauri-app
-        env:
-          TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: true
-        run: cargo tauri build --verbose
+        run: npm exec -- tauri build --verbose
 
       - name: Package Tauri artifacts (Linux)
         if: ${{ inputs.upload || inputs.upload_actions_artifacts }}

@@ -1165,25 +1165,35 @@ fn resolve_standalone_entry(_app: &AppHandle) -> Option<String> {
         "embeddedcowork-server"
     };
 
-    // Production sidecar: externalBin places the binary next to the app executable
+    let mut candidates: Vec<Option<std::path::PathBuf>> = Vec::new();
+
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            let sidecar_path = dir.join(&executable_name);
-            if sidecar_path.exists() {
-                return Some(normalize_path(sidecar_path));
-            }
-
-            // macOS: sidecar may be in ../Resources/ alongside the .app bundle
+            // macOS: binary bundled in ../Resources/server/dist/
             let resources = dir.join("../Resources");
-            let resources_sidecar = resources.join(&executable_name);
-            if resources_sidecar.exists() {
-                return Some(normalize_path(resources_sidecar));
-            }
+            candidates.push(Some(resources.join("server/dist").join(&executable_name)));
+            candidates.push(Some(
+                resources
+                    .join("resources/server/dist")
+                    .join(&executable_name),
+            ));
 
-            // Fallback: check the old resources/server/dist path
-            let legacy = dir.join("resources/server/dist").join(&executable_name);
-            if legacy.exists() {
-                return Some(normalize_path(legacy));
+            // Bundled resource: resources/server/dist/
+            candidates.push(Some(
+                dir.join("resources/server/dist").join(&executable_name),
+            ));
+
+            // Linux AppImage mount paths
+            let linux_resource_roots = [
+                dir.join("../lib/EmbeddedCowork"),
+                dir.join("../lib/embeddedcowork"),
+            ];
+            for root in linux_resource_roots {
+                candidates
+                    .push(Some(root.join("server/dist").join(&executable_name)));
+                candidates.push(Some(
+                    root.join("resources/server/dist").join(&executable_name),
+                ));
             }
         }
     }
@@ -1191,9 +1201,15 @@ fn resolve_standalone_entry(_app: &AppHandle) -> Option<String> {
     // Dev mode fallback: check workspace dist
     let base = workspace_root();
     if let Some(ws) = base {
-        let dev_path = ws.join("packages/server/dist").join(&executable_name);
-        if dev_path.exists() {
-            return Some(normalize_path(dev_path));
+        candidates
+            .push(Some(ws.join("packages/server/dist").join(&executable_name)));
+    }
+
+    for candidate in candidates {
+        if let Some(path) = candidate {
+            if path.exists() {
+                return Some(normalize_path(path));
+            }
         }
     }
 
