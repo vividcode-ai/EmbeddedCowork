@@ -118,6 +118,16 @@ function ensureServerDevDependencies() {
     return
   }
 
+  const hoistedPaths = [
+    path.join(workspaceRoot, "node_modules/typescript/package.json"),
+    path.join(workspaceRoot, "node_modules/@types/node-forge/package.json"),
+    path.join(workspaceRoot, "node_modules/@types/yauzl/package.json"),
+  ]
+  if (hoistedPaths.every((filePath) => fs.existsSync(filePath))) {
+    console.log("[prebuild] server dev dependencies found hoisted, skipping install")
+    return
+  }
+
   console.log("[prebuild] ensuring server build dependencies (with dev)...")
   execSync(serverDevInstallCommand, {
     cwd: workspaceRoot,
