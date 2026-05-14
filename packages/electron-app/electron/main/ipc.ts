@@ -17,7 +17,7 @@ interface DialogOpenResult {
   paths: string[]
 }
 
-export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessManager) {
+export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessManager, loadingWindow?: BrowserWindow | null) {
   cliManager.on("status", (status: CliStatus) => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send("cli:status", status)
@@ -31,9 +31,11 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
   })
 
   cliManager.on("error", (error: Error) => {
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("cli:error", { message: error.message })
-    }
+    ;[mainWindow, loadingWindow].forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send("cli:error", { message: error.message })
+      }
+    })
   })
 
   ipcMain.handle("cli:getStatus", async () => cliManager.getStatus())

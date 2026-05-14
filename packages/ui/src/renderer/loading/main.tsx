@@ -113,6 +113,40 @@ function LoadingApp() {
 
     if (isTauriHost()) {
       void bootstrapTauri()
+    } else {
+      const api = (window as Window & { electronAPI?: ElectronAPI }).electronAPI
+      if (api?.onCliError) {
+        unsubscribers.push(api.onCliError((data: unknown) => {
+          const payload = (data as CliStatus) || {}
+          if (payload.error) {
+            setError(payload.error)
+            setStatusKey("loadingScreen.status.issue")
+          }
+        }))
+      }
+      if (api?.onCliStatus) {
+        unsubscribers.push(api.onCliStatus((data: unknown) => {
+          const payload = (data as CliStatus) || {}
+          if (payload.state === "error" && payload.error) {
+            setError(payload.error)
+            setStatusKey("loadingScreen.status.issue")
+            return
+          }
+          if (payload.state === "ready") {
+            setError(null)
+            setStatusKey(null)
+          }
+        }))
+      }
+      if (api?.getCliStatus) {
+        api.getCliStatus().then((result: unknown) => {
+          const status = result as CliStatus
+          if (status?.state === "error" && status?.error) {
+            setError(status.error)
+            setStatusKey("loadingScreen.status.issue")
+          }
+        }).catch(() => {})
+      }
     }
 
     onCleanup(() => {

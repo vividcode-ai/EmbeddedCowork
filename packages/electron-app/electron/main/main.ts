@@ -42,6 +42,19 @@ function configureDevStoragePaths() {
 configureDevStoragePaths()
 
 const cliManager = new CliProcessManager()
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+}
+
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.focus()
+  }
+})
+
 let loadingWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let currentCliUrl: string | null = null
@@ -252,7 +265,8 @@ function createLoadingWindow() {
     width: 800,
     height: 600,
     frame: false,
-    transparent: true,
+    transparent: false,
+    backgroundColor: "#0f141f",
     resizable: false,
     center: true,
     icon: iconPath,
@@ -313,7 +327,7 @@ function createMainWindow() {
   }
 
   Menu.setApplicationMenu(null)
-  setupCliIPC(window, cliManager)
+  setupCliIPC(window, cliManager, loadingWindow)
 
   window.on("closed", () => {
     clearWindowAllowedOrigin(window)
@@ -518,9 +532,11 @@ async function startCli() {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error("[cli] start failed:", message)
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("cli:error", { message })
-    }
+    ;[loadingWindow, mainWindow].forEach((win) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send("cli:error", { message })
+      }
+    })
   }
 }
 
@@ -635,10 +651,8 @@ app.whenReady().then(() => {
   })
 })
 
-app.on("before-quit", async (event) => {
-  event.preventDefault()
+app.on("before-quit", async () => {
   await cliManager.stop().catch(() => {})
-  app.exit(0)
 })
 
 app.on("window-all-closed", () => {

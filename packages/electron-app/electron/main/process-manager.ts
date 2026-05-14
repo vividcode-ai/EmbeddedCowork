@@ -689,6 +689,7 @@ export class CliProcessManager extends EventEmitter {
           .map((line: string) => line.trim())
           .filter((line: string) => line.length > 0)
           .filter((line: string) => !/^INFO:/i.test(line))
+          .filter((line: string) => process.platform !== "win32" || /\.(exe|cmd|bat)$/i.test(line))
         if (candidates.length > 0 && existsSync(candidates[0])) {
           return candidates[0]
         }
