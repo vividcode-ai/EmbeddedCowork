@@ -54,4 +54,11 @@ if (serverPkg.optionalDependencies) {
   console.log(`[bumpVersion] Synced optionalDependencies to ${rootPkg.version}`)
 }
 
+const uiPkg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "packages", "ui", "package.json"), "utf-8"))
+const publicUiVersionPath = path.join(__dirname, "..", "packages", "server", "public", "ui-version.json")
+if (fs.existsSync(publicUiVersionPath)) {
+  fs.writeFileSync(publicUiVersionPath, JSON.stringify({ uiVersion: uiPkg.version }, null, 2) + "\n")
+  console.log(`[bumpVersion] Synced public/ui-version.json to ${uiPkg.version}`)
+}
+
 runStep(["run", "sync:version", "--workspace", "@embeddedcowork/tauri-app"], "tauri version sync")

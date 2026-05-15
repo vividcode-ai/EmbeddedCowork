@@ -66,18 +66,6 @@ jobs:
           echo "PINNED_NPM_CLI=$tool_dir/node_modules/npm/bin/npm-cli.js" >> "$GITHUB_ENV"
           node "$tool_dir/node_modules/npm/bin/npm-cli.js" --version
 
-      - name: Install dependencies
-        run: node "$PINNED_NPM_CLI" ci --workspaces
-
-      - name: Ensure rollup native binary
-        run: node "$PINNED_NPM_CLI" install @rollup/rollup-linux-x64-gnu --no-save
-
-      - name: Build server package (includes UI bundling)
-        run: node "$PINNED_NPM_CLI" run build --workspace packages/server
-
-      - name: Build platform binaries (cross-compile all targets)
-        run: node "$PINNED_NPM_CLI" run build:platforms --workspace packages/server
-
       - name: Set publish metadata
         shell: bash
         run: |
@@ -87,26 +75,6 @@ jobs:
           fi
           echo "VERSION=$VERSION_INPUT" >> "$GITHUB_ENV"
           echo "DIST_TAG=${{ inputs.dist_tag || 'latest' }}" >> "$GITHUB_ENV"
-
-      - name: Upload server binaries to GitHub Release
-        if: ${{ inputs.tag != '' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          for pkg in darwin-x64 darwin-arm64 win32-x64 linux-x64; do
-            bin_dir="packages/server/publish-packages/$pkg/bin"
-            src=$(ls "$bin_dir"/embeddedcowork-server* 2>/dev/null | head -1)
-            if [ -n "$src" ]; then
-              ext=""
-              [ "$pkg" = "win32-x64" ] && ext=".exe"
-              asset_name="embeddedcowork-server-${VERSION}-${pkg}${ext}"
-              cp "$src" "/tmp/$asset_name"
-              echo "Uploading $asset_name to release ${{ inputs.tag }}"
-              gh release upload "${{ inputs.tag }}" "/tmp/$asset_name" --clobber
-            fi
-          done
 
       - name: Bump package versions for publish
         run: node "$PINNED_NPM_CLI" version ${VERSION} --workspaces --include-workspace-root --no-git-tag-version --allow-same-version
@@ -132,6 +100,38 @@ jobs:
               console.log('Synced optionalDependencies to ' + process.env.VERSION);
             }
           "
+
+      - name: Install dependencies
+        run: node "$PINNED_NPM_CLI" ci --workspaces
+
+      - name: Ensure rollup native binary
+        run: node "$PINNED_NPM_CLI" install @rollup/rollup-linux-x64-gnu --no-save
+
+      - name: Build server package (includes UI bundling)
+        run: node "$PINNED_NPM_CLI" run build --workspace packages/server
+
+      - name: Build platform binaries (cross-compile all targets)
+        run: node "$PINNED_NPM_CLI" run build:platforms --workspace packages/server
+
+      - name: Upload server binaries to GitHub Release
+        if: ${{ inputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pkg in darwin-x64 darwin-arm64 win32-x64 linux-x64; do
+            bin_dir="packages/server/publish-packages/$pkg/bin"
+            src=$(ls "$bin_dir"/embeddedcowork-server* 2>/dev/null | head -1)
+            if [ -n "$src" ]; then
+              ext=""
+              [ "$pkg" = "win32-x64" ] && ext=".exe"
+              asset_name="embeddedcowork-server-${VERSION}-${pkg}${ext}"
+              cp "$src" "/tmp/$asset_name"
+              echo "Uploading $asset_name to release ${{ inputs.tag }}"
+              gh release upload "${{ inputs.tag }}" "/tmp/$asset_name" --clobber
+            fi
+          done
 
       - name: Publish platform packages
         env:
