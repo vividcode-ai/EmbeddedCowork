@@ -113,6 +113,13 @@ jobs:
       - name: Build platform binaries (cross-compile all targets)
         run: node "$PINNED_NPM_CLI" run build:platforms --workspace packages/server
 
+      - name: Ensure release exists
+        if: ${{ inputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release view "${{ inputs.tag }}" >/dev/null 2>&1 || gh release create "${{ inputs.tag }}" --title "${{ inputs.tag }}" --generate-notes
+
       - name: Upload server binaries to GitHub Release
         if: ${{ inputs.tag != '' }}
         env:

@@ -67,11 +67,14 @@ jobs:
           echo "release_name=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.versions.outputs.tag }}
           IS_PRERELEASE: ${{ inputs.prerelease }}
         run: |
+          set -euo pipefail
+          echo "Creating release $TAG ..."
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists"
           else
@@ -80,6 +83,8 @@ jobs:
             else
               gh release create "$TAG" --title "$TAG" --generate-notes
             fi
+            echo "Verifying release $TAG was created..."
+            gh release view "$TAG" >/dev/null
           fi
 
   build-and-upload:

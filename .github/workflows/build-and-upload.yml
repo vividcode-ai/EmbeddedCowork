@@ -207,6 +207,10 @@ jobs:
             codesign --verify --deep --strict --verbose=2 "$app_path"
           done
 
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
+
       - name: Upload release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
@@ -259,6 +263,11 @@ jobs:
       - name: Build Windows binaries (Electron)
         run: npm run build:win --workspace @vividcodeAI/embeddedcowork-electron-app
 
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: pwsh
+        run: if (-not (gh release view $env:TAG 2>$null)) { gh release create $env:TAG --title $env:TAG --generate-notes }
+
       - name: Upload release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
@@ -307,6 +316,10 @@ jobs:
 
       - name: Build Linux binaries (Electron)
         run: npm run build:linux --workspace @vividcodeAI/embeddedcowork-electron-app
+
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
 
       - name: Upload release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
@@ -403,6 +416,10 @@ jobs:
           retention-days: ${{ inputs.actions_artifacts_retention_days }}
           if-no-files-found: warn
 
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
+
       - name: Upload Tauri release assets (macOS)
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
@@ -486,6 +503,10 @@ jobs:
           path: packages/tauri-app/release-tauri/*.zip
           retention-days: ${{ inputs.actions_artifacts_retention_days }}
           if-no-files-found: warn
+
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
 
       - name: Upload Tauri release assets (macOS arm64)
         if: ${{ inputs.upload && inputs.tag != '' }}
@@ -575,6 +596,11 @@ jobs:
           path: packages/tauri-app/release-tauri/*.zip
           retention-days: ${{ inputs.actions_artifacts_retention_days }}
           if-no-files-found: warn
+
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: pwsh
+        run: if (-not (gh release view $env:TAG 2>$null)) { gh release create $env:TAG --title $env:TAG --generate-notes }
 
       - name: Upload Tauri release assets (Windows)
         if: ${{ inputs.upload && inputs.tag != '' }}
@@ -690,6 +716,10 @@ jobs:
           retention-days: ${{ inputs.actions_artifacts_retention_days }}
           if-no-files-found: warn
 
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
+
       - name: Upload Tauri release assets (Linux)
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
@@ -791,6 +821,9 @@ jobs:
           fi
 
 
+      - name: Ensure release exists
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
+
       - name: Upload Tauri release assets (Linux arm64)
         run: |
           set -euo pipefail
@@ -837,6 +870,10 @@ jobs:
 
       - name: Build Linux RPM binaries
         run: npm run build:linux-rpm --workspace @vividcodeAI/embeddedcowork-electron-app
+
+      - name: Ensure release exists
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
 
       - name: Upload RPM release assets
         if: ${{ inputs.upload && inputs.tag != '' }}
