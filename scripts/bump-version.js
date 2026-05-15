@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require("child_process")
+const fs = require("fs")
+const path = require("path")
 
 const versionArgs = process.argv.slice(2)
 
@@ -38,6 +40,18 @@ runStep(
   "npm version"
 )
 
-runStep(["run", "sync:version", "--workspace", "@embeddedcowork/tauri-app"], "tauri version sync")
+const rootPkgPath = path.join(__dirname, "..", "package.json")
+const serverPkgPath = path.join(__dirname, "..", "packages", "server", "package.json")
+const rootPkg = JSON.parse(fs.readFileSync(rootPkgPath, "utf-8"))
+const serverPkg = JSON.parse(fs.readFileSync(serverPkgPath, "utf-8"))
+if (serverPkg.optionalDependencies) {
+  for (const depKey of Object.keys(serverPkg.optionalDependencies)) {
+    if (depKey.startsWith("@vividcodeai/embeddedcowork-")) {
+      serverPkg.optionalDependencies[depKey] = rootPkg.version
+    }
+  }
+  fs.writeFileSync(serverPkgPath, JSON.stringify(serverPkg, null, 2) + "\n")
+  console.log(`[bumpVersion] Synced optionalDependencies to ${rootPkg.version}`)
+}
 
-//
+runStep(["run", "sync:version", "--workspace", "@embeddedcowork/tauri-app"], "tauri version sync")
