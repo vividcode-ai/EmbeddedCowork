@@ -105,7 +105,6 @@ jobs:
   publish-server:
     needs:
       - prepare-release
-      - build-and-upload
     uses: ./.github/workflows/manual-npm-publish.yml
     with:
       ref: ${{ inputs.ref || github.ref }}
