@@ -4,7 +4,7 @@
   "version": "0.0.10",
   "identifier": "ai.vividcode.embeddedcowork.client",
   "build": {
-    "beforeDevCommand": "npm run dev:bootstrap",
+    "beforeDevCommand": "npm run dev:ui",
     "beforeBuildCommand": "npm run bundle:server",
     "frontendDist": "resources/ui-loading"
   },

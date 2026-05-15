@@ -130,6 +130,7 @@ export class CliProcessManager extends EventEmitter {
   private status: CliStatus = { state: "stopped" }
   private stdoutBuffer = ""
   private stderrBuffer = ""
+  private stderrFullBuffer = ""
   private bootstrapToken: string | null = null
   private authCookieName = `${SESSION_COOKIE_NAME_PREFIX}_${process.pid}_${Date.now()}`
   private requestedStop = false
@@ -141,6 +142,7 @@ export class CliProcessManager extends EventEmitter {
 
     this.stdoutBuffer = ""
     this.stderrBuffer = ""
+    this.stderrFullBuffer = ""
     this.bootstrapToken = null
     this.authCookieName = `${SESSION_COOKIE_NAME_PREFIX}_${process.pid}_${Date.now()}`
     this.requestedStop = false
@@ -150,6 +152,7 @@ export class CliProcessManager extends EventEmitter {
     const host = resolveHostForMode(listeningMode)
     const args = this.buildCliArgs(options, host)
     const cliEntry = this.resolveCliEntry(options)
+    console.info("[cli] resolved entry:", JSON.stringify(cliEntry))
 
     let child: ManagedChild
 
@@ -234,7 +237,9 @@ export class CliProcessManager extends EventEmitter {
 
       utilityChild.on("exit", (code) => {
         const failed = this.status.state !== "ready"
-        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}` : undefined
+        const diagStderr = this.stderrFullBuffer + this.stderrBuffer
+        const diagSuffix = diagStderr ? `\n\n--- server stderr ---\n${diagStderr}` : ""
+        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${diagSuffix}` : undefined
         console.info(`[cli] exit (code=${code ?? ""})${error ? ` error=${error}` : ""}`)
         this.updateStatus({ state: failed ? "error" : "stopped", error })
         if (failed && error) {
@@ -254,7 +259,9 @@ export class CliProcessManager extends EventEmitter {
 
       spawnedChild.on("exit", (code, signal) => {
         const failed = this.status.state !== "ready"
-        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${signal ? ` (${signal})` : ""}` : undefined
+        const diagStderr = this.stderrFullBuffer + this.stderrBuffer
+        const diagSuffix = diagStderr ? `\n\n--- server stderr ---\n${diagStderr}` : ""
+        const error = failed ? this.status.error ?? `CLI exited with code ${code ?? 0}${signal ? ` (${signal})` : ""}${diagSuffix}` : undefined
         console.info(`[cli] exit (code=${code}, signal=${signal || ""})${error ? ` error=${error}` : ""}`)
         this.updateStatus({ state: failed ? "error" : "stopped", error })
         if (failed && error) {
@@ -500,6 +507,12 @@ export class CliProcessManager extends EventEmitter {
       this.stdoutBuffer = trailing
     } else {
       this.stderrBuffer = trailing
+      if (lines.length > 0) {
+        this.stderrFullBuffer += lines.join("\n") + "\n"
+        if (this.stderrFullBuffer.length > 10000) {
+          this.stderrFullBuffer = this.stderrFullBuffer.slice(-10000)
+        }
+      }
     }
 
     for (const line of lines) {
@@ -675,14 +688,14 @@ export class CliProcessManager extends EventEmitter {
 
   /**
    * 三步检测链：
-   *   1. which/where → "embeddedCowork" on PATH (npm 全局安装)
-   *   2. ~/.embeddedcowork/bin/embeddedcowork-server (CI 定义的 binary 名)
+   *   1. which/where → "embeddedcowork-server" on PATH (npm 全局安装)
+   *   2. ~/.embeddedcowork/bin/embeddedcowork-server (自动更新的 binary 名)
    *   3. 未找到 → return null
    */
   private resolveSystemEntry(): string | null {
     const locator = process.platform === "win32" ? "where" : "which"
     try {
-      const result = spawnSync(locator, ["embeddedCowork"], { encoding: "utf8" })
+      const result = spawnSync(locator, ["embeddedcowork-server"], { encoding: "utf8" })
       if (result.status === 0 && result.stdout) {
         const candidates = result.stdout
           .split(/\r?\n/)

@@ -19,6 +19,8 @@
   "type": "module",
   "bin": {
     "embeddedCowork": "bin/cli.js",
+    "embeddedcowork-server": "bin/cli.js",
+    "eco": "bin/cli.js",
     "embcowork": "bin/cli.js"
   },
   "scripts": {
