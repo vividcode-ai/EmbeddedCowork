@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork",
-"version": "0.0.21",
+  "version": "0.0.22",
   "description": "EmbeddedCowork Server",
   "license": "MIT",
   "author": {
@@ -34,10 +34,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "optionalDependencies": {
-    "@vividcodeai/embeddedcowork-darwin-x64": "0.0.21",
-    "@vividcodeai/embeddedcowork-darwin-arm64": "0.0.21",
-    "@vividcodeai/embeddedcowork-win32-x64": "0.0.21",
-    "@vividcodeai/embeddedcowork-linux-x64": "0.0.21"
+    "@vividcodeai/embeddedcowork-darwin-x64": "0.0.22",
+    "@vividcodeai/embeddedcowork-darwin-arm64": "0.0.22",
+    "@vividcodeai/embeddedcowork-win32-x64": "0.0.22",
+    "@vividcodeai/embeddedcowork-linux-x64": "0.0.22"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
