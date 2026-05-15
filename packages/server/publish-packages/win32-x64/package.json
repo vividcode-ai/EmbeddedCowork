@@ -1,6 +1,6 @@
 {
   "name": "@vividcodeai/embeddedcowork-win32-x64",
-  "version": "0.0.20",
+"version": "0.0.21",
   "description": "Prebuilt binary for Windows x64 - EmbeddedCowork Server",
   "license": "MIT",
   "author": {

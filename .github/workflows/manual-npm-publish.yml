@@ -115,6 +115,24 @@ jobs:
           NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: 20000
           NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 120000
 
+      - name: Sync optionalDependencies version
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('packages/server/package.json', 'utf-8'));
+            if (pkg.optionalDependencies) {
+              for (const key of Object.keys(pkg.optionalDependencies)) {
+                if (key.startsWith('@vividcodeai/embeddedcowork-')) {
+                  pkg.optionalDependencies[key] = process.env.VERSION;
+                }
+              }
+              fs.writeFileSync('packages/server/package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('Synced optionalDependencies to ' + process.env.VERSION);
+            }
+          "
+
       - name: Publish platform packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
