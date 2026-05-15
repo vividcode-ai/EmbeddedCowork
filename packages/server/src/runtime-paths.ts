@@ -73,7 +73,11 @@ export function resolveOpencodeTemplateDir(importMetaUrl: string): string {
 }
 
 export function readServerPackageVersion(importMetaUrl: string): string {
-  const packageJsonPath = path.join(resolveServerPackageRoot(importMetaUrl), "package.json")
-  const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8")) as { version?: unknown }
-  return typeof parsed.version === "string" && parsed.version.trim().length > 0 ? parsed.version : "0.0.0"
+  try {
+    const packageJsonPath = path.join(resolveServerPackageRoot(importMetaUrl), "package.json")
+    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8")) as { version?: unknown }
+    return typeof parsed.version === "string" && parsed.version.trim().length > 0 ? parsed.version : "0.0.0"
+  } catch {
+    return "FV0.0.0"
+  }
 }

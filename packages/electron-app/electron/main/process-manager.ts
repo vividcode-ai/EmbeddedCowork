@@ -2,13 +2,12 @@ import { spawn, spawnSync, type ChildProcess } from "child_process"
 import { app, utilityProcess, type UtilityProcess } from "electron"
 import { createRequire } from "module"
 import { EventEmitter } from "events"
-import { existsSync, mkdirSync, readFileSync, chmodSync } from "fs"
+import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync } from "fs"
 import os from "os"
 import path from "path"
 import { fileURLToPath } from "url"
 import { parse as parseYaml } from "yaml"
 import { buildUserShellCommand, getUserShellEnv, supportsUserShell } from "./user-shell"
-import { downloadFileWithRetry } from "../../../server/src/download-utils.ts"
 
 const nodeRequire = createRequire(import.meta.url)
 const mainFilename = fileURLToPath(import.meta.url)
@@ -151,8 +150,33 @@ export class CliProcessManager extends EventEmitter {
     const listeningMode = this.resolveListeningMode()
     const host = resolveHostForMode(listeningMode)
     const args = this.buildCliArgs(options, host)
-    const cliEntry = this.resolveCliEntry(options)
-    console.info("[cli] resolved entry:", JSON.stringify(cliEntry))
+
+    if (options.dev) {
+      const tsxPath = this.resolveTsx()
+      if (!tsxPath) {
+        throw new Error("tsx is required to run the CLI in development mode. Please install dependencies.")
+      }
+      const devEntry = this.resolveDevEntry()
+      return this.launchEntry({ entry: devEntry, runner: "tsx", runnerPath: tsxPath }, args, options)
+    }
+
+    const systemEntry = this.resolveSystemEntry()
+    if (systemEntry) {
+      try {
+        return await this.launchEntry({ entry: systemEntry, runner: "system" }, args, options)
+      } catch (err) {
+        this.child = undefined
+        this.requestedStop = false
+        this.updateStatus({ state: "starting", port: undefined, pid: undefined, url: undefined, error: undefined })
+        console.warn(`[cli] system entry failed, falling back to bundled server: ${(err as Error).message}`)
+      }
+    }
+
+    return this.launchEntry({ entry: this.resolveStandaloneProdEntry(), runner: "standalone" }, args, options)
+  }
+
+  private launchEntry(cliEntry: CliEntryResolution, args: string[], options: StartOptions): Promise<CliStatus> {
+    const host = resolveHostForMode(this.resolveListeningMode())
 
     let child: ManagedChild
 
@@ -280,7 +304,7 @@ export class CliProcessManager extends EventEmitter {
 
       this.once("ready", (status) => {
         clearTimeout(timeout)
-        // 后台静默检查 GitHub 更新
+        this.cleanupStaleTempFile()
         this.checkAndDownloadUpdate().catch(() => {})
         resolve(status)
       })
@@ -613,24 +637,6 @@ export class CliProcessManager extends EventEmitter {
     return { command: process.execPath, args: [cliEntry.entry, ...args] }
   }
 
-  private resolveCliEntry(options: StartOptions): CliEntryResolution {
-    if (options.dev) {
-      const tsxPath = this.resolveTsx()
-      if (!tsxPath) {
-        throw new Error("tsx is required to run the CLI in development mode. Please install dependencies.")
-      }
-      const devEntry = this.resolveDevEntry()
-      return { entry: devEntry, runner: "tsx", runnerPath: tsxPath }
-    }
-
-    // Prod: 三步检测链
-    const systemEntry = this.resolveSystemEntry()
-    if (systemEntry) {
-      return { entry: systemEntry, runner: "system" }
-    }
-
-    return { entry: this.resolveStandaloneProdEntry(), runner: "standalone" }
-  }
  
   private resolveTsx(): string | null {
     const candidates: Array<string | (() => string)> = [
@@ -709,11 +715,19 @@ export class CliProcessManager extends EventEmitter {
       }
     } catch {}
 
-    const binDir = path.join(os.homedir(), ".embeddedcowork", "bin")
-    const binaryName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
-    const installedPath = path.join(binDir, binaryName)
-    if (existsSync(installedPath)) {
-      return installedPath
+    const serverDir = path.join(os.homedir(), ".embeddedcowork", "bin", "server")
+    const pkgPath = path.join(serverDir, "package.json")
+    if (existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"))
+        if (pkg.version) {
+          const ext = process.platform === "win32" ? ".exe" : ""
+          const versionedPath = path.join(serverDir, `embeddedcowork-server-${pkg.version}${ext}`)
+          if (existsSync(versionedPath)) return versionedPath
+        }
+      } catch {
+        // package.json 损坏，忽略
+      }
     }
 
     return null
@@ -753,6 +767,31 @@ export class CliProcessManager extends EventEmitter {
     return String(error)
   }
 
+  private resolveDownloadWorkerPath(): string {
+    const candidates = [
+      path.join(process.resourcesPath, "download-worker.cjs"),
+      path.join(mainDirname, "../../electron/resources/download-worker.cjs"),
+    ]
+
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate
+      }
+    }
+
+    throw new Error("Unable to locate download worker script.")
+  }
+
+  private cleanupStaleTempFile(): void {
+    const serverDir = path.join(os.homedir(), ".embeddedcowork", "bin", "server")
+    if (!existsSync(serverDir)) return
+    for (const name of readdirSync(serverDir)) {
+      if (name.endsWith(".tmp")) {
+        unlinkSync(path.join(serverDir, name))
+      }
+    }
+  }
+
   private async checkAndDownloadUpdate(): Promise<void> {
     try {
       const currentVersion = app.getVersion()
@@ -774,19 +813,20 @@ export class CliProcessManager extends EventEmitter {
       const assetName = `embeddedcowork-server-${latestVersion}-${platform}${ext}`
       const downloadUrl = `https://github.com/vividcode-ai/EmbeddedCowork/releases/download/${latestTag}/${assetName}`
 
-      const binDir = path.join(os.homedir(), ".embeddedcowork", "bin")
-      const binaryName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
-      const targetPath = path.join(binDir, binaryName)
+      const serverDir = path.join(os.homedir(), ".embeddedcowork", "bin", "server")
 
-      mkdirSync(binDir, { recursive: true })
+      mkdirSync(serverDir, { recursive: true })
 
-      await downloadFileWithRetry(downloadUrl, targetPath, { retries: 5 })
+      const workerPath = this.resolveDownloadWorkerPath()
+      const child = spawn(process.execPath, [workerPath, downloadUrl, serverDir, latestVersion], {
+        detached: true,
+        stdio: "ignore",
+        env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+        windowsHide: true,
+      })
+      child.unref()
 
-      if (process.platform !== "win32") {
-        chmodSync(targetPath, 0o755)
-      }
-
-      console.info(`[cli] server updated to v${latestVersion} → ${targetPath}`)
+      console.info(`[cli] spawning background update worker for v${latestVersion}`)
     } catch {
       // 静默失败，不影响正在运行的 server
     }
