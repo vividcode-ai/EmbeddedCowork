@@ -45,7 +45,8 @@
   "dependencies": {
     "@vividcodeai/embeddedcowork": "file:../server",
     "@embeddedcowork/ui": "file:../ui",
-    "yaml": "^2.4.2"
+    "yaml": "^2.4.2",
+    "electron-updater": "^6.3.0"
   },
   "devDependencies": {
     "7zip-bin": "^5.2.0",
@@ -64,6 +65,12 @@
   "build": {
     "appId": "ai.vividcode.embeddedcowork.client",
     "productName": "EmbeddedCowork",
+    "publish": {
+      "provider": "github",
+      "owner": "vividcode-ai",
+      "repo": "EmbeddedCowork",
+      "releaseType": "release"
+    },
     "directories": {
       "output": "release",
       "buildResources": "electron/resources"
@@ -122,6 +129,13 @@
     },
     "win": {
       "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
         {
           "target": "zip",
           "arch": [

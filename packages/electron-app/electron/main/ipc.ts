@@ -2,6 +2,7 @@ import { BrowserWindow, Notification, dialog, ipcMain, powerSaveBlocker, type Op
 import fs from "fs"
 import { requestMicrophoneAccess } from "./permissions"
 import type { CliProcessManager, CliStatus } from "./process-manager"
+import type { AppAutoUpdater } from "./auto-updater"
 
 let wakeLockId: number | null = null
 
@@ -17,7 +18,7 @@ interface DialogOpenResult {
   paths: string[]
 }
 
-export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessManager) {
+export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessManager, appAutoUpdater?: AppAutoUpdater) {
   cliManager.on("status", (status: CliStatus) => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send("cli:status", status)
@@ -138,6 +139,19 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       return { ok: true }
     },
   )
+
+  // --- Update IPC handlers ---
+  ipcMain.handle("update:installNow", () => {
+    appAutoUpdater?.installNow()
+  })
+
+  ipcMain.handle("update:checkNow", () => {
+    appAutoUpdater?.checkForUpdates()
+  })
+
+  ipcMain.handle("update:rollback", async () => {
+    await appAutoUpdater?.rollback()
+  })
 
   ipcMain.handle(
     "notifications:show",

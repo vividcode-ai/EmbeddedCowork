@@ -212,3 +212,54 @@ function parseSemverCore(value: string): { major: number; minor: number; patch: 
     patch: parsePart(parts[2]),
   }
 }
+
+// ── Auto-update store ──
+
+export type UpdateStatus = "idle" | "checking" | "downloading" | "ready" | "error" | "no-update"
+
+export interface AppUpdateState {
+  status: UpdateStatus
+  version?: string
+  progress?: {
+    percent: number
+    bytesPerSecond: number
+    total: number
+    transferred: number
+    dismissedToast?: boolean
+  }
+  error?: string
+}
+
+const [updateState, setUpdateState] = createSignal<AppUpdateState>({ status: "idle" })
+
+export function useUpdateState() {
+  return updateState
+}
+
+export function setUpdateStatus(status: UpdateStatus) {
+  setUpdateState((prev) => ({ ...prev, status }))
+}
+
+export function setUpdateProgress(progress: AppUpdateState["progress"]) {
+  setUpdateState((prev) => ({
+    ...prev,
+    status: "downloading" as const,
+    progress,
+  }))
+}
+
+export function readyForInstall(version: string) {
+  setUpdateState((prev) => ({
+    ...prev,
+    status: "ready",
+    version,
+  }))
+}
+
+export function clearUpdateError() {
+  setUpdateState((prev) => ({
+    ...prev,
+    status: "idle",
+    error: undefined,
+  }))
+}

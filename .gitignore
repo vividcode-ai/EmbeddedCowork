@@ -15,3 +15,6 @@ out/
 .sisyphus
 .tmp/
 packages/cloudflare/.wrangler/
+
+# Tauri updater signing key (PRIVATE - DO NOT COMMIT)
+tauri-updater.key

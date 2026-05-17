@@ -37,12 +37,47 @@ const localElectronAPI = {
   setWakeLock: (enabled) => ipcRenderer.invoke("power:setWakeLock", Boolean(enabled)),
   showNotification: (payload) => ipcRenderer.invoke("notifications:show", payload),
   openRemoteWindow: (payload) => ipcRenderer.invoke("remote:openWindow", payload),
+  // ── Auto-update API ──
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on("update:status", (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners("update:status")
+  },
+  onUpdateAvailable: (callback) => {
+    ipcRenderer.on("update:available", (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners("update:available")
+  },
+  onUpdateProgress: (callback) => {
+    ipcRenderer.on("update:progress", (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners("update:progress")
+  },
+  onUpdateReady: (callback) => {
+    ipcRenderer.on("update:ready", (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners("update:ready")
+  },
+  onUpdateError: (callback) => {
+    ipcRenderer.on("update:error", (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners("update:error")
+  },
+  onRollbackNeeded: (callback) => {
+    ipcRenderer.on("rollback:needed", (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners("rollback:needed")
+  },
+  checkForUpdates: () => ipcRenderer.invoke("update:checkNow"),
+  installUpdate: () => ipcRenderer.invoke("update:installNow"),
+  rollbackUpdate: () => ipcRenderer.invoke("update:rollback"),
 }
 
 const remoteElectronAPI = {
   requestMicrophoneAccess: localElectronAPI.requestMicrophoneAccess,
   setWakeLock: localElectronAPI.setWakeLock,
   showNotification: localElectronAPI.showNotification,
+  // Remote windows only need update notification, not install trigger
+  onUpdateStatus: localElectronAPI.onUpdateStatus,
+  onUpdateAvailable: localElectronAPI.onUpdateAvailable,
+  onUpdateProgress: localElectronAPI.onUpdateProgress,
+  onUpdateReady: localElectronAPI.onUpdateReady,
+  onUpdateError: localElectronAPI.onUpdateError,
+  onRollbackNeeded: localElectronAPI.onRollbackNeeded,
 }
 
 contextBridge.exposeInMainWorld(

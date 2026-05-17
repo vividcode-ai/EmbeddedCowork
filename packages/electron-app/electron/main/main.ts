@@ -8,6 +8,7 @@ import { createApplicationMenu } from "./menu"
 import { setupCliIPC } from "./ipc"
 import { configureMediaPermissionHandlers } from "./permissions"
 import { CliProcessManager } from "./process-manager"
+import { AppAutoUpdater } from "./auto-updater"
 
 const mainFilename = fileURLToPath(import.meta.url)
 const mainDirname = dirname(mainFilename)
@@ -42,6 +43,7 @@ function configureDevStoragePaths() {
 configureDevStoragePaths()
 
 const cliManager = new CliProcessManager()
+const appAutoUpdater = new AppAutoUpdater()
 let loadingWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let currentCliUrl: string | null = null
@@ -313,7 +315,7 @@ function createMainWindow() {
   }
 
   Menu.setApplicationMenu(null)
-  setupCliIPC(window, cliManager)
+  setupCliIPC(window, cliManager, appAutoUpdater)
 
   window.on("closed", () => {
     clearWindowAllowedOrigin(window)
@@ -377,7 +379,7 @@ function finalizeCliSwap(url: string) {
       loadingWindow = null
     }
     mainWindow?.maximize()
-    createApplicationMenu(mainWindow!)
+    createApplicationMenu(mainWindow!, appAutoUpdater)
   }).catch((error) => console.error("[cli] failed to load CLI view:", error))
 }
 
@@ -596,6 +598,8 @@ app.whenReady().then(() => {
   createMainWindow()
   ;(mainWindow as BrowserWindow & { __embeddedcoworkOpenRemoteWindow?: typeof openRemoteWindow }).__embeddedcoworkOpenRemoteWindow = openRemoteWindow
 
+  appAutoUpdater.setMainWindow(mainWindow)
+
   if (isMac) {
     session.defaultSession.setSpellCheckerEnabled(false)
     configureMediaPermissionHandlers(getAllowedRendererOrigins)
@@ -611,9 +615,16 @@ app.whenReady().then(() => {
     }
   }
 
+  appAutoUpdater.init()
+
   setTimeout(() => {
     void startCli()
   }, 0)
+
+  // Listen for manual update check from menu
+  app.on("menu:checkForUpdates", () => {
+    appAutoUpdater.checkForUpdates()
+  })
 
   app.on("certificate-error", (event, _webContents, url, error, _certificate, callback) => {
     if (isInsecureOriginAllowed(url)) {
@@ -637,6 +648,7 @@ app.whenReady().then(() => {
 
 app.on("before-quit", async (event) => {
   event.preventDefault()
+  await appAutoUpdater.markCleanExit()
   await cliManager.stop().catch(() => {})
   app.exit(0)
 })

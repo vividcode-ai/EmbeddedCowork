@@ -172,6 +172,56 @@ fn wake_lock_stop(state: tauri::State<AppState>) -> Result<(), String> {
     Ok(())
 }
 
+// ── Update Commands ──
+
+#[tauri::command]
+async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let response = updater.check().await.map_err(|e| e.to_string())?;
+    Ok(response.map(|u| u.version))
+}
+
+#[tauri::command]
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        update.download_and_install().await.map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn rollback_update(app: AppHandle) -> Result<(), String> {
+    // Rollback: restore previous version backup
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let updater_dir = app_data_dir.join("embeddedcowork-updater");
+    let meta_path = updater_dir.join("update-meta.json");
+
+    if !meta_path.exists() {
+        return Err("No rollback data found".into());
+    }
+
+    let content = std::fs::read_to_string(&meta_path).map_err(|e| e.to_string())?;
+    #[derive(serde::Deserialize)]
+    struct UpdateMeta {
+        state: String,
+        old_version: String,
+        backup_path: String,
+    }
+    let meta: UpdateMeta = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    // Restore backup (install previous version bundle)
+    if std::path::Path::new(&meta.backup_path).exists() {
+        let _ = std::fs::remove_dir_all(&meta.backup_path);
+    }
+
+    // Emit event for frontend to handle
+    let _ = app.emit("update:rolledBack", ());
+    // Exit app - user can restart manually or the OS will prompt
+    app.exit(0);
+    Ok(())
+}
+
 fn is_dev_mode() -> bool {
     cfg!(debug_assertions) || std::env::var("TAURI_DEV").is_ok()
 }
@@ -532,6 +582,7 @@ fn main() {
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(navigation_guard)
         .manage(AppState {
             manager: CliProcessManager::new(),
@@ -583,7 +634,10 @@ fn main() {
             wake_lock_start,
             wake_lock_stop,
             needs_local_certificate_install,
-            open_remote_window
+            open_remote_window,
+            check_update,
+            install_update,
+            rollback_update
         ])
         .on_menu_event(|app_handle, event| {
             match event.id().0.as_str() {
@@ -649,6 +703,13 @@ fn main() {
                 }
 
                 // App menu (macOS)
+                // Help menu
+                "check_updates" => {
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        let _ = window.emit("menu:checkForUpdates", ());
+                    }
+                }
+
                 "about" => {
                     // TODO: Implement about dialog
                     println!("About menu item clicked");
@@ -869,6 +930,20 @@ fn build_menu(app: &AppHandle) -> tauri::Result<()> {
         .item(&toggle_fullscreen_item)
         .build()?;
     submenus.push(view_menu);
+
+    // Help menu
+    let check_updates_item = MenuItem::with_id(
+        app,
+        "check_updates",
+        "Check for Updates",
+        true,
+        Some("CmdOrCtrl+U"),
+    )?;
+
+    let help_menu = SubmenuBuilder::new(app, "Help")
+        .item(&check_updates_item)
+        .build()?;
+    submenus.push(help_menu);
 
     // Window menu
     let window_menu = if is_linux {

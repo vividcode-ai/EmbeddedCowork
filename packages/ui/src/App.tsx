@@ -23,6 +23,8 @@ import { getLogger } from "./lib/logger"
 import { launchError, showLaunchError, clearLaunchError } from "./stores/launch-errors"
 import { formatLaunchErrorMessage, isMissingBinaryMessage } from "./lib/launch-errors"
 import { initReleaseNotifications } from "./stores/releases"
+import { UpdateNotification } from "./components/update-notification"
+import { RollbackDialog } from "./components/rollback-dialog"
 import { isTauriHost, isWebHost, runtimeEnv } from "./lib/runtime-env"
 import { useI18n } from "./lib/i18n"
 import { setWakeLockDesired } from "./lib/native/wake-lock"
@@ -631,6 +633,8 @@ const App: Component = () => {
         <SideCarPickerDialog open={sidecarPickerOpen()} onClose={() => setSidecarPickerOpen(false)} onOpenSidecar={handleOpenSidecar} />
  
         <AlertDialog />
+        <UpdateNotification />
+        <RollbackDialog />
 
         <Toaster
           position="top-right"

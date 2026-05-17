@@ -1,6 +1,7 @@
 import { Menu, BrowserWindow, MenuItemConstructorOptions } from "electron"
+import type { AppAutoUpdater } from "./auto-updater"
 
-export function createApplicationMenu(mainWindow: BrowserWindow) {
+export function createApplicationMenu(mainWindow: BrowserWindow, autoUpdater?: AppAutoUpdater) {
   const isMac = process.platform === "darwin"
 
   const template: MenuItemConstructorOptions[] = [
@@ -60,6 +61,20 @@ export function createApplicationMenu(mainWindow: BrowserWindow) {
         { role: "zoomOut" as const },
         { type: "separator" as const },
         { role: "togglefullscreen" as const },
+      ],
+    },
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "Check for Updates",
+          accelerator: "CmdOrCtrl+U",
+          click: () => {
+            if (autoUpdater) {
+              autoUpdater.checkForUpdates()
+            }
+          },
+        },
       ],
     },
     {

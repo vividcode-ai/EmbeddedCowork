@@ -394,6 +394,48 @@ jobs:
             ditto -ck --sequesterRsrc --keepParent "$BUNDLE_ROOT/macos/EmbeddedCowork.app" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-macos-x64.zip"
           fi
 
+      - name: Sign Tauri artifacts (macOS ed25519)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: bash
+        env:
+          PRIVATE_KEY: ${{ secrets.TAURI_UPDATER_PRIVATE_KEY }}
+        working-directory: packages/tauri-app
+        run: |
+          set -euo pipefail
+          mkdir -p release-tauri/signatures
+          for file in release-tauri/*.zip; do
+            [ -f "$file" ] || continue
+            filename=$(basename "$file")
+            echo "$PRIVATE_KEY" | npx tauri signer sign \
+              --private-key /dev/stdin \
+              --password "embeddedcowork-update-key" \
+              --file-path "$file" 2>/dev/null
+            # Move .sig file to signatures directory
+            if [ -f "${file}.sig" ]; then
+              mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
+            fi
+          done
+
+      - name: Upload signature artifacts (Tauri macOS)
+        if: ${{ inputs.upload_actions_artifacts }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.actions_artifacts_name_prefix }}signatures-macos
+          path: packages/tauri-app/release-tauri/signatures/
+          retention-days: ${{ inputs.actions_artifacts_retention_days }}
+          if-no-files-found: warn
+
+      - name: Upload Tauri signatures to release (macOS)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
+            [ -f "$sig" ] || continue
+            echo "Uploading $sig"
+            gh release upload "$TAG" "$sig" --clobber
+          done
+
       - name: Upload Actions artifacts (Tauri macOS)
         if: ${{ inputs.upload_actions_artifacts }}
         uses: actions/upload-artifact@v4
@@ -857,3 +899,43 @@ jobs:
           path: packages/electron-app/release/*.rpm
           retention-days: ${{ inputs.actions_artifacts_retention_days }}
           if-no-files-found: error
+
+  generate-update-manifest:
+    needs:
+      - build-tauri-macos
+      - build-tauri-macos-arm64
+      - build-tauri-windows
+      - build-tauri-linux
+    if: ${{ inputs.upload && inputs.tag != '' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ inputs.version }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download all signature artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: signatures-*
+          path: signatures-download
+          merge-multiple: true
+
+      - name: Generate tauri-update.json
+        working-directory: packages/tauri-app
+        env:
+          SIGNATURES_DIR: ${{ github.workspace }}/signatures-download
+        run: node scripts/generate-tauri-update-manifest.js --tag "$TAG" --version "$VERSION"
+
+      - name: Upload tauri-update.json to release
+        run: |
+          gh release upload "$TAG" "packages/tauri-app/release-tauri/tauri-update.json" --clobber

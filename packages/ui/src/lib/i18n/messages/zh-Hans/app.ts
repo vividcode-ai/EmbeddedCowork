@@ -38,4 +38,21 @@ export const appMessages = {
   "theme.mode.dark": "深色",
   "theme.toggle.title": "主题：{mode}",
   "theme.toggle.ariaLabel": "主题：{mode}",
+
+  "update.checking": "正在检查更新...",
+  "update.downloading": "正在下载 {version} ({percent}%)",
+  "update.ready.title": "更新就绪",
+  "update.ready.message": "EmbeddedCowork {version} 已下载完成。",
+  "update.ready.action": "立即重启安装",
+  "update.ready.dismiss": "稍后再说",
+  "update.error": "更新失败：{error}",
+  "update.noUpdate": "已是最新版本。",
+
+  "rollback.title": "检测到恢复",
+  "rollback.message": "上次更新到 v{newVersion} 后未能正常启动。是否回滚到 v{oldVersion}？",
+  "rollback.action": "回滚到 v{oldVersion}",
+  "rollback.dismiss": "继续使用 v{newVersion}",
+  "rollback.inProgress": "正在回滚到 {version}...",
+  "rollback.success": "已回滚到 {version}。",
+  "rollback.failed": "回滚失败：{error}",
 } as const

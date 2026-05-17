@@ -40,6 +40,16 @@
       ]
     }
   },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "dialog": false,
+      "pubkey": "dW50cnRzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYyOTZFODI3ODNFMTkyQzMKUldURGt1R0RKK2lXWW12QUhhVGRjR2ljMGltbms2aDhKaXIwZlJNRFpRd2dBOC80Z2Qvcnl2ZUkK",
+      "endpoints": [
+        "https://github.com/vividcode-ai/EmbeddedCowork/releases/latest/download/tauri-update.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "linux": {

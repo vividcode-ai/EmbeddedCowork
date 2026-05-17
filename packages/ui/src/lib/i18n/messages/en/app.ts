@@ -39,4 +39,21 @@ export const appMessages = {
   "theme.mode.dark": "Dark",
   "theme.toggle.title": "Theme: {mode}",
   "theme.toggle.ariaLabel": "Theme: {mode}",
+
+  "update.checking": "Checking for updates...",
+  "update.downloading": "Downloading {version} ({percent}%)",
+  "update.ready.title": "Update ready",
+  "update.ready.message": "EmbeddedCowork {version} has been downloaded.",
+  "update.ready.action": "Restart & Install",
+  "update.ready.dismiss": "Later",
+  "update.error": "Update failed: {error}",
+  "update.noUpdate": "You're up to date.",
+
+  "rollback.title": "Recovery detected",
+  "rollback.message": "The previous update to v{newVersion} didn't start properly. Roll back to v{oldVersion}?",
+  "rollback.action": "Roll back to v{oldVersion}",
+  "rollback.dismiss": "Use v{newVersion}",
+  "rollback.inProgress": "Rolling back to {version}...",
+  "rollback.success": "Rolled back to {version}.",
+  "rollback.failed": "Rollback failed: {error}",
 } as const
