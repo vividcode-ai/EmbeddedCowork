@@ -1,6 +1,8 @@
-import { autoUpdater } from "electron-updater"
+import pkg from "electron-updater"
 import { BrowserWindow, app } from "electron"
 import { ElectronRollbackManager } from "./rollback"
+
+const { autoUpdater } = pkg
 
 export class AppAutoUpdater {
   private rollbackManager: ElectronRollbackManager
