@@ -62,6 +62,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
       TAG: ${{ inputs.tag }}
+      PUBLISH_MODE: always
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -234,6 +235,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
       TAG: ${{ inputs.tag }}
+      PUBLISH_MODE: always
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -288,6 +290,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ inputs.version }}
       TAG: ${{ inputs.tag }}
+      PUBLISH_MODE: always
     steps:
       - name: Checkout
         uses: actions/checkout@v4
