@@ -23,6 +23,7 @@ use tauri::{
 use tauri_plugin_global_shortcut::{
     Code as ShortcutCode, GlobalShortcutExt, Shortcut, ShortcutState,
 };
+use tauri_plugin_updater::UpdaterExt;
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
 
