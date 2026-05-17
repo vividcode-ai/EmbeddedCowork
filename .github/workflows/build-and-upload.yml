@@ -211,6 +211,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
             [ -f "$file" ] || continue
@@ -263,6 +264,10 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
+          gh release view $env:TAG 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:TAG --title $env:TAG --generate-notes
+          }
           Get-ChildItem -Path "packages/electron-app/release" -Filter *.zip -File | ForEach-Object {
             Write-Host "Uploading $($_.FullName)"
             gh release upload $env:TAG $_.FullName --clobber
@@ -312,23 +317,13 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
             [ -f "$file" ] || continue
             echo "Uploading $file"
             gh release upload "$TAG" "$file" --clobber
           done
-
-      - name: Upload Actions artifacts (Electron Linux)
-        if: ${{ inputs.upload_actions_artifacts }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.actions_artifacts_name_prefix }}electron-linux
-          path: |
-            packages/electron-app/release/*.zip
-            packages/electron-app/release/*.AppImage
-          retention-days: ${{ inputs.actions_artifacts_retention_days }}
-          if-no-files-found: error
 
   build-tauri-macos:
     runs-on: macos-15-intel
@@ -429,6 +424,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
             [ -f "$sig" ] || continue
@@ -449,6 +445,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for file in packages/tauri-app/release-tauri/*.zip; do
             [ -f "$file" ] || continue
@@ -533,6 +530,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for file in packages/tauri-app/release-tauri/*.zip; do
             [ -f "$file" ] || continue
@@ -622,6 +620,10 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
+          gh release view $env:TAG 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:TAG --title $env:TAG --generate-notes
+          }
           if (Test-Path "packages/tauri-app/release-tauri") {
             Get-ChildItem -Path "packages/tauri-app/release-tauri" -Filter *.zip -File | ForEach-Object {
               Write-Host "Uploading $($_.FullName)"
@@ -736,6 +738,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for file in packages/tauri-app/release-tauri/*; do
             [ -f "$file" ] || continue
@@ -884,6 +887,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           shopt -s nullglob
           for file in packages/electron-app/release/*.rpm; do
             [ -f "$file" ] || continue
@@ -938,4 +942,5 @@ jobs:
 
       - name: Upload tauri-update.json to release
         run: |
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
           gh release upload "$TAG" "packages/tauri-app/release-tauri/tauri-update.json" --clobber
