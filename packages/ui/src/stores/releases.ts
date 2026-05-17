@@ -230,7 +230,7 @@ export interface AppUpdateState {
   error?: string
 }
 
-const [updateState, setUpdateState] = createSignal<AppUpdateState>({ status: "idle" })
+export const [updateState, setUpdateState] = createSignal<AppUpdateState>({ status: "idle" })
 
 export function useUpdateState() {
   return updateState
