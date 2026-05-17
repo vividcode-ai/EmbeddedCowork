@@ -397,15 +397,23 @@ jobs:
         working-directory: packages/tauri-app
         run: |
           set -euo pipefail
+          # Skip if no private key configured
+          if [ -z "${PRIVATE_KEY:-}" ]; then
+            echo "TAURI_UPDATER_PRIVATE_KEY not set; skipping signing"
+            exit 0
+          fi
+          # Write key to temp file (safer than /dev/stdin)
+          KEY_FILE=$(mktemp)
+          trap 'rm -f "$KEY_FILE"' EXIT
+          echo "$PRIVATE_KEY" > "$KEY_FILE"
           mkdir -p release-tauri/signatures
           for file in release-tauri/*.zip; do
             [ -f "$file" ] || continue
             filename=$(basename "$file")
-            echo "$PRIVATE_KEY" | npx tauri signer sign \
-              --private-key /dev/stdin \
+            npx tauri signer sign \
+              --private-key "$KEY_FILE" \
               --password "embeddedcowork-update-key" \
-              --file-path "$file" 2>/dev/null
-            # Move .sig file to signatures directory
+              --file-path "$file"
             if [ -f "${file}.sig" ]; then
               mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
             fi
