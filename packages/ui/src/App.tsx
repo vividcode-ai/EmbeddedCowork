@@ -82,6 +82,7 @@ const App: Component = () => {
   const {
     preferences,
     serverSettings,
+    recentFolders,
     recordWorkspaceLaunch,
     toggleShowThinkingBlocks,
     toggleKeyboardShortcutHints,
@@ -99,6 +100,23 @@ const App: Component = () => {
   const [escapeInDebounce, setEscapeInDebounce] = createSignal(false)
   const [instanceTabBarHeight, setInstanceTabBarHeight] = createSignal(0)
   const [sidecarPickerOpen, setSidecarPickerOpen] = createSignal(false)
+  const [hasAutoLaunched, setHasAutoLaunched] = createSignal(false)
+
+  const isAutoLaunching = createMemo(() => {
+    if (hasAutoLaunched()) return false
+    if (appTabs().length > 0) return false
+    if (opencodeAvailable() !== true) return false
+    const folders = recentFolders()
+    return folders && folders.length > 0
+  })
+
+  createEffect(() => {
+    if (!isAutoLaunching()) return
+    setHasAutoLaunched(true)
+    const folders = recentFolders()
+    const mostRecent = folders[0]
+    handleSelectFolder(mostRecent.path, serverSettings().opencodeBinary || undefined)
+  })
 
   const phoneQuery = useMediaQuery("(max-width: 767px)")
   const isPhoneLayout = createMemo(() => phoneQuery())
@@ -604,11 +622,17 @@ const App: Component = () => {
         >
           <Show when={opencodeAvailable() !== null}>
             <Show when={opencodeAvailable()} fallback={<OpencodeSetupScreen />}>
-              <FolderSelectionView
-                onSelectFolder={handleSelectFolder}
-                isLoading={isSelectingFolder()}
-                onOpenSidecar={handleOpenSidecarPicker}
-              />
+              <Show when={!isAutoLaunching()} fallback={
+                <div class="flex items-center justify-center h-full">
+                  <div class="animate-spin rounded-full h-8 w-8 border-2 border-base" />
+                </div>
+              }>
+                <FolderSelectionView
+                  onSelectFolder={handleSelectFolder}
+                  isLoading={isSelectingFolder()}
+                  onOpenSidecar={handleOpenSidecarPicker}
+                />
+              </Show>
             </Show>
           </Show>
         </Show>
