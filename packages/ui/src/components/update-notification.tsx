@@ -13,10 +13,17 @@ import { getLogger } from "../lib/logger"
 
 const log = getLogger("actions")
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B"
+  const k = 1024
+  const sizes = ["B", "KB", "MB", "GB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
 export function UpdateNotification() {
   const { t } = useI18n()
   const [showInstallDialog, setShowInstallDialog] = createSignal(false)
-  const [activeToastId, setActiveToastId] = createSignal<string | null>(null)
 
   // Set up platform-specific listeners
   createEffect(() => {
@@ -43,32 +50,12 @@ export function UpdateNotification() {
       unlisteners.push(
         api.onUpdateProgress((progress: { percent: number; bytesPerSecond: number; total: number; transferred: number }) => {
           setUpdateProgress(progress)
-
-          // Show or update downloading toast
-          const state = updateState()
-          if (state.status === "downloading" && !state.dismissedToast) {
-            const percent = Math.round(progress.percent)
-            const toast = showToastNotification({
-              title: t("update.downloading", { version: state.version ?? "", percent: String(percent) }),
-              message: `${formatBytes(progress.transferred)} / ${formatBytes(progress.total)}`,
-              variant: "info",
-              duration: Number.POSITIVE_INFINITY,
-              position: "bottom-right",
-            })
-            setActiveToastId(toast.id)
-            setUpdateProgress({ ...progress, dismissedToast: false })
-          }
         }),
       )
 
       unlisteners.push(
         api.onUpdateReady((info: { version: string }) => {
           readyForInstall(info.version)
-          // Dismiss download toast
-          if (activeToastId()) {
-            // Toast auto-dismisses; we show the dialog instead
-            setActiveToastId(null)
-          }
           setShowInstallDialog(true)
           log.info("Update ready:", info.version)
         }),
@@ -96,8 +83,6 @@ export function UpdateNotification() {
     }
 
     if (host === "tauri") {
-      // Tauri: use @tauri-apps/plugin-updater JS API
-      // Auto-check on startup is handled by Rust side
       initTauriUpdater()
     }
   })
@@ -106,14 +91,13 @@ export function UpdateNotification() {
     try {
       const { checkUpdate, onUpdaterEvent } = await import("@tauri-apps/plugin-updater")
 
-      // Listen for updater events
       const unlisten = await onUpdaterEvent((event) => {
         switch (event.event) {
           case "CHECKING":
             setUpdateStatus("checking")
             break
           case "UPDATE_AVAILABLE":
-            setUpdateStatus("checking") // will transition to downloading when auto-download starts
+            setUpdateStatus("checking")
             break
           case "DOWNLOAD_PROGRESS":
             setUpdateProgress({
@@ -144,7 +128,6 @@ export function UpdateNotification() {
         try { unlisten() } catch { /* ignore */ }
       })
 
-      // Check for updates
       const update = await checkUpdate()
       if (update?.shouldUpdate) {
         log.info("Tauri update available:", update.manifest?.version)
@@ -174,24 +157,46 @@ export function UpdateNotification() {
     setShowInstallDialog(false)
   }
 
-  // Calculate human-readable download speed
-  function formatBytes(bytes: number): string {
-    if (bytes === 0) return "0 B"
-    const k = 1024
-    const sizes = ["B", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
-  }
+  const state = updateState()
+  const progress = state.progress
 
   return (
     <>
+      {/* Download progress bar (fixed bottom-right) */}
+      <Show when={state.status === "downloading" && progress && progress.total > 0}>
+        <div class="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg border border-base bg-surface-primary px-4 py-3 shadow-xl min-w-[240px]">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-secondary truncate">
+                {t("update.downloading", {
+                  version: state.version ?? "",
+                  percent: String(Math.round(progress!.percent)),
+                })}
+              </span>
+              <span class="text-xs font-medium text-primary ml-2">
+                {Math.round(progress!.percent)}%
+              </span>
+            </div>
+            <div class="w-full h-1.5 bg-base rounded-full overflow-hidden">
+              <div
+                class="h-full bg-accent rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress!.percent}%` }}
+              />
+            </div>
+            <div class="text-[10px] text-muted mt-0.5">
+              {formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}
+            </div>
+          </div>
+        </div>
+      </Show>
+
       {/* Install dialog */}
       <Show when={showInstallDialog()}>
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div class="w-full max-w-md rounded-lg border border-base bg-surface-primary p-6 shadow-2xl">
             <h2 class="text-lg font-semibold text-primary">{t("update.ready.title")}</h2>
             <p class="mt-2 text-sm text-secondary">
-              {t("update.ready.message", { version: updateState().version ?? "" })}
+              {t("update.ready.message", { version: state.version ?? "" })}
             </p>
             <div class="mt-6 flex justify-end gap-3">
               <button

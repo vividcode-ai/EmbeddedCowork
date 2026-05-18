@@ -30,25 +30,33 @@ export class AppAutoUpdater {
     }
   }
 
+  private setProgressBar(value: number) {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.setProgressBar(value)
+    }
+  }
+
   private setupListeners() {
     autoUpdater.on("checking-for-update", () => {
+      this.setProgressBar(-1) // indeterminate (taskbar pulse)
       this.send("update:status", "checking")
     })
 
-    autoUpdater.on("update-available", (info) => {
+    autoUpdater.on("update-available", () => {
       // Backup current version before starting download
       this.rollbackManager.backupCurrentApp(app.getVersion()).catch(() => {
-        // Backup best-effort; don't block update if backup fails
         console.warn("[auto-updater] failed to backup current app")
       })
-      this.send("update:available", { version: info.version, releaseDate: info.releaseDate })
+      this.setProgressBar(0) // 0% – download starting
     })
 
     autoUpdater.on("update-not-available", () => {
+      this.setProgressBar(-1) // clear
       this.send("update:status", "no-update")
     })
 
     autoUpdater.on("download-progress", (progress) => {
+      this.setProgressBar(progress.percent / 100) // 0.0 – 1.0
       this.send("update:progress", {
         percent: progress.percent,
         bytesPerSecond: progress.bytesPerSecond,
@@ -58,6 +66,9 @@ export class AppAutoUpdater {
     })
 
     autoUpdater.on("update-downloaded", (info) => {
+      this.setProgressBar(1) // 100% green
+      // Clear progress bar after 2 seconds
+      setTimeout(() => this.setProgressBar(-1), 2000)
       this.rollbackManager.markInstalling(info.version)
       this.send("update:ready", {
         version: info.version,
@@ -67,6 +78,8 @@ export class AppAutoUpdater {
     })
 
     autoUpdater.on("error", (err) => {
+      this.setProgressBar(2) // error (red on Windows/macOS)
+      setTimeout(() => this.setProgressBar(-1), 3000)
       this.send("update:error", { message: err.message })
     })
   }
