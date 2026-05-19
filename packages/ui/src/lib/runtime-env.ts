@@ -17,6 +17,9 @@ declare global {
 
   interface Window {
     __EMBEDDEDCOWORK_WINDOW_CONTEXT__?: WindowContextKind
+    __EMBEDDEDCOWORK__?: {
+      updaterEnabled?: boolean
+    }
     electronAPI?: unknown
     __TAURI__?: {
       core?: TauriCoreModule
@@ -125,3 +128,7 @@ export const canUseNativeDialogs = () => isDesktopHost() && isLocalWindow()
 export const canOpenRemoteWindows = () => isDesktopHost() && isLocalWindow()
 export const canRestartCli = () => isDesktopHost() && isLocalWindow()
 export const canUseDesktopFolderDrop = () => isDesktopHost() && isLocalWindow()
+export const isUpdaterEnabled = (): boolean => {
+  if (typeof window === "undefined") return false
+  return window.__EMBEDDEDCOWORK__?.updaterEnabled ?? false
+}

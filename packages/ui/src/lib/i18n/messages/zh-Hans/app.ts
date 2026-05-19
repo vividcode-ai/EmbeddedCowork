@@ -47,6 +47,12 @@ export const appMessages = {
   "update.ready.dismiss": "稍后再说",
   "update.error": "更新失败：{error}",
   "update.noUpdate": "已是最新版本。",
+  "update.polling.available.title": "更新可用",
+  "update.polling.available.message": "版本 {version} 已下载完成，可以安装。",
+  "update.polling.install": "安装并重启",
+  "update.polling.later": "稍后",
+  "update.alreadyUpToDate": "已是最新版本！",
+  "update.checkFailed": "检查更新失败",
 
   "rollback.title": "检测到恢复",
   "rollback.message": "上次更新到 v{newVersion} 后未能正常启动。是否回滚到 v{oldVersion}？",

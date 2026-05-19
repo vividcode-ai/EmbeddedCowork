@@ -1,4 +1,4 @@
-import { BrowserWindow, Notification, dialog, ipcMain, powerSaveBlocker, type OpenDialogOptions } from "electron"
+import { BrowserWindow, Notification, app, dialog, ipcMain, powerSaveBlocker, type OpenDialogOptions } from "electron"
 import fs from "fs"
 import { requestMicrophoneAccess } from "./permissions"
 import type { CliProcessManager, CliStatus } from "./process-manager"
@@ -151,6 +151,20 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
 
   ipcMain.handle("update:rollback", async () => {
     await appAutoUpdater?.rollback()
+  })
+
+  // --- Aligned IPC handlers (matching opencode pattern) ---
+  ipcMain.handle("check-update", async () => {
+    if (!app.isPackaged) return { updateAvailable: false }
+    return appAutoUpdater?.checkUpdate() ?? { updateAvailable: false }
+  })
+
+  ipcMain.handle("install-update", () => {
+    appAutoUpdater?.installNow()
+  })
+
+  ipcMain.handle("get-updater-enabled", () => {
+    return app.isPackaged
   })
 
   ipcMain.handle(

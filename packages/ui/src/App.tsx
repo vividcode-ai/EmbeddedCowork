@@ -25,7 +25,8 @@ import { formatLaunchErrorMessage, isMissingBinaryMessage } from "./lib/launch-e
 import { initReleaseNotifications } from "./stores/releases"
 import { UpdateNotification } from "./components/update-notification"
 import { RollbackDialog } from "./components/rollback-dialog"
-import { isTauriHost, isWebHost, runtimeEnv } from "./lib/runtime-env"
+import { isDesktopHost, isElectronHost, isTauriHost, isUpdaterEnabled, isWebHost, runtimeEnv } from "./lib/runtime-env"
+import { showToastNotification } from "./lib/notifications"
 import { useI18n } from "./lib/i18n"
 import { setWakeLockDesired } from "./lib/native/wake-lock"
 import {
@@ -485,12 +486,97 @@ const App: Component = () => {
           log.error("Failed to listen for menu:newInstance event", error)
         })
 
+        tauriBridge.event.listen("menu:checkForUpdates", () => {
+          void handleCheckForUpdates()
+        }).catch((error) => {
+          log.error("Failed to listen for menu:checkForUpdates event", error)
+        })
+
         onCleanup(() => {
           unlistenMenu?.()
         })
       }
     }
   })
+
+  // ── Periodic update polling (every 10 min) ──
+  onMount(() => {
+    if (!isDesktopHost() || !isUpdaterEnabled()) return
+
+    let toastId: number | undefined
+
+    const pollUpdate = async () => {
+      try {
+        let result: { updateAvailable: boolean; version?: string }
+        if (isElectronHost()) {
+          const api = (window as any).electronAPI as any
+          result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
+        } else if (isTauriHost()) {
+          const { invoke } = await import("@tauri-apps/api/core")
+          const version = await invoke<string | null>("check_update")
+          result = { updateAvailable: version != null, version: version ?? undefined }
+        } else return
+        if (!result.updateAvailable || toastId !== undefined) return
+        toastId = showToastNotification({
+          title: t("update.polling.available.title"),
+          message: t("update.polling.available.message", { version: result.version ?? "" }),
+          variant: "info",
+          duration: Number.POSITIVE_INFINITY,
+          position: "bottom-right",
+          action: {
+            label: t("update.polling.install"),
+            onClick: async () => {
+              if (isElectronHost()) {
+                const api = (window as any).electronAPI as any
+                await (api.installUpdateV2?.() ?? Promise.resolve())
+              } else if (isTauriHost()) {
+                const { relaunch } = await import("@tauri-apps/plugin-process")
+                await relaunch()
+              }
+            },
+          },
+        })
+      } catch (err) {
+        log.warn("Update poll failed:", err)
+      }
+    }
+
+    void pollUpdate()
+    const interval = setInterval(pollUpdate, 10 * 60 * 1000)
+    onCleanup(() => clearInterval(interval))
+  })
+
+  async function handleCheckForUpdates() {
+    if (!isDesktopHost() || !isUpdaterEnabled()) return
+    try {
+      let result: { updateAvailable: boolean; version?: string }
+      if (isElectronHost()) {
+        const api = (window as any).electronAPI as any
+        result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
+      } else if (isTauriHost()) {
+        const { invoke } = await import("@tauri-apps/api/core")
+        const version = await invoke<string | null>("check_update")
+        result = { updateAvailable: version != null, version: version ?? undefined }
+      } else return
+      if (!result.updateAvailable) {
+        showToastNotification({
+          title: t("update.alreadyUpToDate"),
+          message: "",
+          variant: "success",
+          duration: 3000,
+          position: "bottom-right",
+        })
+      }
+    } catch (err) {
+      showToastNotification({
+        title: t("update.checkFailed"),
+        message: String(err),
+        variant: "error",
+        duration: 8000,
+        position: "bottom-right",
+      })
+    }
+  }
 
   return (
     <>

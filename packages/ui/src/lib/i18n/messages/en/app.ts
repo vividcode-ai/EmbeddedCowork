@@ -48,6 +48,12 @@ export const appMessages = {
   "update.ready.dismiss": "Later",
   "update.error": "Update failed: {error}",
   "update.noUpdate": "You're up to date.",
+  "update.polling.available.title": "Update Available",
+  "update.polling.available.message": "Version {version} has been downloaded and is ready to install.",
+  "update.polling.install": "Install & Restart",
+  "update.polling.later": "Later",
+  "update.alreadyUpToDate": "You're up to date!",
+  "update.checkFailed": "Update check failed",
 
   "rollback.title": "Recovery detected",
   "rollback.message": "The previous update to v{newVersion} didn't start properly. Roll back to v{oldVersion}?",

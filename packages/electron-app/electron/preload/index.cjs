@@ -65,19 +65,18 @@ const localElectronAPI = {
   checkForUpdates: () => ipcRenderer.invoke("update:checkNow"),
   installUpdate: () => ipcRenderer.invoke("update:installNow"),
   rollbackUpdate: () => ipcRenderer.invoke("update:rollback"),
+  // ── Aligned API (matching opencode pattern) ──
+  checkUpdate: () => ipcRenderer.invoke("check-update"),
+  installUpdateV2: () => ipcRenderer.invoke("install-update"),
+  getUpdaterEnabled: () => ipcRenderer.invoke("get-updater-enabled"),
 }
 
 const remoteElectronAPI = {
-  requestMicrophoneAccess: localElectronAPI.requestMicrophoneAccess,
-  setWakeLock: localElectronAPI.setWakeLock,
-  showNotification: localElectronAPI.showNotification,
-  // Remote windows only need update notification, not install trigger
-  onUpdateStatus: localElectronAPI.onUpdateStatus,
-  onUpdateAvailable: localElectronAPI.onUpdateAvailable,
-  onUpdateProgress: localElectronAPI.onUpdateProgress,
-  onUpdateReady: localElectronAPI.onUpdateReady,
-  onUpdateError: localElectronAPI.onUpdateError,
-  onRollbackNeeded: localElectronAPI.onRollbackNeeded,
+  ...localElectronAPI,
+  // Remote windows can check but not install
+  installUpdate: undefined,
+  installUpdateV2: undefined,
+  rollbackUpdate: undefined,
 }
 
 contextBridge.exposeInMainWorld(
