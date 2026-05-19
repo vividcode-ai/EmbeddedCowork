@@ -415,7 +415,7 @@ jobs:
             [ -f "$file" ] || continue
             filename=$(basename "$file")
             npx tauri signer sign \
-              --private-key "$KEY_FILE" \
+              --private-key-path "$KEY_FILE" \
               --password "$PRIVATE_KEY_PASS" \
               "$file"
             if [ -f "${file}.sig" ]; then
@@ -550,7 +550,7 @@ jobs:
             [ -f "$file" ] || continue
             filename=$(basename "$file")
             npx tauri signer sign \
-              --private-key "$KEY_FILE" \
+              --private-key-path "$KEY_FILE" \
               --password "$PRIVATE_KEY_PASS" \
               "$file"
             if [ -f "${file}.sig" ]; then
@@ -689,7 +689,7 @@ jobs:
               $file = $_.FullName
               $filename = $_.Name
               Write-Host "Signing $filename"
-              npx tauri signer sign --private-key "$keyFile" --password "$env:PRIVATE_KEY_PASS" "$file"
+              npx tauri signer sign --private-key-path "$keyFile" --password "$env:PRIVATE_KEY_PASS" "$file"
               $sigFile = "${file}.sig"
               if (Test-Path $sigFile) {
                 Move-Item -Path $sigFile -Destination "release-tauri/signatures/${filename}.sig" -Force
@@ -841,14 +841,6 @@ jobs:
           cp "$deb" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.deb"
           cp "$rpm" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.rpm"
 
-      - name: Debug TAURI_SIGNING_PRIVATE_KEY
-        if: ${{ inputs.upload && inputs.tag != '' }}
-        env:
-          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          echo "Key length: ${#PRIVATE_KEY}"
-          printf '%s' "$PRIVATE_KEY" | xxd | head -5
-
       - name: Sign Tauri artifacts (Linux ed25519)
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: bash
@@ -870,7 +862,7 @@ jobs:
             [ -f "$file" ] || continue
             filename=$(basename "$file")
             npx tauri signer sign \
-              --private-key "$KEY_FILE" \
+              --private-key-path "$KEY_FILE" \
               --password "$PRIVATE_KEY_PASS" \
               "$file"
             if [ -f "${file}.sig" ]; then
