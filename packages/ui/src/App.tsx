@@ -754,16 +754,11 @@ const App: Component = () => {
                   <div class="animate-spin rounded-full h-8 w-8 border-2 border-base" />
                 </div>
               }>
-                <div class="flex flex-col items-center justify-center h-full gap-4 p-8">
-                  <p class="text-secondary text-sm">{t("commands.newInstance.description")}</p>
-                  <button
-                    type="button"
-                    class="selector-button selector-button-primary"
-                    onClick={handleNewInstanceRequest}
-                  >
-                    {t("commands.newInstance.label")}
-                  </button>
-                </div>
+                <FolderSelectionView
+                  onSelectFolder={handleSelectFolder}
+                  isLoading={isSelectingFolder()}
+                  onOpenSidecar={handleOpenSidecarPicker}
+                />
               </Show>
             </Show>
           </Show>
