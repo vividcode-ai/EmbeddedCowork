@@ -396,13 +396,14 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: bash
         env:
-          PRIVATE_KEY: ${{ secrets.TAURI_UPDATER_PRIVATE_KEY }}
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          PRIVATE_KEY_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         working-directory: packages/tauri-app
         run: |
           set -euo pipefail
           # Skip if no private key configured
           if [ -z "${PRIVATE_KEY:-}" ]; then
-            echo "TAURI_UPDATER_PRIVATE_KEY not set; skipping signing"
+            echo "TAURI_SIGNING_PRIVATE_KEY not set; skipping signing"
             exit 0
           fi
           # Write key to temp file (safer than /dev/stdin)
@@ -415,7 +416,7 @@ jobs:
             filename=$(basename "$file")
             npx tauri signer sign \
               --private-key "$KEY_FILE" \
-              --password "embeddedcowork-update-key" \
+              --password "$PRIVATE_KEY_PASS" \
               --file-path "$file"
             if [ -f "${file}.sig" ]; then
               mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
@@ -528,6 +529,56 @@ jobs:
             ditto -ck --sequesterRsrc --keepParent "$BUNDLE_ROOT/macos/EmbeddedCowork.app" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-macos-arm64.zip"
           fi
 
+      - name: Sign Tauri artifacts (macOS arm64 ed25519)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: bash
+        env:
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          PRIVATE_KEY_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        working-directory: packages/tauri-app
+        run: |
+          set -euo pipefail
+          if [ -z "${PRIVATE_KEY:-}" ]; then
+            echo "TAURI_SIGNING_PRIVATE_KEY not set; skipping signing"
+            exit 0
+          fi
+          KEY_FILE=$(mktemp)
+          trap 'rm -f "$KEY_FILE"' EXIT
+          echo "$PRIVATE_KEY" > "$KEY_FILE"
+          mkdir -p release-tauri/signatures
+          for file in release-tauri/*.zip; do
+            [ -f "$file" ] || continue
+            filename=$(basename "$file")
+            npx tauri signer sign \
+              --private-key "$KEY_FILE" \
+              --password "$PRIVATE_KEY_PASS" \
+              --file-path "$file"
+            if [ -f "${file}.sig" ]; then
+              mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
+            fi
+          done
+
+      - name: Upload signature artifacts (Tauri macOS arm64)
+        if: ${{ inputs.upload_actions_artifacts }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.actions_artifacts_name_prefix }}signatures-macos-arm64
+          path: packages/tauri-app/release-tauri/signatures/
+          retention-days: ${{ inputs.actions_artifacts_retention_days }}
+          if-no-files-found: warn
+
+      - name: Upload Tauri signatures to release (macOS arm64)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          shopt -s nullglob
+          for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
+            [ -f "$sig" ] || continue
+            echo "Uploading $sig"
+            gh release upload "$TAG" "$sig" --clobber
+          done
+
       - name: Upload Actions artifacts (Tauri macOS arm64)
         if: ${{ inputs.upload_actions_artifacts }}
         uses: actions/upload-artifact@v4
@@ -616,6 +667,60 @@ jobs:
           if ($null -ne $exe) {
             $dest = Join-Path $artifactDir ("EmbeddedCowork-Tauri-$env:VERSION-windows-x64.zip")
             Compress-Archive -Path $exe.Directory.FullName -DestinationPath $dest -Force
+          }
+
+      - name: Sign Tauri artifacts (Windows ed25519)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: pwsh
+        env:
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          PRIVATE_KEY_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        working-directory: packages/tauri-app
+        run: |
+          if (-not $env:PRIVATE_KEY) {
+            Write-Host "TAURI_SIGNING_PRIVATE_KEY not set; skipping signing"
+            exit 0
+          }
+          $keyFile = [System.IO.Path]::GetTempFileName()
+          try {
+            Set-Content -Path $keyFile -Value $env:PRIVATE_KEY -NoNewline
+            New-Item -ItemType Directory -Path "release-tauri/signatures" -Force | Out-Null
+            Get-ChildItem -Path "release-tauri" -Filter *.zip -File | ForEach-Object {
+              $file = $_.FullName
+              $filename = $_.Name
+              Write-Host "Signing $filename"
+              npx tauri signer sign --private-key "$keyFile" --password "$env:PRIVATE_KEY_PASS" --file-path "$file"
+              $sigFile = "${file}.sig"
+              if (Test-Path $sigFile) {
+                Move-Item -Path $sigFile -Destination "release-tauri/signatures/${filename}.sig" -Force
+              }
+            }
+          } finally {
+            Remove-Item -Path $keyFile -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload signature artifacts (Tauri Windows)
+        if: ${{ inputs.upload_actions_artifacts }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.actions_artifacts_name_prefix }}signatures-windows
+          path: packages/tauri-app/release-tauri/signatures/
+          retention-days: ${{ inputs.actions_artifacts_retention_days }}
+          if-no-files-found: warn
+
+      - name: Upload Tauri signatures to release (Windows)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: pwsh
+        run: |
+          gh release view $env:TAG 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:TAG --title $env:TAG --generate-notes
+          }
+          if (Test-Path "packages/tauri-app/release-tauri/signatures") {
+            Get-ChildItem -Path "packages/tauri-app/release-tauri/signatures" -Filter *.sig -File | ForEach-Object {
+              Write-Host "Uploading $($_.FullName)"
+              gh release upload $env:TAG $_.FullName --clobber
+            }
           }
 
       - name: Upload Actions artifacts (Tauri Windows)
@@ -735,6 +840,56 @@ jobs:
           cp "$appimage" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.AppImage"
           cp "$deb" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.deb"
           cp "$rpm" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.rpm"
+
+      - name: Sign Tauri artifacts (Linux ed25519)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        shell: bash
+        env:
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          PRIVATE_KEY_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        working-directory: packages/tauri-app
+        run: |
+          set -euo pipefail
+          if [ -z "${PRIVATE_KEY:-}" ]; then
+            echo "TAURI_SIGNING_PRIVATE_KEY not set; skipping signing"
+            exit 0
+          fi
+          KEY_FILE=$(mktemp)
+          trap 'rm -f "$KEY_FILE"' EXIT
+          echo "$PRIVATE_KEY" > "$KEY_FILE"
+          mkdir -p release-tauri/signatures
+          for file in release-tauri/*.AppImage; do
+            [ -f "$file" ] || continue
+            filename=$(basename "$file")
+            npx tauri signer sign \
+              --private-key "$KEY_FILE" \
+              --password "$PRIVATE_KEY_PASS" \
+              --file-path "$file"
+            if [ -f "${file}.sig" ]; then
+              mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
+            fi
+          done
+
+      - name: Upload signature artifacts (Tauri Linux)
+        if: ${{ inputs.upload_actions_artifacts }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.actions_artifacts_name_prefix }}signatures-linux
+          path: packages/tauri-app/release-tauri/signatures/
+          retention-days: ${{ inputs.actions_artifacts_retention_days }}
+          if-no-files-found: warn
+
+      - name: Upload Tauri signatures to release (Linux)
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          shopt -s nullglob
+          for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
+            [ -f "$sig" ] || continue
+            echo "Uploading $sig"
+            gh release upload "$TAG" "$sig" --clobber
+          done
 
       - name: Upload Actions artifacts (Tauri Linux)
         if: ${{ inputs.upload_actions_artifacts }}
