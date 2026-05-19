@@ -417,7 +417,7 @@ jobs:
             npx tauri signer sign \
               --private-key "$KEY_FILE" \
               --password "$PRIVATE_KEY_PASS" \
-              --file-path "$file"
+              "$file"
             if [ -f "${file}.sig" ]; then
               mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
             fi
@@ -552,7 +552,7 @@ jobs:
             npx tauri signer sign \
               --private-key "$KEY_FILE" \
               --password "$PRIVATE_KEY_PASS" \
-              --file-path "$file"
+              "$file"
             if [ -f "${file}.sig" ]; then
               mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
             fi
@@ -689,7 +689,7 @@ jobs:
               $file = $_.FullName
               $filename = $_.Name
               Write-Host "Signing $filename"
-              npx tauri signer sign --private-key "$keyFile" --password "$env:PRIVATE_KEY_PASS" --file-path "$file"
+              npx tauri signer sign --private-key "$keyFile" --password "$env:PRIVATE_KEY_PASS" "$file"
               $sigFile = "${file}.sig"
               if (Test-Path $sigFile) {
                 Move-Item -Path $sigFile -Destination "release-tauri/signatures/${filename}.sig" -Force
@@ -864,7 +864,7 @@ jobs:
             npx tauri signer sign \
               --private-key "$KEY_FILE" \
               --password "$PRIVATE_KEY_PASS" \
-              --file-path "$file"
+              "$file"
             if [ -f "${file}.sig" ]; then
               mv "${file}.sig" "release-tauri/signatures/${filename}.sig"
             fi

@@ -26,6 +26,7 @@ import { initReleaseNotifications } from "./stores/releases"
 import { UpdateNotification } from "./components/update-notification"
 import { RollbackDialog } from "./components/rollback-dialog"
 import { isDesktopHost, isElectronHost, isTauriHost, isUpdaterEnabled, isWebHost, runtimeEnv } from "./lib/runtime-env"
+import { serverApi } from "./lib/api-client"
 import { showToastNotification, type ToastHandle } from "./lib/notifications"
 import { useI18n } from "./lib/i18n"
 import { setWakeLockDesired } from "./lib/native/wake-lock"
@@ -101,22 +102,26 @@ const App: Component = () => {
   const [escapeInDebounce, setEscapeInDebounce] = createSignal(false)
   const [instanceTabBarHeight, setInstanceTabBarHeight] = createSignal(0)
   const [sidecarPickerOpen, setSidecarPickerOpen] = createSignal(false)
-  const [hasAutoLaunched, setHasAutoLaunched] = createSignal(false)
-
-  const isAutoLaunching = createMemo(() => {
-    if (hasAutoLaunched()) return false
-    if (appTabs().length > 0) return false
-    if (opencodeAvailable() !== true) return false
-    const folders = recentFolders()
-    return folders && folders.length > 0
-  })
+  const [isBootstrapping, setIsBootstrapping] = createSignal(false)
+  const [hasBootstrapped, setHasBootstrapped] = createSignal(false)
 
   createEffect(() => {
-    if (!isAutoLaunching()) return
-    setHasAutoLaunched(true)
+    if (appTabs().length > 0) return
+    if (opencodeAvailable() !== true) return
+    if (hasBootstrapped()) return
+    if (isBootstrapping()) return
+
+    setHasBootstrapped(true)
+    setIsBootstrapping(true)
+
     const folders = recentFolders()
-    const mostRecent = folders[0]
-    handleSelectFolder(mostRecent.path, serverSettings().opencodeBinary || undefined)
+    if (folders && folders.length > 0) {
+      const mostRecent = folders[0]
+      handleSelectFolder(mostRecent.path, serverSettings().opencodeBinary || undefined)
+        .finally(() => setIsBootstrapping(false))
+    } else {
+      performAutoCreateDefaultWorkspace()
+    }
   })
 
   const phoneQuery = useMediaQuery("(max-width: 767px)")
@@ -306,6 +311,26 @@ const App: Component = () => {
       log.error("Failed to create instance", error)
     } finally {
       setIsSelectingFolder(false)
+    }
+  }
+
+  async function performAutoCreateDefaultWorkspace() {
+    try {
+      const fs = await serverApi.listFileSystem()
+      const homePath = fs.metadata.homePath
+      const binary = serverSettings().opencodeBinary || "opencode"
+      clearLaunchError()
+      const instanceId = await createInstance(homePath, binary)
+      selectInstanceTab(instanceId)
+      log.info("Created default instance with home directory", { instanceId, homePath })
+    } catch (error) {
+      const message = formatLaunchErrorMessage(error, t("app.launchError.fallbackMessage"))
+      const missingBinary = isMissingBinaryMessage(message)
+      const binary = serverSettings().opencodeBinary || "opencode"
+      showLaunchError({ source: "create", message, binaryPath: binary, missingBinary })
+      log.error("Failed to create default instance", error)
+    } finally {
+      setIsBootstrapping(false)
     }
   }
 
@@ -706,16 +731,21 @@ const App: Component = () => {
         >
           <Show when={opencodeAvailable() !== null}>
             <Show when={opencodeAvailable()} fallback={<OpencodeSetupScreen />}>
-              <Show when={!isAutoLaunching()} fallback={
+              <Show when={!isBootstrapping()} fallback={
                 <div class="flex items-center justify-center h-full">
                   <div class="animate-spin rounded-full h-8 w-8 border-2 border-base" />
                 </div>
               }>
-                <FolderSelectionView
-                  onSelectFolder={handleSelectFolder}
-                  isLoading={isSelectingFolder()}
-                  onOpenSidecar={handleOpenSidecarPicker}
-                />
+                <div class="flex flex-col items-center justify-center h-full gap-4 p-8">
+                  <p class="text-secondary text-sm">{t("commands.newInstance.description")}</p>
+                  <button
+                    type="button"
+                    class="selector-button selector-button-primary"
+                    onClick={handleNewInstanceRequest}
+                  >
+                    {t("commands.newInstance.label")}
+                  </button>
+                </div>
               </Show>
             </Show>
           </Show>
