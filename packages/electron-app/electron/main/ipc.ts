@@ -159,7 +159,8 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
     return appAutoUpdater?.checkUpdate() ?? { updateAvailable: false }
   })
 
-  ipcMain.handle("install-update", () => {
+  ipcMain.handle("install-update", async () => {
+    await cliManager.stop().catch(() => {})
     appAutoUpdater?.installNow()
   })
 

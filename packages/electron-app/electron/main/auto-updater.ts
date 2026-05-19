@@ -5,6 +5,9 @@ import { ElectronRollbackManager } from "./rollback"
 const { autoUpdater } = pkg
 
 export class AppAutoUpdater {
+  /** Whether an update install is in progress (used by before-quit to let quitAndInstall manage the flow) */
+  isUpdating = false
+
   private rollbackManager: ElectronRollbackManager
   private mainWindow: BrowserWindow | null = null
   private cleanupFunctions: Array<() => void> = []
@@ -144,6 +147,7 @@ export class AppAutoUpdater {
 
   /** Install the downloaded update immediately */
   installNow() {
+    this.isUpdating = true
     autoUpdater.quitAndInstall()
   }
 

@@ -409,7 +409,7 @@ jobs:
           # Write key to temp file (safer than /dev/stdin)
           KEY_FILE=$(mktemp)
           trap 'rm -f "$KEY_FILE"' EXIT
-          echo "$PRIVATE_KEY" > "$KEY_FILE"
+          printf '%s' "$PRIVATE_KEY" > "$KEY_FILE"
           mkdir -p release-tauri/signatures
           for file in release-tauri/*.zip; do
             [ -f "$file" ] || continue
@@ -544,7 +544,7 @@ jobs:
           fi
           KEY_FILE=$(mktemp)
           trap 'rm -f "$KEY_FILE"' EXIT
-          echo "$PRIVATE_KEY" > "$KEY_FILE"
+          printf '%s' "$PRIVATE_KEY" > "$KEY_FILE"
           mkdir -p release-tauri/signatures
           for file in release-tauri/*.zip; do
             [ -f "$file" ] || continue
@@ -856,7 +856,7 @@ jobs:
           fi
           KEY_FILE=$(mktemp)
           trap 'rm -f "$KEY_FILE"' EXIT
-          echo "$PRIVATE_KEY" > "$KEY_FILE"
+          printf '%s' "$PRIVATE_KEY" > "$KEY_FILE"
           mkdir -p release-tauri/signatures
           for file in release-tauri/*.AppImage; do
             [ -f "$file" ] || continue
