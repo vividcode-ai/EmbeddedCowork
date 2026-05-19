@@ -841,6 +841,14 @@ jobs:
           cp "$deb" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.deb"
           cp "$rpm" "$ARTIFACT_DIR/EmbeddedCowork-Tauri-${VERSION}-linux-x64.rpm"
 
+      - name: Debug TAURI_SIGNING_PRIVATE_KEY
+        if: ${{ inputs.upload && inputs.tag != '' }}
+        env:
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          echo "Key length: ${#PRIVATE_KEY}"
+          printf '%s' "$PRIVATE_KEY" | xxd | head -5
+
       - name: Sign Tauri artifacts (Linux ed25519)
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: bash
