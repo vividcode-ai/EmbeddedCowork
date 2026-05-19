@@ -598,23 +598,23 @@
 }
 
 /* ===== Assistant footer controls ===== */
-.assistant-message .message-item-header-row--top {
-  justify-content: flex-start;
-  width: 100%;
+.assistant-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+  pointer-events: none;
 }
 
-.assistant-message .message-header-left {
+.assistant-message:hover .assistant-controls-row {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
+  pointer-events: auto;
+}
+
+.assistant-controls-row .message-header-left {
   flex: 0 0 auto;
-}
-
-.assistant-message .message-select-checkbox {
-  opacity: 0 !important;
-  transition: opacity 0ms ease 0ms !important;
-}
-
-.assistant-message:hover .message-select-checkbox {
-  opacity: 1 !important;
-  transition: opacity 100ms ease 0ms !important;
 }
 
 /* ===== Reasoning card controls row ===== */

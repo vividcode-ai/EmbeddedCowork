@@ -827,7 +827,7 @@ export default function MessageBlock(props: MessageBlockProps) {
                     startPartId={(item() as ContentDisplayItem).startPartId}
                     messageIndex={props.messageIndex}
                     lastAssistantIndex={props.lastAssistantIndex}
-                    showDeleteMessage={index === 0}
+                    showDeleteMessage={true}
                     onDeleteHoverChange={props.onDeleteHoverChange}
                     onRevert={props.onRevert}
                     onDeleteMessagesUpTo={props.onDeleteMessagesUpTo}
@@ -848,7 +848,7 @@ export default function MessageBlock(props: MessageBlockProps) {
                             store={props.store}
                             messageId={toolItem.messageId}
                             partId={toolItem.partId}
-                            showDeleteMessage={index === 0}
+                            showDeleteMessage={true}
                           deleteHover={props.deleteHover}
                           onDeleteHoverChange={props.onDeleteHoverChange}
                           onDeleteMessagesUpTo={props.onDeleteMessagesUpTo}
@@ -867,7 +867,7 @@ export default function MessageBlock(props: MessageBlockProps) {
                     part={(item() as StepDisplayItem).part}
                     messageInfo={(item() as StepDisplayItem).messageInfo}
                     showAgentMeta
-                    showDeleteMessage={index === 0}
+                    showDeleteMessage={true}
                     instanceId={props.instanceId}
                     sessionId={props.sessionId}
                     messageId={props.messageId}
@@ -884,7 +884,7 @@ export default function MessageBlock(props: MessageBlockProps) {
                     messageInfo={(item() as StepDisplayItem).messageInfo}
                     showUsage={props.showUsageMetrics()}
                     borderColor={(item() as StepDisplayItem).accentColor}
-                    showDeleteMessage={index === 0}
+                    showDeleteMessage={false}
                     instanceId={props.instanceId}
                     sessionId={props.sessionId}
                     messageId={props.messageId}
@@ -902,7 +902,7 @@ export default function MessageBlock(props: MessageBlockProps) {
                     instanceId={props.instanceId}
                     sessionId={props.sessionId}
                     messageId={(item() as CompactionDisplayItem).messageId}
-                    showDeleteMessage={index === 0}
+                    showDeleteMessage={true}
                     onDeleteHoverChange={props.onDeleteHoverChange}
                     onDeleteMessagesUpTo={props.onDeleteMessagesUpTo}
                     selectedMessageIds={props.selectedMessageIds}
@@ -918,7 +918,7 @@ export default function MessageBlock(props: MessageBlockProps) {
                     messageId={(item() as ReasoningDisplayItem).messageId}
                     showAgentMeta={(item() as ReasoningDisplayItem).showAgentMeta}
                     defaultExpanded={(item() as ReasoningDisplayItem).defaultExpanded}
-                    showDeleteMessage={index === 0}
+                    showDeleteMessage={true}
                     onDeleteHoverChange={props.onDeleteHoverChange}
                     onDeleteMessagesUpTo={props.onDeleteMessagesUpTo}
                     selectedMessageIds={props.selectedMessageIds}

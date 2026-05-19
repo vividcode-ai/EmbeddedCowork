@@ -625,7 +625,7 @@ export default function MessageItem(props: MessageItemProps) {
         </div>
 
         <header class="message-item-header pb-0">
-          <div class="message-item-header-row message-item-header-row--top" ref={(el) => (topRowEl = el)}>
+          <div class="assistant-controls-row" ref={(el) => (topRowEl = el)}>
             <Show when={props.showDeleteMessage}>
               <input
                 class="message-select-checkbox"

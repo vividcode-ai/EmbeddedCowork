@@ -26,7 +26,7 @@ import { initReleaseNotifications } from "./stores/releases"
 import { UpdateNotification } from "./components/update-notification"
 import { RollbackDialog } from "./components/rollback-dialog"
 import { isDesktopHost, isElectronHost, isTauriHost, isUpdaterEnabled, isWebHost, runtimeEnv } from "./lib/runtime-env"
-import { showToastNotification } from "./lib/notifications"
+import { showToastNotification, type ToastHandle } from "./lib/notifications"
 import { useI18n } from "./lib/i18n"
 import { setWakeLockDesired } from "./lib/native/wake-lock"
 import {
@@ -503,7 +503,7 @@ const App: Component = () => {
   onMount(() => {
     if (!isDesktopHost() || !isUpdaterEnabled()) return
 
-    let toastId: number | undefined
+    let toastHandle: ToastHandle | undefined
 
     const pollUpdate = async () => {
       try {
@@ -516,8 +516,8 @@ const App: Component = () => {
           const version = await invoke<string | null>("check_update")
           result = { updateAvailable: version != null, version: version ?? undefined }
         } else return
-        if (!result.updateAvailable || toastId !== undefined) return
-        toastId = showToastNotification({
+        if (!result.updateAvailable || toastHandle !== undefined) return
+        toastHandle = showToastNotification({
           title: t("update.polling.available.title"),
           message: t("update.polling.available.message", { version: result.version ?? "" }),
           variant: "info",
@@ -529,10 +529,8 @@ const App: Component = () => {
               if (isElectronHost()) {
                 const api = (window as any).electronAPI as any
                 await (api.installUpdateV2?.() ?? Promise.resolve())
-              } else if (isTauriHost()) {
-                const { relaunch } = await import("@tauri-apps/plugin-process")
-                await relaunch()
               }
+              // Tauri: check_update already handled download + install + restart
             },
           },
         })

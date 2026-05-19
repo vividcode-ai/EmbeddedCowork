@@ -18,7 +18,8 @@ export type ToastPayload = {
   position?: ToastPosition
   action?: {
     label: string
-    href: string
+    href?: string
+    onClick?: () => void
   }
 }
 
@@ -111,7 +112,13 @@ export function showToastNotification(payload: ToastPayload): ToastHandle {
               <button
                 type="button"
                 class="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-wide text-sky-300 hover:text-sky-200"
-                onClick={() => void openExternalUrl(payload.action!.href)}
+                onClick={() => {
+                  if (payload.action!.onClick) {
+                    payload.action!.onClick()
+                  } else if (payload.action!.href) {
+                    void openExternalUrl(payload.action!.href)
+                  }
+                }}
               >
                 {payload.action.label}
               </button>
