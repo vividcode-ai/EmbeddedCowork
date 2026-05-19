@@ -447,7 +447,7 @@ const SessionList: Component<SessionListProps> = (props) => {
     return (
       <div class="session-list-item group">
         <button
-          class={`session-item-base ${rowProps.isChild ? `session-item-child${rowProps.isLastChild ? " session-item-child-last" : ""} session-item-border-assistant session-item-kind-assistant` : "session-item-border-user session-item-kind-user"} ${isActive() ? "session-item-active" : "session-item-inactive"}`}
+          class={`session-item-base ${rowProps.isChild ? `session-item-child${rowProps.isLastChild ? " session-item-child-last" : ""} session-item-kind-assistant` : "session-item-kind-user"} ${isActive() ? "session-item-active" : "session-item-inactive"}`}
           data-session-id={rowProps.sessionId}
           onClick={() => selectSession(rowProps.sessionId)}
           title={title()}

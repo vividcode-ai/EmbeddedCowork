@@ -13,7 +13,7 @@ const PromptAttachmentsBar: Component<PromptAttachmentsBarProps> = (props) => {
   const { t } = useI18n()
 
   return (
-    <div class="flex flex-wrap items-center gap-1.5 border-t px-3 py-2" style="border-color: var(--border-base);">
+    <div class="flex flex-wrap items-center gap-1.5 border-t py-2" style="padding-inline: clamp(100px, 6vw, 200px); border-color: var(--border-base);">
       <For each={props.attachments}>
         {(attachment) => {
           const isText = attachment.source.type === "text"

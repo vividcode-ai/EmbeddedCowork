@@ -886,7 +886,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
 
         <Box
           component="main"
-          sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowX: "hidden" }}
+          sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowX: "hidden"}}
           class="content-area"
         >
           <Show

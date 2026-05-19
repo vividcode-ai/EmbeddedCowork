@@ -1017,7 +1017,6 @@ function CompactionCard(props: CompactionCardProps) {
   return (
     <div
       class={`delete-hover-scope ${containerClass()} relative`}
-      style={{ "border-left": `4px solid ${borderColor()}` }}
       role="status"
       aria-label={t("messageBlock.compaction.ariaLabel")}
     >
@@ -1130,8 +1129,6 @@ function StepCard(props: StepCardProps) {
     }
   }
 
-  const finishStyle = () => (props.borderColor ? { "border-left-color": props.borderColor } : undefined)
-
   const canDeleteMessage = () =>
     Boolean(props.showDeleteMessage && props.instanceId && props.sessionId && props.messageId) && !deletingMessage()
 
@@ -1198,7 +1195,7 @@ function StepCard(props: StepCardProps) {
       return null
     }
     return (
-      <div class={`message-step-card message-step-finish message-step-finish-flush relative`} style={finishStyle()}>
+      <div class={`message-step-card message-step-finish message-step-finish-flush relative`}>
         <Show when={props.showDeleteMessage && props.messageId}>
           <input
             class="message-select-checkbox absolute left-2 top-1/2 -translate-y-1/2"

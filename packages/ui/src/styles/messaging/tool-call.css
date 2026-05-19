@@ -5,7 +5,6 @@
 .tool-call-message {
   @apply flex flex-col gap-2 p-3 w-full;
   background-color: var(--message-tool-bg);
-  border-inline-start: 4px solid var(--message-tool-border);
   color: inherit;
 }
 
