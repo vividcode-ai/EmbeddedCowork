@@ -28,6 +28,13 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+  padding-inline: clamp(100px, 6vw, 200px);
+}
+
+@media (max-width: 768px) {
+  .message-stream {
+    padding-inline: 16px;
+  }
 }
 
 .message-stream::-webkit-scrollbar {

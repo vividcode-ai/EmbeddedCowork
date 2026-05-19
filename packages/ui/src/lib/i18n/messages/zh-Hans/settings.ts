@@ -253,4 +253,11 @@ export const settingsMessages = {
   "sidecars.refresh": "刷新",
   "sidecars.path": "路径",
   "sidecars.go": "前往",
+
+  "settings.update.title": "应用更新",
+  "settings.update.subtitle": "检查桌面应用的新版本",
+  "settings.update.checkForUpdates": "检查更新",
+  "settings.update.checkForUpdatesDesc": "检查是否有新版本可用",
+  "settings.update.check": "检查",
+  "settings.update.checking": "检查中...",
 } as const

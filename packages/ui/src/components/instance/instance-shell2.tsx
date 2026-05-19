@@ -110,6 +110,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
 
   // Worktree selector manages its own dialogs.
   const [showSessionSearch, setShowSessionSearch] = createSignal(false)
+  const [autoCreateTriggered, setAutoCreateTriggered] = createSignal(false)
 
   const {
     allInstanceSessions,
@@ -124,6 +125,17 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     handleSessionSelect,
   } = useInstanceSessionContext({
     instanceId: () => props.instance.id,
+  })
+
+  createEffect(() => {
+    if (!props.isActiveInstance) return
+    if (autoCreateTriggered()) return
+    if (loading().fetchingSessions.get(props.instance.id)) return
+    if (!props.instance.client) return
+    if (allInstanceSessions().size > 0) return
+
+    setAutoCreateTriggered(true)
+    void props.onNewSession()
   })
 
   const desktopQuery = useMediaQuery("(min-width: 1280px)")
@@ -874,7 +886,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
 
         <Box
           component="main"
-          sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowX: "hidden" }}
+          sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowX: "hidden"}}
           class="content-area"
         >
           <Show

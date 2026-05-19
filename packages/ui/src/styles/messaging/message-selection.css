@@ -9,6 +9,16 @@
   flex: 0 0 auto;
 }
 
+.message-item-base .message-select-checkbox {
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+}
+
+.message-item-base:hover .message-select-checkbox {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
+}
+
 .message-delete-mode-toolbar {
   position: absolute;
   left: 50%;

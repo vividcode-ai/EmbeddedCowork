@@ -600,6 +600,13 @@ app.whenReady().then(() => {
 
   appAutoUpdater.setMainWindow(mainWindow)
 
+  // Inject updaterEnabled flag into renderer
+  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow?.webContents.executeJavaScript(
+      `window.__EMBEDDEDCOWORK__ = Object.assign(window.__EMBEDDEDCOWORK__ || {}, { updaterEnabled: ${app.isPackaged} })`,
+    ).catch(() => {})
+  })
+
   if (isMac) {
     session.defaultSession.setSpellCheckerEnabled(false)
     configureMediaPermissionHandlers(getAllowedRendererOrigins)

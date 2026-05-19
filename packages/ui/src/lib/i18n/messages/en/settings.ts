@@ -253,4 +253,11 @@ export const settingsMessages = {
   "sidecars.refresh": "Refresh",
   "sidecars.path": "Path",
   "sidecars.go": "Go",
+
+  "settings.update.title": "Application Update",
+  "settings.update.subtitle": "Check for new versions of the desktop app",
+  "settings.update.checkForUpdates": "Check for Updates",
+  "settings.update.checkForUpdatesDesc": "Check if a new version is available",
+  "settings.update.check": "Check",
+  "settings.update.checking": "Checking...",
 } as const

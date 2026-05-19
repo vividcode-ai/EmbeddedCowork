@@ -1,11 +1,13 @@
 import { Select } from "@kobalte/core/select"
-import { createEffect, createMemo, createSignal, type Component } from "solid-js"
-import { ChevronDown, Database, Terminal } from "lucide-solid"
+import { createEffect, createMemo, createSignal, Show, type Component } from "solid-js"
+import { ChevronDown, Database, RefreshCw, Terminal } from "lucide-solid"
 import OpenCodeBinarySelector from "../opencode-binary-selector"
 import EnvironmentVariablesEditor from "../environment-variables-editor"
 import { useConfig } from "../../stores/preferences"
 import type { ServerLogLevel } from "../../stores/preferences"
 import { useI18n } from "../../lib/i18n"
+import { isDesktopHost, isElectronHost, isTauriHost, isUpdaterEnabled } from "../../lib/runtime-env"
+import { showToastNotification } from "../../lib/notifications"
 
 type LogLevelOption = {
   value: ServerLogLevel
@@ -187,6 +189,74 @@ export const OpenCodeSettingsSection: Component = () => {
         </div>
         <EnvironmentVariablesEditor />
       </div>
+      <Show when={isDesktopHost() && isUpdaterEnabled()}>
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-heading-with-icon">
+              <RefreshCw class="settings-card-heading-icon" />
+              <div>
+                <h3 class="settings-card-title">{t("settings.update.title")}</h3>
+                <p class="settings-card-subtitle">{t("settings.update.subtitle")}</p>
+              </div>
+            </div>
+            <span class="settings-scope-badge settings-scope-badge-server">{t("settings.scope.client")}</span>
+          </div>
+          <div class="settings-card-body">
+            <div class="settings-toggle-row settings-toggle-row-compact">
+              <div>
+                <div class="settings-toggle-title">{t("settings.update.checkForUpdates")}</div>
+                <div class="settings-toggle-caption">{t("settings.update.checkForUpdatesDesc")}</div>
+              </div>
+              <button
+                type="button"
+                class="selector-button selector-button-secondary"
+                onClick={handleCheckForUpdates}
+                disabled={checkingUpdate()}
+              >
+                {checkingUpdate() ? t("settings.update.checking") : t("settings.update.check")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
     </div>
   )
+
+  const [checkingUpdate, setCheckingUpdate] = createSignal(false)
+
+  async function handleCheckForUpdates() {
+    if (!isDesktopHost() || !isUpdaterEnabled()) return
+    setCheckingUpdate(true)
+    try {
+      let result: { updateAvailable: boolean; version?: string }
+      if (isElectronHost()) {
+        const api = (window as any).electronAPI as any
+        result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
+      } else if (isTauriHost()) {
+        const { invoke } = await import("@tauri-apps/api/core")
+        const version = await invoke<string | null>("check_update")
+        result = { updateAvailable: version != null, version: version ?? undefined }
+      } else return
+
+      if (!result.updateAvailable) {
+        showToastNotification({
+          title: t("update.alreadyUpToDate"),
+          message: "",
+          variant: "success",
+          duration: 3000,
+          position: "bottom-right",
+        })
+      }
+    } catch (err) {
+      showToastNotification({
+        title: t("update.checkFailed"),
+        message: String(err),
+        variant: "error",
+        duration: 8000,
+        position: "bottom-right",
+      })
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
 }

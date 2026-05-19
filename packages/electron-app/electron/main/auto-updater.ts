@@ -12,10 +12,10 @@ export class AppAutoUpdater {
   constructor() {
     this.rollbackManager = new ElectronRollbackManager()
 
-    autoUpdater.autoDownload = true
+    autoUpdater.autoDownload = false
     autoUpdater.allowPrerelease = false
     autoUpdater.allowDowngrade = false
-    autoUpdater.autoInstallOnAppQuit = false
+    autoUpdater.autoInstallOnAppQuit = true
 
     this.setupListeners()
   }
@@ -118,7 +118,23 @@ export class AppAutoUpdater {
     }
   }
 
-  /** Check for updates (called from menu) */
+  /** Check for updates and download in background. Returns update info. */
+  async checkUpdate(): Promise<{ updateAvailable: boolean; version?: string }> {
+    if (!app.isPackaged) return { updateAvailable: false }
+    try {
+      const result = await autoUpdater.checkForUpdates()
+      const version = result?.updateInfo?.version
+      if (!result?.isUpdateAvailable || !version) {
+        return { updateAvailable: false }
+      }
+      await autoUpdater.downloadUpdate()
+      return { updateAvailable: true, version }
+    } catch {
+      return { updateAvailable: false }
+    }
+  }
+
+  /** Check for updates with user-visible dialog (called from menu) */
   checkForUpdates() {
     if (!app.isPackaged) return
     autoUpdater.checkForUpdates().catch((err) => {

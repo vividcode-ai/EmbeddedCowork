@@ -281,13 +281,7 @@ session-sidebar-controls .selector-trigger-primary {
   pointer-events: none;
 }
 
-.session-item-base.session-item-border-user {
-  border-inline-start: 4px solid var(--message-user-border);
-}
 
-.session-item-base.session-item-border-assistant {
-  border-inline-start: 4px solid var(--message-assistant-border);
-}
 
 .session-item-expander {
   @apply flex-shrink-0 p-0.5 rounded transition-colors;

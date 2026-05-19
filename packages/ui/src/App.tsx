@@ -25,7 +25,8 @@ import { formatLaunchErrorMessage, isMissingBinaryMessage } from "./lib/launch-e
 import { initReleaseNotifications } from "./stores/releases"
 import { UpdateNotification } from "./components/update-notification"
 import { RollbackDialog } from "./components/rollback-dialog"
-import { isTauriHost, isWebHost, runtimeEnv } from "./lib/runtime-env"
+import { isDesktopHost, isElectronHost, isTauriHost, isUpdaterEnabled, isWebHost, runtimeEnv } from "./lib/runtime-env"
+import { showToastNotification, type ToastHandle } from "./lib/notifications"
 import { useI18n } from "./lib/i18n"
 import { setWakeLockDesired } from "./lib/native/wake-lock"
 import {
@@ -82,6 +83,7 @@ const App: Component = () => {
   const {
     preferences,
     serverSettings,
+    recentFolders,
     recordWorkspaceLaunch,
     toggleShowThinkingBlocks,
     toggleKeyboardShortcutHints,
@@ -99,6 +101,23 @@ const App: Component = () => {
   const [escapeInDebounce, setEscapeInDebounce] = createSignal(false)
   const [instanceTabBarHeight, setInstanceTabBarHeight] = createSignal(0)
   const [sidecarPickerOpen, setSidecarPickerOpen] = createSignal(false)
+  const [hasAutoLaunched, setHasAutoLaunched] = createSignal(false)
+
+  const isAutoLaunching = createMemo(() => {
+    if (hasAutoLaunched()) return false
+    if (appTabs().length > 0) return false
+    if (opencodeAvailable() !== true) return false
+    const folders = recentFolders()
+    return folders && folders.length > 0
+  })
+
+  createEffect(() => {
+    if (!isAutoLaunching()) return
+    setHasAutoLaunched(true)
+    const folders = recentFolders()
+    const mostRecent = folders[0]
+    handleSelectFolder(mostRecent.path, serverSettings().opencodeBinary || undefined)
+  })
 
   const phoneQuery = useMediaQuery("(max-width: 767px)")
   const isPhoneLayout = createMemo(() => phoneQuery())
@@ -467,12 +486,95 @@ const App: Component = () => {
           log.error("Failed to listen for menu:newInstance event", error)
         })
 
+        tauriBridge.event.listen("menu:checkForUpdates", () => {
+          void handleCheckForUpdates()
+        }).catch((error) => {
+          log.error("Failed to listen for menu:checkForUpdates event", error)
+        })
+
         onCleanup(() => {
           unlistenMenu?.()
         })
       }
     }
   })
+
+  // ── Periodic update polling (every 10 min) ──
+  onMount(() => {
+    if (!isDesktopHost() || !isUpdaterEnabled()) return
+
+    let toastHandle: ToastHandle | undefined
+
+    const pollUpdate = async () => {
+      try {
+        let result: { updateAvailable: boolean; version?: string }
+        if (isElectronHost()) {
+          const api = (window as any).electronAPI as any
+          result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
+        } else if (isTauriHost()) {
+          const { invoke } = await import("@tauri-apps/api/core")
+          const version = await invoke<string | null>("check_update")
+          result = { updateAvailable: version != null, version: version ?? undefined }
+        } else return
+        if (!result.updateAvailable || toastHandle !== undefined) return
+        toastHandle = showToastNotification({
+          title: t("update.polling.available.title"),
+          message: t("update.polling.available.message", { version: result.version ?? "" }),
+          variant: "info",
+          duration: Number.POSITIVE_INFINITY,
+          position: "bottom-right",
+          action: {
+            label: t("update.polling.install"),
+            onClick: async () => {
+              if (isElectronHost()) {
+                const api = (window as any).electronAPI as any
+                await (api.installUpdateV2?.() ?? Promise.resolve())
+              }
+              // Tauri: check_update already handled download + install + restart
+            },
+          },
+        })
+      } catch (err) {
+        log.warn("Update poll failed:", err)
+      }
+    }
+
+    void pollUpdate()
+    const interval = setInterval(pollUpdate, 10 * 60 * 1000)
+    onCleanup(() => clearInterval(interval))
+  })
+
+  async function handleCheckForUpdates() {
+    if (!isDesktopHost() || !isUpdaterEnabled()) return
+    try {
+      let result: { updateAvailable: boolean; version?: string }
+      if (isElectronHost()) {
+        const api = (window as any).electronAPI as any
+        result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
+      } else if (isTauriHost()) {
+        const { invoke } = await import("@tauri-apps/api/core")
+        const version = await invoke<string | null>("check_update")
+        result = { updateAvailable: version != null, version: version ?? undefined }
+      } else return
+      if (!result.updateAvailable) {
+        showToastNotification({
+          title: t("update.alreadyUpToDate"),
+          message: "",
+          variant: "success",
+          duration: 3000,
+          position: "bottom-right",
+        })
+      }
+    } catch (err) {
+      showToastNotification({
+        title: t("update.checkFailed"),
+        message: String(err),
+        variant: "error",
+        duration: 8000,
+        position: "bottom-right",
+      })
+    }
+  }
 
   return (
     <>
@@ -604,11 +706,17 @@ const App: Component = () => {
         >
           <Show when={opencodeAvailable() !== null}>
             <Show when={opencodeAvailable()} fallback={<OpencodeSetupScreen />}>
-              <FolderSelectionView
-                onSelectFolder={handleSelectFolder}
-                isLoading={isSelectingFolder()}
-                onOpenSidecar={handleOpenSidecarPicker}
-              />
+              <Show when={!isAutoLaunching()} fallback={
+                <div class="flex items-center justify-center h-full">
+                  <div class="animate-spin rounded-full h-8 w-8 border-2 border-base" />
+                </div>
+              }>
+                <FolderSelectionView
+                  onSelectFolder={handleSelectFolder}
+                  isLoading={isSelectingFolder()}
+                  onOpenSidecar={handleOpenSidecarPicker}
+                />
+              </Show>
             </Show>
           </Show>
         </Show>

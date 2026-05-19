@@ -179,16 +179,13 @@ fn wake_lock_stop(state: tauri::State<AppState>) -> Result<(), String> {
 async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
     let updater = app.updater().map_err(|e| e.to_string())?;
     let response = updater.check().await.map_err(|e| e.to_string())?;
-    Ok(response.map(|u| u.version))
-}
-
-#[tauri::command]
-async fn install_update(app: AppHandle) -> Result<(), String> {
-    let updater = app.updater().map_err(|e| e.to_string())?;
-    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+    if let Some(update) = &response {
         update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+        app.exit(0);
+        Ok(Some(update.version.clone()))
+    } else {
+        Ok(None)
     }
-    Ok(())
 }
 
 #[tauri::command]
@@ -599,6 +596,11 @@ fn main() {
             build_menu(&app.handle())?;
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.eval(LOCAL_WINDOW_CONTEXT_SCRIPT);
+                let updater_enabled = !is_dev_mode();
+                let _ = window.eval(&format!(
+                    "window.__EMBEDDEDCOWORK__ = Object.assign(window.__EMBEDDEDCOWORK__ || {{}}, {{ updaterEnabled: {} }})",
+                    updater_enabled
+                ));
             }
             if let Some(shortcut) = fullscreen_shortcut() {
                 let shortcut_manager = app.handle().global_shortcut();
@@ -637,7 +639,6 @@ fn main() {
             needs_local_certificate_install,
             open_remote_window,
             check_update,
-            install_update,
             rollback_update
         ])
         .on_menu_event(|app_handle, event| {

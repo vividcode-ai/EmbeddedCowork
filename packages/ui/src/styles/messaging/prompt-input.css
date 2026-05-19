@@ -3,6 +3,13 @@
   border-color: var(--border-base);
   background-color: var(--surface-base);
   margin-bottom: 10px;
+  padding-inline: clamp(100px, 6vw, 200px);
+}
+
+@media (max-width: 768px) {
+  .prompt-input-container {
+    padding-inline: 16px;
+  }
 }
 
 .prompt-input-wrapper {
