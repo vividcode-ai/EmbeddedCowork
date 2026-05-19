@@ -287,6 +287,22 @@ const App: Component = () => {
 
   const launchErrorMessage = () => launchError()?.message ?? ""
 
+  async function ensureFirstSession(instanceId: string) {
+    try {
+      await fetchSessions(instanceId)
+    } catch {
+      return
+    }
+    const existing = getSessions(instanceId)
+    if (existing.length === 0) {
+      const session = await createSession(instanceId)
+      if (session?.id) {
+        setActiveParentSession(instanceId, session.id)
+        log.info("Created initial session for instance", { instanceId, sessionId: session.id })
+      }
+    }
+  }
+
   async function handleSelectFolder(folderPath: string, binaryPath?: string) {
     if (!folderPath) {
       return
@@ -299,6 +315,7 @@ const App: Component = () => {
       const instanceId = await createInstance(folderPath, selectedBinary)
       selectInstanceTab(instanceId)
       setShowFolderSelection(false)
+      await ensureFirstSession(instanceId)
 
       log.info("Created instance", {
         instanceId,
@@ -322,6 +339,7 @@ const App: Component = () => {
       clearLaunchError()
       const instanceId = await createInstance(homePath, binary)
       selectInstanceTab(instanceId)
+      await ensureFirstSession(instanceId)
       log.info("Created default instance with home directory", { instanceId, homePath })
     } catch (error) {
       const message = formatLaunchErrorMessage(error, t("app.launchError.fallbackMessage"))
