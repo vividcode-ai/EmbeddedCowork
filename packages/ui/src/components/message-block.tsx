@@ -1494,8 +1494,59 @@ function ReasoningCard(props: ReasoningCardProps) {
   }
 
   return (
-    <div class="delete-hover-scope message-reasoning-card">
-      <div class="message-reasoning-header">
+    <div class="delete-hover-scope reasoning-wrapper">
+      <div class="message-reasoning-card">
+        <Show when={hasMeta()}>
+          <div class="message-reasoning-meta-row">
+            <span class="message-step-meta-inline">
+              <Show when={agentIdentifier()}>
+                {(value) => (
+                  <span class="font-medium text-[var(--message-assistant-border)]">{t("messageBlock.step.agentLabel", { agent: value() })}</span>
+                )}
+              </Show>
+              <Show when={modelIdentifier()}>
+                {(value) => (
+                  <span class="font-medium text-[var(--message-assistant-border)]">{t("messageBlock.step.modelLabel", { model: value() })}</span>
+                )}
+              </Show>
+            </span>
+          </div>
+        </Show>
+
+        <Show when={expanded()}>
+          <div class="message-reasoning-expanded">
+            <div class="message-reasoning-body">
+              <ReasoningStreamOutput
+                text={reasoningText}
+                scrollTopSnapshot={scrollTopSnapshot}
+                setScrollTopSnapshot={setScrollTopSnapshot}
+                onContentRendered={props.onContentRendered}
+                ariaLabel={t("messageBlock.reasoning.detailsAriaLabel")}
+              />
+            </div>
+          </div>
+        </Show>
+      </div>
+
+      <div class="message-reasoning-controls-row">
+        <Show when={props.showDeleteMessage}>
+          <input
+            class="message-select-checkbox"
+            type="checkbox"
+            checked={isSelectedForDeletion()}
+            onClick={(event) => {
+              event.stopPropagation()
+            }}
+            onChange={(event) => {
+              event.stopPropagation()
+              const next = Boolean((event.currentTarget as HTMLInputElement).checked)
+              props.onToggleSelectedMessage?.(props.messageId, next)
+            }}
+            aria-label={t("messageItem.selection.checkboxAriaLabel")}
+            title={t("messageItem.selection.checkboxAriaLabel")}
+          />
+        </Show>
+
         <button
           type="button"
           class="message-reasoning-toggle"
@@ -1505,24 +1556,6 @@ function ReasoningCard(props: ReasoningCardProps) {
         >
           <span class="message-reasoning-label">
             <span class="message-reasoning-label-primary">
-              <Show when={props.showDeleteMessage}>
-                <input
-                  class="message-select-checkbox"
-                  type="checkbox"
-                  checked={isSelectedForDeletion()}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                  }}
-                  onChange={(event) => {
-                    event.stopPropagation()
-                    const next = Boolean((event.currentTarget as HTMLInputElement).checked)
-                    props.onToggleSelectedMessage?.(props.messageId, next)
-                  }}
-                  aria-label={t("messageItem.selection.checkboxAriaLabel")}
-                  title={t("messageItem.selection.checkboxAriaLabel")}
-                />
-              </Show>
-
               <span>{t("messageBlock.reasoning.thinkingLabel")}</span>
             </span>
           </span>
@@ -1586,41 +1619,10 @@ function ReasoningCard(props: ReasoningCardProps) {
               <Trash class="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </Show>
-
-          <span class="message-reasoning-time">{timestamp()}</span>
         </div>
+
+        <span class="message-reasoning-time">{timestamp()}</span>
       </div>
-
-      <Show when={hasMeta()}>
-        <div class="message-reasoning-meta-row">
-          <span class="message-step-meta-inline">
-            <Show when={agentIdentifier()}>
-              {(value) => (
-                <span class="font-medium text-[var(--message-assistant-border)]">{t("messageBlock.step.agentLabel", { agent: value() })}</span>
-              )}
-            </Show>
-            <Show when={modelIdentifier()}>
-              {(value) => (
-                <span class="font-medium text-[var(--message-assistant-border)]">{t("messageBlock.step.modelLabel", { model: value() })}</span>
-              )}
-            </Show>
-          </span>
-        </div>
-      </Show>
-
-      <Show when={expanded()}>
-        <div class="message-reasoning-expanded">
-          <div class="message-reasoning-body">
-            <ReasoningStreamOutput
-              text={reasoningText}
-              scrollTopSnapshot={scrollTopSnapshot}
-              setScrollTopSnapshot={setScrollTopSnapshot}
-              onContentRendered={props.onContentRendered}
-              ariaLabel={t("messageBlock.reasoning.detailsAriaLabel")}
-            />
-          </div>
-        </div>
-      </Show>
     </div>
   )
 }

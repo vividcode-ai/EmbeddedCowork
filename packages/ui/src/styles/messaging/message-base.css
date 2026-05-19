@@ -119,20 +119,6 @@
   transition: opacity 100ms ease 0ms;
 }
 
-.message-reasoning-card .message-select-checkbox,
-.message-reasoning-card .message-reasoning-label-primary > span,
-.message-reasoning-card .message-reasoning-time {
-  opacity: 0;
-  transition: opacity 0ms ease 0ms;
-}
-
-.message-reasoning-card:hover .message-select-checkbox,
-.message-reasoning-card:hover .message-reasoning-label-primary > span,
-.message-reasoning-card:hover .message-reasoning-time {
-  opacity: 1;
-  transition: opacity 100ms ease 0ms;
-}
-
 .message-action-button {
   @apply bg-transparent border-0 text-[var(--text-muted)] cursor-pointer px-2 py-0.5 rounded text-xs font-semibold leading-none transition-all duration-200 flex items-center justify-center h-6;
 }
@@ -151,13 +137,18 @@
 }
 
 .assistant-message {
-  /* gap: 0.25rem; */
-  padding: 0.6rem 0.65rem;
+  padding: 0;
   margin-top: 0;
   margin-bottom: 0;
 
   --markdown-accent: var(--message-assistant-border);
   --markdown-heading-color: var(--text-primary);
+}
+
+.assistant-content-bubble {
+  background-color: var(--message-assistant-bg);
+  border-radius: 1rem 0.5rem 1rem 0.5rem;
+  padding: 0.6rem 0.65rem;
 }
 
 .message-item-base:not(.assistant-message) {
@@ -179,11 +170,13 @@
 
 .message-step-finish {
   background-color: var(--message-assistant-bg);
-  margin: 0;
+  border-radius: 1rem 0.5rem 1rem 0.5rem;
+  width: fit-content;
+  margin: 5px auto;
 }
 
 .message-step-finish-flush {
-  margin-top: -0.125rem;
+  margin-top: 5px;
 }
 
 .message-step-usage {
@@ -371,6 +364,9 @@
 
 .message-step-finish {
   background-color: var(--message-assistant-bg);
+  border-radius: 1rem 0.5rem 1rem 0.5rem;
+  width: fit-content;
+  margin: 5px auto;
 }
 
 .message-step-heading {
@@ -436,6 +432,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  border-radius: 1rem 0.5rem 1rem 0.5rem;
 }
 
 .message-reasoning-header {
@@ -448,6 +445,14 @@
 
 .message-reasoning-header:hover {
   background-color: var(--surface-hover);
+}
+
+.reasoning-wrapper {
+  display: flow-root;
+}
+
+.reasoning-wrapper .message-reasoning-toggle {
+  flex: 0 0 auto;
 }
 
 .message-reasoning-toggle {
@@ -475,14 +480,8 @@
   padding: 0.25rem 0.6rem 0.25rem 0;
 }
 
-.message-reasoning-actions .message-action-button {
-  opacity: 0;
-  transition: opacity 0ms ease 0ms;
-}
-
-.message-reasoning-card:hover .message-reasoning-actions .message-action-button {
-  opacity: 1;
-  transition: opacity 100ms ease 0ms;
+.reasoning-wrapper .message-reasoning-controls-row > * {
+  flex-shrink: 0;
 }
 
 .message-reasoning-toggle:hover {
@@ -598,11 +597,49 @@
   unicode-bidi: plaintext;
 }
 
+/* ===== Assistant footer controls ===== */
+.assistant-message .message-item-header-row--top {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.assistant-message .message-header-left {
+  flex: 0 0 auto;
+}
+
+.assistant-message .message-select-checkbox {
+  opacity: 0 !important;
+  transition: opacity 0ms ease 0ms !important;
+}
+
+.assistant-message:hover .message-select-checkbox {
+  opacity: 1 !important;
+  transition: opacity 100ms ease 0ms !important;
+}
+
+/* ===== Reasoning card controls row ===== */
+.reasoning-wrapper .message-reasoning-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  opacity: 0;
+  transition: opacity 0ms ease 0ms;
+  pointer-events: none;
+}
+
+.reasoning-wrapper:hover .message-reasoning-controls-row {
+  opacity: 1;
+  transition: opacity 100ms ease 0ms;
+  pointer-events: auto;
+}
+
 /* ===== User bubble layout ===== */
 .message-item-base--user {
-  background: none;
-  padding: 0;
-  width: fit-content;
+  background: none !important;
+  padding: 0 !important;
+  width: fit-content !important;
   align-self: flex-end;
 }
 

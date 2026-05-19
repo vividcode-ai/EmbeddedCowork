@@ -345,7 +345,7 @@ export default function MessageItem(props: MessageItemProps) {
   const containerClass = () =>
     isUser()
       ? "message-item-base message-item-base--user"
-      : "message-item-base assistant-message bg-[var(--message-assistant-bg)]"
+      : "message-item-base assistant-message"
 
   const speakerLabel = () => (isUser() ? t("messageItem.speaker.you") : t("messageItem.speaker.assistant"))
 
@@ -522,108 +522,6 @@ export default function MessageItem(props: MessageItemProps) {
       data-message-role={isUser() ? "user" : "assistant"}
       data-message-status={props.record.status}
     >
-      <Show when={!isUser()}>
-        <header class="message-item-header pb-0">
-          <div class="message-item-header-row message-item-header-row--top" ref={(el) => (topRowEl = el)}>
-            <div class="message-header-left">
-              <div class="message-speaker-primary" ref={(el) => (speakerPrimaryEl = el)}>
-                <Show when={props.showDeleteMessage}>
-                  <input
-                    class="message-select-checkbox"
-                    type="checkbox"
-                    checked={isSelectedForDeletion()}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                    }}
-                    onChange={(event) => {
-                      event.stopPropagation()
-                      const next = Boolean((event.currentTarget as HTMLInputElement).checked)
-                      props.onToggleSelectedMessage?.(props.record.id, next)
-                    }}
-                    aria-label={t("messageItem.selection.checkboxAriaLabel")}
-                    title={t("messageItem.selection.checkboxAriaLabel")}
-                  />
-                </Show>
-
-                <span class="message-speaker-label" data-role="assistant">
-                  {speakerLabel()}
-                </span>
-              </div>
-
-              <Show when={metaText() && showMetaInline()}>
-                <span class="message-agent-meta-inline">{metaText()}</span>
-              </Show>
-
-              <Show when={metaText()}>
-                <span
-                  ref={(el) => (metaMeasureEl = el)}
-                  class="message-agent-meta-inline message-agent-meta-inline--measure"
-                >
-                  {metaText()}
-                </span>
-              </Show>
-            </div>
-
-            <div class="message-item-actions" ref={(el) => (actionsEl = el)}>
-              <div class="message-action-group">
-                <button
-                  class="message-action-button"
-                  onClick={handleCopy}
-                  title={copyLabel()}
-                  aria-label={copyLabel()}
-                >
-                  <Copy class="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-
-                <Show when={canSpeakMessage()}>
-                  <SpeechActionButton
-                    class="message-action-button"
-                    onClick={() => void speech.toggle()}
-                    title={speech.buttonTitle()}
-                    isLoading={speech.isLoading()}
-                    isPlaying={speech.isPlaying()}
-                  />
-                </Show>
-
-                <Show when={props.showDeleteMessage}>
-                  <button
-                    class="message-action-button"
-                    onClick={() => void handleDeleteUpTo()}
-                    disabled={!props.onDeleteMessagesUpTo || deletingUpTo()}
-                    onMouseEnter={() => props.onDeleteHoverChange?.({ kind: "deleteUpTo", messageId: props.record.id })}
-                    onMouseLeave={() => props.onDeleteHoverChange?.({ kind: "none" })}
-                    title={t("messageItem.actions.deleteMessagesUpTo")}
-                    aria-label={t("messageItem.actions.deleteMessagesUpTo")}
-                  >
-                    <DeleteUpToIcon />
-                  </button>
-
-                  <button
-                    class="message-action-button"
-                    onClick={handleDeleteMessage}
-                    disabled={deletingMessage()}
-                    onMouseEnter={() => props.onDeleteHoverChange?.({ kind: "message", messageId: props.record.id })}
-                    onMouseLeave={() => props.onDeleteHoverChange?.({ kind: "none" })}
-                    title={deletingMessage() ? t("messageItem.actions.deletingMessage") : t("messageItem.actions.deleteMessage")}
-                    aria-label={deletingMessage() ? t("messageItem.actions.deletingMessage") : t("messageItem.actions.deleteMessage")}
-                  >
-                    <Trash class="w-3.5 h-3.5" aria-hidden="true" />
-                  </button>
-                </Show>
-              </div>
-              <time class="message-timestamp" dateTime={timestampIso()}>{timestamp()}</time>
-            </div>
-          </div>
-
-          <Show when={metaText() && !showMetaInline()}>
-            <div class="message-item-header-row message-item-header-row--meta">
-              <span class="message-agent-meta-block">{metaText()}</span>
-            </div>
-          </Show>
-
-        </header>
-      </Show>
-
       <Show when={isUser()}>
         <div class="user-message-container">
           <div class="user-message-bubble">
@@ -722,7 +620,109 @@ export default function MessageItem(props: MessageItemProps) {
       </Show>
 
       <Show when={!isUser()}>
-        {contentSection}
+        <div class="assistant-content-bubble">
+          {contentSection}
+        </div>
+
+        <header class="message-item-header pb-0">
+          <div class="message-item-header-row message-item-header-row--top" ref={(el) => (topRowEl = el)}>
+            <Show when={props.showDeleteMessage}>
+              <input
+                class="message-select-checkbox"
+                type="checkbox"
+                checked={isSelectedForDeletion()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                }}
+                onChange={(event) => {
+                  event.stopPropagation()
+                  const next = Boolean((event.currentTarget as HTMLInputElement).checked)
+                  props.onToggleSelectedMessage?.(props.record.id, next)
+                }}
+                aria-label={t("messageItem.selection.checkboxAriaLabel")}
+                title={t("messageItem.selection.checkboxAriaLabel")}
+              />
+            </Show>
+
+            <div class="message-header-left">
+              <div class="message-speaker-primary" ref={(el) => (speakerPrimaryEl = el)}>
+                <span class="message-speaker-label" data-role="assistant">
+                  {speakerLabel()}
+                </span>
+              </div>
+
+              <Show when={metaText() && showMetaInline()}>
+                <span class="message-agent-meta-inline">{metaText()}</span>
+              </Show>
+
+              <Show when={metaText()}>
+                <span
+                  ref={(el) => (metaMeasureEl = el)}
+                  class="message-agent-meta-inline message-agent-meta-inline--measure"
+                >
+                  {metaText()}
+                </span>
+              </Show>
+            </div>
+
+            <div class="message-item-actions" ref={(el) => (actionsEl = el)}>
+              <div class="message-action-group">
+                <button
+                  class="message-action-button"
+                  onClick={handleCopy}
+                  title={copyLabel()}
+                  aria-label={copyLabel()}
+                >
+                  <Copy class="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+
+                <Show when={canSpeakMessage()}>
+                  <SpeechActionButton
+                    class="message-action-button"
+                    onClick={() => void speech.toggle()}
+                    title={speech.buttonTitle()}
+                    isLoading={speech.isLoading()}
+                    isPlaying={speech.isPlaying()}
+                  />
+                </Show>
+
+                <Show when={props.showDeleteMessage}>
+                  <button
+                    class="message-action-button"
+                    onClick={() => void handleDeleteUpTo()}
+                    disabled={!props.onDeleteMessagesUpTo || deletingUpTo()}
+                    onMouseEnter={() => props.onDeleteHoverChange?.({ kind: "deleteUpTo", messageId: props.record.id })}
+                    onMouseLeave={() => props.onDeleteHoverChange?.({ kind: "none" })}
+                    title={t("messageItem.actions.deleteMessagesUpTo")}
+                    aria-label={t("messageItem.actions.deleteMessagesUpTo")}
+                  >
+                    <DeleteUpToIcon />
+                  </button>
+
+                  <button
+                    class="message-action-button"
+                    onClick={handleDeleteMessage}
+                    disabled={deletingMessage()}
+                    onMouseEnter={() => props.onDeleteHoverChange?.({ kind: "message", messageId: props.record.id })}
+                    onMouseLeave={() => props.onDeleteHoverChange?.({ kind: "none" })}
+                    title={deletingMessage() ? t("messageItem.actions.deletingMessage") : t("messageItem.actions.deleteMessage")}
+                    aria-label={deletingMessage() ? t("messageItem.actions.deletingMessage") : t("messageItem.actions.deleteMessage")}
+                  >
+                    <Trash class="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                </Show>
+              </div>
+              <time class="message-timestamp" dateTime={timestampIso()}>{timestamp()}</time>
+            </div>
+          </div>
+
+          <Show when={metaText() && !showMetaInline()}>
+            <div class="message-item-header-row message-item-header-row--meta">
+              <span class="message-agent-meta-block">{metaText()}</span>
+            </div>
+          </Show>
+
+        </header>
       </Show>
     </div>
   )
