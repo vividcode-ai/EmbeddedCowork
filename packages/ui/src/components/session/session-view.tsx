@@ -37,6 +37,8 @@ interface SessionViewProps {
   forceCompactStatusLayout?: boolean
   isActive?: boolean
   registerSessionPromptApi?: (sessionId: string, api: PromptInputApi | null) => void
+  onAgentChange?: (sessionId: string, agent: string) => Promise<void>
+  onModelChange?: (sessionId: string, model: { providerId: string; modelId: string }) => Promise<void>
 }
 
 export const SessionView: Component<SessionViewProps> = (props) => {
@@ -379,6 +381,10 @@ export const SessionView: Component<SessionViewProps> = (props) => {
                 disabled={sessionNeedsInput()}
                 onAbortSession={handleAbortSession}
                 registerPromptInputApi={registerPromptInputApi}
+                currentAgent={activeSession.agent}
+                currentModel={activeSession.model}
+                onAgentChange={props.onAgentChange ? (agent) => props.onAgentChange!(props.sessionId, agent) : undefined}
+                onModelChange={props.onModelChange ? (model) => props.onModelChange!(props.sessionId, model) : undefined}
                 />
             </div>
           )

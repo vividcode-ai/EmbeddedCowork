@@ -31,4 +31,9 @@ export interface PromptInputProps {
   isSessionBusy?: boolean
   onAbortSession?: () => Promise<void>
   registerPromptInputApi?: (api: PromptInputApi) => void | (() => void)
+
+  currentAgent?: string
+  currentModel?: { providerId: string; modelId: string }
+  onAgentChange?: (agent: string) => Promise<void>
+  onModelChange?: (model: { providerId: string; modelId: string }) => Promise<void>
 }

@@ -496,8 +496,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
             leftPinned={leftPinned}
             onSelectSession={handleSessionSelect}
             onNewSession={props.onNewSession}
-            onSidebarAgentChange={props.handleSidebarAgentChange}
-            onSidebarModelChange={props.handleSidebarModelChange}
             onPinLeftDrawer={pinLeftDrawer}
             onUnpinLeftDrawer={unpinLeftDrawer}
             onCloseLeftDrawer={closeLeftDrawer}
@@ -558,8 +556,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
           leftPinned={leftPinned}
           onSelectSession={handleSessionSelect}
           onNewSession={props.onNewSession}
-          onSidebarAgentChange={props.handleSidebarAgentChange}
-          onSidebarModelChange={props.handleSidebarModelChange}
           onPinLeftDrawer={pinLeftDrawer}
           onUnpinLeftDrawer={unpinLeftDrawer}
           onCloseLeftDrawer={closeLeftDrawer}
@@ -927,6 +923,8 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                               onSidebarToggle={() => setLeftOpen(true)}
                               forceCompactStatusLayout={showEmbeddedSidebarToggle()}
                               isActive={isActive()}
+                              onAgentChange={props.handleSidebarAgentChange}
+                              onModelChange={props.handleSidebarModelChange}
                             />
                           </div>
                         )

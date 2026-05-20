@@ -1,7 +1,7 @@
 import { Show, type Accessor, type Component } from "solid-js"
 import type { SessionThread } from "../../../stores/session-state"
 import type { Session } from "../../../types/session"
-import { keyboardRegistry, type KeyboardShortcut } from "../../../lib/keyboard-registry"
+import type { KeyboardShortcut } from "../../../lib/keyboard-registry"
 import type { DrawerViewState } from "./types"
 
 import { PlusSquare, Search } from "lucide-solid"
@@ -13,10 +13,6 @@ import InfoOutlinedIcon from "@suid/icons-material/InfoOutlined"
 
 import SessionList from "../../session-list"
 import KeyboardHint from "../../keyboard-hint"
-import WorktreeSelector from "../../worktree-selector"
-import AgentSelector from "../../agent-selector"
-import ModelSelector from "../../model-selector"
-import ThinkingSelector from "../../thinking-selector"
 import { useScrollbarFade } from "../../../lib/hooks/use-scrollbar-fade"
 import { getLogger } from "../../../lib/logger"
 
@@ -39,8 +35,6 @@ interface SessionSidebarProps {
 
   onSelectSession: (sessionId: string) => void
   onNewSession: () => Promise<void> | void
-  onSidebarAgentChange: (sessionId: string, agent: string) => Promise<void>
-  onSidebarModelChange: (sessionId: string, model: { providerId: string; modelId: string }) => Promise<void>
   onPinLeftDrawer: () => void
   onUnpinLeftDrawer: () => void
   onCloseLeftDrawer: () => void
@@ -152,43 +146,6 @@ const SessionSidebar: Component<SessionSidebarProps> = (props) => {
           showHeader={false}
           showFooter={false}
         />
-
-        <div class="session-sidebar-separator" />
-        <Show when={props.activeSession()}>
-          {(activeSession) => (
-            <div class="session-sidebar-controls px-4 py-4 border-t border-base flex flex-col gap-3">
-              <WorktreeSelector instanceId={props.instanceId} sessionId={activeSession().id} />
-
-              <AgentSelector
-                instanceId={props.instanceId}
-                sessionId={activeSession().id}
-                currentAgent={activeSession().agent}
-                onAgentChange={(agent) => props.onSidebarAgentChange(activeSession().id, agent)}
-              />
-
-              <ModelSelector
-                instanceId={props.instanceId}
-                sessionId={activeSession().id}
-                currentModel={activeSession().model}
-                onModelChange={(model) => props.onSidebarModelChange(activeSession().id, model)}
-              />
-
-              <ThinkingSelector instanceId={props.instanceId} currentModel={activeSession().model} />
-
-              <KeyboardHint
-                class="session-sidebar-selector-hints"
-                ariaHidden={true}
-                shortcuts={[
-                  keyboardRegistry.get("open-agent-selector"),
-                  keyboardRegistry.get("focus-model"),
-                  keyboardRegistry.get("focus-variant"),
-                ].filter((shortcut): shortcut is KeyboardShortcut => Boolean(shortcut))}
-                separator=" "
-                showDescription={false}
-              />
-            </div>
-          )}
-        </Show>
       </div>
     </div>
   )

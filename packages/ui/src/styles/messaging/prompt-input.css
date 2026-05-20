@@ -370,6 +370,52 @@
   background-color: var(--attachment-chip-ring);
 }
 
+.prompt-input-bottom-bar {
+  @apply flex items-center justify-between gap-2 px-3 py-1.5;
+  border-top: 1px solid var(--border-base);
+  background-color: var(--surface-secondary);
+}
+
+.prompt-input-bottom-bar .sidebar-selector {
+  @apply w-auto;
+}
+
+.prompt-input-bottom-bar .selector-trigger {
+  @apply min-w-0 w-auto px-2 py-0.5 border-none rounded;
+  background: transparent;
+  height: 28px;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.prompt-input-bottom-bar .selector-trigger:hover {
+  background-color: var(--surface-hover);
+}
+
+.prompt-input-bottom-bar .selector-trigger-primary {
+  font-size: 0.75rem;
+}
+
+.prompt-input-bottom-bar .selector-trigger-label--stacked {
+  @apply flex-row items-center gap-1;
+}
+
+.prompt-input-bottom-bar .selector-trigger-icon {
+  @apply flex-shrink-0;
+}
+
+.prompt-input-bottom-bar__start {
+  @apply flex items-center gap-1.5 min-w-0 flex-1;
+}
+
+.prompt-input-bottom-bar__end {
+  @apply flex items-center flex-none;
+}
+
+.prompt-input-bottom-bar__end .sidebar-selector {
+  @apply max-w-[200px];
+}
+
 @media (pointer: coarse) {
   .prompt-input-overlay {
     display: none;

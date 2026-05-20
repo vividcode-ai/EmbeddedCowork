@@ -135,22 +135,8 @@
   color: var(--text-muted);
 }
 
-.session-sidebar-selector-hints {
-  @apply flex flex-wrap items-center w-full text-xs;
-  justify-content: space-evenly;
-  gap: 4px;
-  color: var(--text-muted);
-}
-
 .session-header-hints {
   @apply flex-shrink-0;
-}
-
-.session-sidebar-controls .selector-trigger,
-.session-sidebar-controls [data-model-selector-control],
-.session-sidebar-controls .selector-trigger-label,
-.session-sidebar-controls .selector-trigger-primary {
-  @apply w-full;
 }
 
 .sidebar-selector {

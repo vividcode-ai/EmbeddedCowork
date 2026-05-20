@@ -24,6 +24,7 @@ import {
   isConversationModeEnabled,
   toggleConversationMode,
 } from "../stores/conversation-speech"
+import PromptInputBottomBar from "./prompt-input-bottom-bar"
 const log = getLogger("actions")
 const LazyUnifiedPicker = lazy(() => import("./unified-picker"))
 
@@ -699,6 +700,17 @@ export default function PromptInput(props: PromptInputProps) {
             </div>
           </div>
         </div>
+
+        <Show when={props.currentAgent && props.currentModel && props.onAgentChange && props.onModelChange}>
+          <PromptInputBottomBar
+            instanceId={props.instanceId}
+            sessionId={props.sessionId}
+            currentAgent={props.currentAgent!}
+            currentModel={props.currentModel!}
+            onAgentChange={props.onAgentChange!}
+            onModelChange={props.onModelChange!}
+          />
+        </Show>
 
       </div>
     </div>
