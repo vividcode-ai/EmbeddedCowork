@@ -14,6 +14,7 @@ import type { WorkspaceDescriptor, WorkspaceEventPayload, WorkspaceLogEntry } fr
 import { ensureInstanceConfigLoaded } from "./instance-config"
 import {
   activeSessionId,
+  agents,
   fetchSessions,
   fetchAgents,
   fetchProviders,
@@ -33,11 +34,12 @@ import {
 } from "./worktrees"
 import { fetchCommands, clearCommands } from "./commands"
 import { serverSettings } from "./preferences"
-import { setSessionPendingPermission, setSessionPendingQuestion, setSessions } from "./session-state"
+import { setSessionPendingPermission, setSessionPendingQuestion, setSessions, withSession } from "./session-state"
 import { setHasInstances } from "./ui"
 import { messageStoreBus } from "./message-v2/bus"
 import { upsertPermissionV2, removePermissionV2, upsertQuestionV2, removeQuestionV2 } from "./message-v2/bridge"
 import { clearCacheForInstance } from "../lib/global-cache"
+import { getDefaultModel } from "./session-models"
 import { getLogger } from "../lib/logger"
 import { mergeInstanceMetadata, clearInstanceMetadata } from "./instance-metadata"
 import { showWorkspaceLaunchError } from "./launch-errors"
@@ -342,6 +344,25 @@ async function hydrateInstanceData(instanceId: string, options?: { force?: boole
 
     await fetchAgents(instanceId)
     await fetchProviders(instanceId)
+
+    const activeId = activeSessionId().get(instanceId)
+    if (activeId && activeId !== "info") {
+      const storedSession = sessions().get(instanceId)?.get(activeId)
+      if (storedSession && !storedSession.agent) {
+        const instanceAgents = agents().get(instanceId) || []
+        const firstAgent = instanceAgents.find((a) => a.mode !== "subagent" && !a.hidden)
+        if (firstAgent) {
+          const defaultModel = await getDefaultModel(instanceId, firstAgent.name)
+          withSession(instanceId, activeId, (current) => {
+            current.agent = firstAgent.name
+            if (defaultModel.providerId && defaultModel.modelId) {
+              current.model = defaultModel
+            }
+          })
+        }
+      }
+    }
+
     await ensureInstanceConfigLoaded(instanceId)
     const instance = instances().get(instanceId)
     if (!instance?.client) return
