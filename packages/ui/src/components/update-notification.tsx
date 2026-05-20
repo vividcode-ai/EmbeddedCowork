@@ -37,7 +37,7 @@ export function UpdateNotification() {
 
       unlisteners.push(
         api.onUpdateStatus((status: string) => {
-          setUpdateStatus(status)
+          setUpdateStatus(status as any)
         }),
       )
 
@@ -89,48 +89,11 @@ export function UpdateNotification() {
 
   async function initTauriUpdater() {
     try {
-      const { checkUpdate, onUpdaterEvent } = await import("@tauri-apps/plugin-updater")
-
-      const unlisten = await onUpdaterEvent((event) => {
-        switch (event.event) {
-          case "CHECKING":
-            setUpdateStatus("checking")
-            break
-          case "UPDATE_AVAILABLE":
-            setUpdateStatus("checking")
-            break
-          case "DOWNLOAD_PROGRESS":
-            setUpdateProgress({
-              percent: event.data?.progress ?? 0,
-              bytesPerSecond: 0,
-              total: event.data?.total ?? 0,
-              transferred: event.data?.transferred ?? 0,
-            })
-            break
-          case "DOWNLOADED":
-            readyForInstall(event.data?.version ?? "")
-            setShowInstallDialog(true)
-            break
-          case "ERROR":
-            log.error("Tauri update error:", event.data?.error ?? "unknown")
-            showToastNotification({
-              title: t("update.error", { error: event.data?.error ?? "Unknown" }),
-              message: "",
-              variant: "error",
-              duration: 8000,
-              position: "bottom-right",
-            })
-            break
-        }
-      })
-
-      onCleanup(() => {
-        try { unlisten() } catch { /* ignore */ }
-      })
-
-      const update = await checkUpdate()
-      if (update?.shouldUpdate) {
-        log.info("Tauri update available:", update.manifest?.version)
+      const { check } = await import("@tauri-apps/plugin-updater")
+      const update = await check()
+      if (update) {
+        log.info("Tauri update available:", update.version)
+        setShowInstallDialog(true)
       }
     } catch (err) {
       log.warn("Tauri updater not available:", err)
@@ -144,10 +107,29 @@ export function UpdateNotification() {
       await api?.installUpdate()
     } else if (host === "tauri") {
       try {
-        const { installUpdate } = await import("@tauri-apps/plugin-updater")
-        await installUpdate()
+        const { check } = await import("@tauri-apps/plugin-updater")
+        const update = await check()
+        if (!update) return
+        setUpdateStatus("downloading")
+        let total = 0
+        let transferred = 0
+        await update.downloadAndInstall((event) => {
+          if (event.event === 'Started') {
+            total = event.data.contentLength ?? 0
+            transferred = 0
+            setUpdateProgress({ percent: 0, bytesPerSecond: 0, total, transferred })
+          } else if (event.event === 'Progress') {
+            transferred += event.data.chunkLength
+            const percent = total > 0 ? Math.round((transferred / total) * 100) : 0
+            setUpdateProgress({ percent, bytesPerSecond: 0, total, transferred })
+          }
+        })
+        const { invoke } = await import("@tauri-apps/api/core")
+        readyForInstall(update.version)
+        await invoke("restart_app")
       } catch (err) {
         log.error("Tauri install update failed:", err)
+        setUpdateStatus("error")
       }
     }
     setShowInstallDialog(false)

@@ -179,13 +179,7 @@ fn wake_lock_stop(state: tauri::State<AppState>) -> Result<(), String> {
 async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
     let updater = app.updater().map_err(|e| e.to_string())?;
     let response = updater.check().await.map_err(|e| e.to_string())?;
-    if let Some(update) = &response {
-        update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
-        app.exit(0);
-        Ok(Some(update.version.clone()))
-    } else {
-        Ok(None)
-    }
+    Ok(response.map(|update| update.version.clone()))
 }
 
 #[tauri::command]
@@ -218,6 +212,11 @@ async fn rollback_update(app: AppHandle) -> Result<(), String> {
     // Exit app - user can restart manually or the OS will prompt
     app.exit(0);
     Ok(())
+}
+
+#[tauri::command]
+fn restart_app(app: AppHandle) {
+    app.exit(0);
 }
 
 fn is_dev_mode() -> bool {
@@ -639,7 +638,8 @@ fn main() {
             needs_local_certificate_install,
             open_remote_window,
             check_update,
-            rollback_update
+            rollback_update,
+            restart_app
         ])
         .on_menu_event(|app_handle, event| {
             match event.id().0.as_str() {

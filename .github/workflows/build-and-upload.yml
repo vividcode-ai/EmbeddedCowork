@@ -1093,12 +1093,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Download all signature artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: signatures-*
-          path: signatures-download
-          merge-multiple: true
+      - name: Download signature files from release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p signatures-download
+          gh release download "$TAG" --pattern "*.sig" --dir signatures-download
 
       - name: Generate tauri-update.json
         working-directory: packages/tauri-app

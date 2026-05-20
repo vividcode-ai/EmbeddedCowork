@@ -238,7 +238,32 @@ export const OpenCodeSettingsSection: Component = () => {
         result = { updateAvailable: version != null, version: version ?? undefined }
       } else return
 
-      if (!result.updateAvailable) {
+      if (result.updateAvailable) {
+        showToastNotification({
+          title: t("update.polling.available.title"),
+          message: t("update.polling.available.message", { version: result.version ?? "" }),
+          variant: "info",
+          duration: Number.POSITIVE_INFINITY,
+          position: "bottom-right",
+          action: {
+            label: t("update.polling.install"),
+            onClick: async () => {
+              if (isElectronHost()) {
+                const api = (window as any).electronAPI as any
+                await (api.installUpdateV2?.() ?? Promise.resolve())
+              } else if (isTauriHost()) {
+                const { check } = await import("@tauri-apps/plugin-updater")
+                const update = await check()
+                if (update) {
+                  await update.downloadAndInstall()
+                }
+                const { invoke } = await import("@tauri-apps/api/core")
+                await invoke("restart_app")
+              }
+            },
+          },
+        })
+      } else {
         showToastNotification({
           title: t("update.alreadyUpToDate"),
           message: "",
