@@ -5,6 +5,7 @@ import { getOrCreateWorktreeClient, getWorktreeSlugForSession } from "./worktree
 import { addRecentModelPreference, getModelThinkingSelection, setAgentModelPreference } from "./preferences"
 import { providers, sessions, withSession } from "./session-state"
 import { getDefaultModel, isModelValid } from "./session-models"
+import { fetchProviders } from "./session-api"
 import { updateSessionInfo } from "./message-v2/session-info"
 import { messageStoreBus } from "./message-v2/bus"
 import { removeMessagePartV2, removeMessageV2 } from "./message-v2/bridge"
@@ -351,6 +352,15 @@ async function updateSessionAgent(instanceId: string, sessionId: string, agent: 
   }
 }
 
+async function ensureProvidersLoaded(instanceId: string): Promise<void> {
+  if (providers().get(instanceId)?.length) return
+  try {
+    await fetchProviders(instanceId)
+  } catch (error) {
+    log.error("Failed to fetch providers for model validation", error)
+  }
+}
+
 async function updateSessionModel(
   instanceId: string,
   sessionId: string,
@@ -363,8 +373,11 @@ async function updateSessionModel(
   }
 
   if (!isModelValid(instanceId, model)) {
-    log.warn("Invalid model selection", model)
-    return
+    await ensureProvidersLoaded(instanceId)
+    if (!isModelValid(instanceId, model)) {
+      log.warn("Invalid model selection after retry", model)
+      return
+    }
   }
 
   withSession(instanceId, sessionId, (current) => {

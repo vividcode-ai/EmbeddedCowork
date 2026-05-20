@@ -117,6 +117,9 @@ export default function ModelSelector(props: ModelSelectorProps) {
 
   const handleChange = async (value: FlatModel | null) => {
     if (!value) return
+    if (instanceProviders().length === 0) {
+      await fetchProviders(props.instanceId)
+    }
     await props.onModelChange({ providerId: value.providerId, modelId: value.id })
   }
 
