@@ -1,6 +1,5 @@
-import type { Configuration } from "electron-builder"
-
-const config: Configuration = {
+/** @type {import("electron-builder").Configuration} */
+const config = {
   appId: "ai.vividcode.embeddedcowork.client",
   productName: "EmbeddedCowork",
   publish: {
@@ -114,4 +113,4 @@ const config: Configuration = {
   },
 }
 
-export default config
+module.exports = config

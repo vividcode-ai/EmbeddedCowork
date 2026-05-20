@@ -36,11 +36,11 @@
     "build:linux-rpm": "node scripts/build.js linux-rpm",
     "build:all": "node scripts/build.js all",
     "prepackage:mac": "npm run prepare:resources",
-    "package:mac": "electron-builder --config electron-builder.config.ts --mac",
+    "package:mac": "electron-builder --config electron-builder.config.cjs --mac",
     "prepackage:win": "npm run prepare:resources",
-    "package:win": "electron-builder --config electron-builder.config.ts --win",
+    "package:win": "electron-builder --config electron-builder.config.cjs --win",
     "prepackage:linux": "npm run prepare:resources",
-    "package:linux": "electron-builder --config electron-builder.config.ts --linux"
+    "package:linux": "electron-builder --config electron-builder.config.cjs --linux"
   },
   "dependencies": {
     "@embeddedcowork/ui": "file:../ui",
