@@ -169,7 +169,7 @@ async function build(platform) {
     }
 
     const publishMode = process.env.PUBLISH_MODE || "never"
-    await run(npxCmd, ["electron-builder", `--publish=${publishMode}`, ...config.args])
+    await run(npxCmd, ["electron-builder", `--publish=${publishMode}`, "--config", "electron-builder.config.ts", ...config.args])
 
     console.log("\n✅ Build complete!")
     console.log(`📁 Binaries available in: ${join(appDir, "release")}\n`)
