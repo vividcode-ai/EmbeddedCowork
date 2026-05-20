@@ -1,4 +1,3 @@
-import { Show } from "solid-js"
 import type { Component } from "solid-js"
 import AgentSelector from "./agent-selector"
 import ModelSelector from "./model-selector"
@@ -30,12 +29,10 @@ const PromptInputBottomBar: Component<PromptInputBottomBarProps> = (props) => {
           currentModel={props.currentModel}
           onModelChange={props.onModelChange}
         />
-        <Show when={props.currentModel.providerId && props.currentModel.modelId}>
-          <ThinkingSelector
-            instanceId={props.instanceId}
-            currentModel={props.currentModel}
-          />
-        </Show>
+        <ThinkingSelector
+          instanceId={props.instanceId}
+          currentModel={props.currentModel}
+        />
       </div>
       <div class="prompt-input-bottom-bar__end">
         <WorktreeSelector
