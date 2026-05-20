@@ -118,3 +118,17 @@ jobs:
       dist_tag: ${{ inputs.dist_tag }}
       package_name: ${{ inputs.npm_package_name }}
     secrets: inherit
+
+  mark-latest:
+    needs:
+      - prepare-release
+      - build-and-upload
+      - publish-server
+    if: ${{ !inputs.prerelease }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ needs.prepare-release.outputs.tag }}
+    steps:
+      - name: Mark release as latest
+        run: gh release edit "$TAG" --latest
