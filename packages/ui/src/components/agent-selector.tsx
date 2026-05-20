@@ -44,11 +44,14 @@ export default function AgentSelector(props: AgentSelectorProps) {
     return filtered
   })
 
+  let autoSelected = false
+
   createEffect(() => {
     const list = availableAgents()
+    if (autoSelected) return
     if (list.length === 0) return
-    if (!props.currentAgent) return
     if (!list.some((agent) => agent.name === props.currentAgent)) {
+      autoSelected = true
       void props.onAgentChange(list[0].name)
     }
   })
