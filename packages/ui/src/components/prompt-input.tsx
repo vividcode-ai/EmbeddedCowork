@@ -17,7 +17,6 @@ import { usePromptState } from "./prompt-input/usePromptState"
 import { usePromptAttachments } from "./prompt-input/usePromptAttachments"
 import { usePromptPicker } from "./prompt-input/usePromptPicker"
 import { usePromptKeyDown } from "./prompt-input/usePromptKeyDown"
-import { usePromptResize } from "./prompt-input/usePromptResize"
 import { usePromptVoiceInput } from "./prompt-input/usePromptVoiceInput"
 import {
   canUseConversationMode,
@@ -502,12 +501,6 @@ export default function PromptInput(props: PromptInputProps) {
       ? t("promptInput.conversationMode.disable.title")
       : t("promptInput.conversationMode.enable.title")
 
-  const { isResizing, onResizeHandlePointerDown } = usePromptResize({
-    getTextarea: () => textareaRef ?? null,
-    minHeight: 56,
-    maxHeight: 400,
-  })
-
   const instance = () => getActiveInstance()
 
   let voiceButtonPressed = false
@@ -540,7 +533,7 @@ export default function PromptInput(props: PromptInputProps) {
   return (
     <div class="prompt-input-container">
       <div
-        class={`prompt-input-wrapper relative ${isDragging() ? "border-2" : ""} ${isResizing() ? "is-resizing" : ""}`}
+        class={`prompt-input-wrapper relative ${isDragging() ? "border-2" : ""}`}
         style={
           isDragging()
             ? "border-color: var(--accent-primary); background-color: rgba(0, 102, 255, 0.05);"
@@ -550,11 +543,6 @@ export default function PromptInput(props: PromptInputProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div
-          class="prompt-resize-handle"
-          onPointerDown={onResizeHandlePointerDown}
-          aria-label="Resize prompt input"
-        />
         <Show when={showPicker() && instance()}>
           <Suspense fallback={null}>
             <LazyUnifiedPicker
@@ -579,7 +567,7 @@ export default function PromptInput(props: PromptInputProps) {
         <div class="flex flex-1 flex-col">
           <div class={`prompt-input-field-container ${expandState() === "expanded" ? "is-expanded" : ""}`}>
             <div class={`prompt-input-field ${expandState() === "expanded" ? "is-expanded" : ""}`}>
-               <div class={`flex flex-col relative prompt-input ${mode() === "shell" ? "shell-mode" : ""} ${expandState() === "expanded" ? "is-expanded" : ""} ${isResizing() ? "is-resizing" : ""}`}>
+               <div class={`flex flex-col relative prompt-input ${mode() === "shell" ? "shell-mode" : ""} ${expandState() === "expanded" ? "is-expanded" : ""}`}>
                 <textarea
                   ref={textareaRef}
                   class="prompt-input-textarea"
