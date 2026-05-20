@@ -151,7 +151,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "closeAppWhenInstalling": true,
+      "closeAppConfirm": false
     },
     "linux": {
       "target": [

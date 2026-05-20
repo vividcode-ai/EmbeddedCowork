@@ -400,6 +400,54 @@ export class CliProcessManager extends EventEmitter {
     })
   }
 
+  /** Force-stop immediately with SIGKILL/taskkill /T /F. No 30s grace period. */
+  async forceStop(): Promise<void> {
+    const child = this.child
+    if (!child) {
+      this.updateStatus({ state: "stopped" })
+      return
+    }
+
+    if (this.childLaunchMode === "utility") {
+      return this.stopUtilityChild(child as UtilityProcess)
+    }
+
+    const spawnedChild = child as ChildProcess
+    this.requestedStop = true
+
+    const pid = spawnedChild.pid
+    if (!pid || spawnedChild.exitCode !== null || spawnedChild.signalCode !== null) {
+      this.child = undefined
+      this.updateStatus({ state: "stopped" })
+      return
+    }
+
+    return new Promise<void>((resolve) => {
+      const killTimeout = setTimeout(() => {
+        console.warn(`[cli] forceStop timeout after 10000ms`)
+      }, 10000)
+
+      spawnedChild.on("exit", () => {
+        clearTimeout(killTimeout)
+        this.child = undefined
+        console.info("[cli] CLI process force-stopped")
+        this.updateStatus({ state: "stopped" })
+        resolve()
+      })
+
+      if (process.platform === "win32") {
+        const { spawnSync } = require("child_process")
+        spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { encoding: "utf8", timeout: 5000 })
+      } else {
+        try {
+          process.kill(-pid, "SIGKILL")
+        } catch {
+          try { process.kill(pid, "SIGKILL") } catch { /* ignore */ }
+        }
+      }
+    })
+  }
+
   private stopUtilityChild(child: UtilityProcess): Promise<void> {
     this.requestedStop = true
 
