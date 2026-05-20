@@ -654,7 +654,10 @@ app.whenReady().then(() => {
 })
 
 app.on("before-quit", async (event) => {
-  if (appAutoUpdater.isUpdating) return
+  if (appAutoUpdater.isUpdating) {
+    await cliManager.forceStop().catch(() => {})
+    return
+  }
   event.preventDefault()
   await appAutoUpdater.markCleanExit()
   await cliManager.stop().catch(() => {})
