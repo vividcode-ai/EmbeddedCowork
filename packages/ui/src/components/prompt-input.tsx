@@ -701,7 +701,7 @@ export default function PromptInput(props: PromptInputProps) {
           </div>
         </div>
 
-        <Show when={props.currentAgent && props.currentModel && props.onAgentChange && props.onModelChange}>
+        <Show when={props.onAgentChange && props.onModelChange}>
           <PromptInputBottomBar
             instanceId={props.instanceId}
             sessionId={props.sessionId}
