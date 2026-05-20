@@ -43,10 +43,11 @@
     "package:linux": "electron-builder --config electron-builder.config.ts --linux"
   },
   "dependencies": {
-    "@vividcodeai/embeddedcowork": "file:../server",
     "@embeddedcowork/ui": "file:../ui",
-    "yaml": "^2.4.2",
-    "electron-updater": "^6.3.0"
+    "@vividcodeai/embeddedcowork": "file:../server",
+    "config-file-ts": "^0.2.8-rc1",
+    "electron-updater": "^6.3.0",
+    "yaml": "^2.4.2"
   },
   "devDependencies": {
     "7zip-bin": "^5.2.0",
