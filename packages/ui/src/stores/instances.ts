@@ -333,15 +333,6 @@ async function hydrateInstanceData(instanceId: string, options?: { force?: boole
     }
     await fetchSessions(instanceId)
 
-    // Auto-select the most recently updated parent session on first entry
-    const instanceSessions = sessions().get(instanceId)
-    if (instanceSessions && instanceSessions.size > 0 && !activeSessionId().get(instanceId)) {
-      const threads = getSessionThreads(instanceId)
-      if (threads.length > 0) {
-        setActiveParentSession(instanceId, threads[0].parent.id)
-      }
-    }
-
     await fetchAgents(instanceId)
     await fetchProviders(instanceId)
 
@@ -361,6 +352,15 @@ async function hydrateInstanceData(instanceId: string, options?: { force?: boole
             })
           }
         }
+      }
+    }
+
+    // Auto-select the most recently updated parent session on first entry
+    const instanceSessions = sessions().get(instanceId)
+    if (instanceSessions && instanceSessions.size > 0 && !activeSessionId().get(instanceId)) {
+      const threads = getSessionThreads(instanceId)
+      if (threads.length > 0) {
+        setActiveParentSession(instanceId, threads[0].parent.id)
       }
     }
 
