@@ -1,4 +1,4 @@
-import { batch, createMemo, type Accessor } from "solid-js"
+import { batch, createEffect, createMemo, createSignal, type Accessor } from "solid-js"
 import type { ToolState } from "@opencode-ai/sdk/v2"
 import type { Session } from "../../../types/session"
 import {
@@ -56,11 +56,18 @@ export function useInstanceSessionContext(options: InstanceSessionContextOptions
 
   const sessionThreads = createMemo(() => getSessionThreads(options.instanceId()))
 
-  const activeSessions = createMemo(() => {
+  const [activeSessions, setActiveSessions] = createSignal<Map<string, SessionFamilyMember>>(new Map())
+
+  createEffect(() => {
     const parentId = activeParentSessionId().get(options.instanceId())
-    if (!parentId) return new Map<string, ReturnType<typeof getSessionFamily>[number]>()
+    if (!parentId) {
+      setActiveSessions(new Map())
+      return
+    }
+    sessions()
+    getSessionThreads(options.instanceId())
     const sessionFamily = getSessionFamily(options.instanceId(), parentId)
-    return new Map(sessionFamily.map((s) => [s.id, s]))
+    setActiveSessions(new Map(sessionFamily.map((s) => [s.id, s])))
   })
 
   const activeSessionIdForInstance = createMemo(() => {
