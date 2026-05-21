@@ -1,4 +1,4 @@
-import { Show, createMemo, createEffect, on, type Component } from "solid-js"
+import { Show, createMemo, createEffect, createSignal, on, type Component } from "solid-js"
 import type { Session } from "../../types/session"
 import type { Attachment } from "../../types/attachment"
 import type { ClientPart } from "../../types/message"
@@ -44,6 +44,18 @@ interface SessionViewProps {
 export const SessionView: Component<SessionViewProps> = (props) => {
   const { t } = useI18n()
   const session = () => props.activeSessions.get(props.sessionId)
+
+  const [localAgent, setLocalAgent] = createSignal("")
+  const [localModel, setLocalModel] = createSignal<{ providerId: string; modelId: string }>({ providerId: "", modelId: "" })
+
+  createEffect(() => {
+    const s = session()
+    if (s) {
+      setLocalAgent(s.agent)
+      setLocalModel(s.model)
+    }
+  })
+
   const messagesLoading = createMemo(() => isSessionMessagesLoading(props.instanceId, props.sessionId))
   const messageStore = createMemo(() => messageStoreBus.getOrCreate(props.instanceId))
   const sessionBusy = createMemo(() => {
@@ -382,10 +394,16 @@ export const SessionView: Component<SessionViewProps> = (props) => {
                 disabled={sessionNeedsInput()}
                 onAbortSession={handleAbortSession}
                 registerPromptInputApi={registerPromptInputApi}
-                currentAgent={activeSession.agent}
-                currentModel={activeSession.model}
-                onAgentChange={props.onAgentChange ? (agent) => props.onAgentChange!(props.sessionId, agent) : undefined}
-                onModelChange={props.onModelChange ? (model) => props.onModelChange!(props.sessionId, model) : undefined}
+                currentAgent={localAgent()}
+                currentModel={localModel()}
+                onAgentChange={async (agent) => {
+                  setLocalAgent(agent)
+                  await props.onAgentChange?.(props.sessionId, agent)
+                }}
+                onModelChange={async (model) => {
+                  setLocalModel(model)
+                  await props.onModelChange?.(props.sessionId, model)
+                }}
                 />
             </div>
           )
