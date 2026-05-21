@@ -23,11 +23,11 @@ export const settingsMessages = {
   "agentSelector.placeholder": "Select agent...",
   "agentSelector.badge.subagent": "subagent",
   "agentSelector.none": "None",
-  "agentSelector.trigger.primary": "Agent: {agent}",
+  "agentSelector.trigger.primary": "{agent}",
 
   "modelSelector.placeholder.search": "Search models...",
   "modelSelector.none": "None",
-  "modelSelector.trigger.primary": "Model: {model}",
+  "modelSelector.trigger.primary": "{model}",
   "modelSelector.favoritesOnly.toggle.ariaLabel": "Toggle favorites only",
   "modelSelector.favoritesOnly.showAll": "Show all models",
   "modelSelector.favorite.add": "Add to favorites",
@@ -50,7 +50,7 @@ export const settingsMessages = {
   "modelSelector.selectModel.noModels": "No models available for this provider",
 
   "thinkingSelector.variant.default": "Default",
-  "thinkingSelector.label": "Thinking: {variant}",
+  "thinkingSelector.label": "{variant}",
 
   "envEditor.title": "Environment Variables",
   "envEditor.count.one": "({count} variable)",

@@ -23,11 +23,11 @@ export const settingsMessages = {
   "agentSelector.placeholder": "选择智能体...",
   "agentSelector.badge.subagent": "子智能体",
   "agentSelector.none": "无",
-  "agentSelector.trigger.primary": "智能体：{agent}",
+  "agentSelector.trigger.primary": "{agent}",
 
   "modelSelector.placeholder.search": "搜索模型...",
   "modelSelector.none": "无",
-  "modelSelector.trigger.primary": "模型：{model}",
+  "modelSelector.trigger.primary": "{model}",
   "modelSelector.favoritesOnly.toggle.ariaLabel": "仅显示收藏",
   "modelSelector.favoritesOnly.showAll": "显示所有模型",
   "modelSelector.favorite.add": "添加到收藏",
@@ -50,7 +50,7 @@ export const settingsMessages = {
   "modelSelector.selectModel.noModels": "该提供商没有可用模型",
 
   "thinkingSelector.variant.default": "默认",
-  "thinkingSelector.label": "思考：{variant}",
+  "thinkingSelector.label": "{variant}",
 
   "envEditor.title": "环境变量",
   "envEditor.count.one": "（{count} 个变量）",

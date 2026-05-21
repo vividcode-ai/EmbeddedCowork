@@ -23,11 +23,11 @@ export const settingsMessages = {
   "agentSelector.placeholder": "Seleccionar agente...",
   "agentSelector.badge.subagent": "subagente",
   "agentSelector.none": "Ninguno",
-  "agentSelector.trigger.primary": "Agente: {agent}",
+  "agentSelector.trigger.primary": "{agent}",
 
   "modelSelector.placeholder.search": "Buscar modelos...",
   "modelSelector.none": "Ninguno",
-  "modelSelector.trigger.primary": "Modelo: {model}",
+  "modelSelector.trigger.primary": "{model}",
   "modelSelector.favoritesOnly.toggle.ariaLabel": "Alternar solo favoritos",
   "modelSelector.favoritesOnly.showAll": "Mostrar todos los modelos",
   "modelSelector.favorite.add": "Agregar a favoritos",
@@ -50,7 +50,7 @@ export const settingsMessages = {
   "modelSelector.selectModel.noModels": "No hay modelos disponibles para este proveedor",
 
   "thinkingSelector.variant.default": "Por defecto",
-  "thinkingSelector.label": "Pensamiento: {variant}",
+  "thinkingSelector.label": "{variant}",
 
   "envEditor.title": "Variables de entorno",
   "envEditor.count.one": "({count} variable)",

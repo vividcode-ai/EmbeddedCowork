@@ -392,8 +392,8 @@ export default function WorktreeSelector(props: WorktreeSelectorProps) {
               {(state) => {
                 if (worktreesUnavailable()) {
                   return (
-                    <div class="selector-trigger-label selector-trigger-label--stacked">
-                      <span class="selector-trigger-primary selector-trigger-primary--align-left">Worktree: Unavailable</span>
+                    <div class="selector-trigger-label">
+                      <span class="selector-trigger-primary selector-trigger-primary--align-left">Unavailable</span>
                     </div>
                   )
                 }
@@ -401,8 +401,8 @@ export default function WorktreeSelector(props: WorktreeSelectorProps) {
                 const value = state.selectedOption()
                 const label = value && value.kind === "worktree" ? (value.slug === "root" ? "Workspace" : value.slug) : "Workspace"
                 return (
-                  <div class="selector-trigger-label selector-trigger-label--stacked">
-                    <span class="selector-trigger-primary selector-trigger-primary--align-left">Worktree: {label}</span>
+                  <div class="selector-trigger-label">
+                    <span class="selector-trigger-primary selector-trigger-primary--align-left">{label}</span>
                   </div>
                 )
               }}

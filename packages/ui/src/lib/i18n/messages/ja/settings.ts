@@ -23,11 +23,11 @@ export const settingsMessages = {
   "agentSelector.placeholder": "エージェントを選択...",
   "agentSelector.badge.subagent": "サブエージェント",
   "agentSelector.none": "なし",
-  "agentSelector.trigger.primary": "エージェント: {agent}",
+  "agentSelector.trigger.primary": "{agent}",
 
   "modelSelector.placeholder.search": "モデルを検索...",
   "modelSelector.none": "なし",
-  "modelSelector.trigger.primary": "モデル: {model}",
+  "modelSelector.trigger.primary": "{model}",
   "modelSelector.favoritesOnly.toggle.ariaLabel": "お気に入りのみ",
   "modelSelector.favoritesOnly.showAll": "すべてのモデルを表示",
   "modelSelector.favorite.add": "お気に入りに追加",
@@ -50,7 +50,7 @@ export const settingsMessages = {
   "modelSelector.selectModel.noModels": "このプロバイダーに利用可能なモデルはありません",
 
   "thinkingSelector.variant.default": "デフォルト",
-  "thinkingSelector.label": "思考: {variant}",
+  "thinkingSelector.label": "{variant}",
 
   "envEditor.title": "環境変数",
   "envEditor.count.one": "（{count} 個）",

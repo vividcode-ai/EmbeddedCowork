@@ -23,11 +23,11 @@ export const settingsMessages = {
   "agentSelector.placeholder": "בחר סוכן...",
   "agentSelector.badge.subagent": "תת-סוכן",
   "agentSelector.none": "ללא",
-  "agentSelector.trigger.primary": "סוכן: {agent}",
+  "agentSelector.trigger.primary": "{agent}",
 
   "modelSelector.placeholder.search": "חפש מודלים...",
   "modelSelector.none": "ללא",
-  "modelSelector.trigger.primary": "מודל: {model}",
+  "modelSelector.trigger.primary": "{model}",
   "modelSelector.favoritesOnly.toggle.ariaLabel": "הצג מועדפים בלבד",
   "modelSelector.favoritesOnly.showAll": "הצג את כל המודלים",
   "modelSelector.favorite.add": "הוסף למועדפים",
@@ -50,7 +50,7 @@ export const settingsMessages = {
   "modelSelector.selectModel.noModels": "אין מודלים זמינים עבור ספק זה",
 
   "thinkingSelector.variant.default": "ברירת מחדל",
-  "thinkingSelector.label": "חשיבה: {variant}",
+  "thinkingSelector.label": "{variant}",
 
   "envEditor.title": "משתני סביבה",
   "envEditor.count.one": "(משתנה אחד)",

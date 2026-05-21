@@ -23,11 +23,11 @@ export const settingsMessages = {
   "agentSelector.placeholder": "Выберите агента…",
   "agentSelector.badge.subagent": "субагент",
   "agentSelector.none": "Нет",
-  "agentSelector.trigger.primary": "Агент: {agent}",
+  "agentSelector.trigger.primary": "{agent}",
 
   "modelSelector.placeholder.search": "Поиск моделей…",
   "modelSelector.none": "Нет",
-  "modelSelector.trigger.primary": "Модель: {model}",
+  "modelSelector.trigger.primary": "{model}",
   "modelSelector.favoritesOnly.toggle.ariaLabel": "Только избранное",
   "modelSelector.favoritesOnly.showAll": "Показать все модели",
   "modelSelector.favorite.add": "Добавить в избранное",
@@ -50,7 +50,7 @@ export const settingsMessages = {
   "modelSelector.selectModel.noModels": "Нет доступных моделей для этого провайдера",
 
   "thinkingSelector.variant.default": "По умолчанию",
-  "thinkingSelector.label": "Размышления: {variant}",
+  "thinkingSelector.label": "{variant}",
 
   "envEditor.title": "Переменные окружения",
   "envEditor.count.one": "({count} переменная)",

@@ -297,15 +297,10 @@ export default function ModelSelector(props: ModelSelectorProps) {
           <Combobox.Trigger
             class="selector-trigger"
           >
-            <div class="selector-trigger-label selector-trigger-label--stacked flex-1 min-w-0">
+            <div class="selector-trigger-label flex-1 min-w-0">
               <span class="selector-trigger-primary selector-trigger-primary--align-left">
                 {t("modelSelector.trigger.primary", { model: currentModelValue()?.name ?? t("modelSelector.none") })}
               </span>
-          {currentModelValue() && (
-                <span class="selector-trigger-secondary" dir="ltr">
-                  {currentModelValue()!.providerId}/{currentModelValue()!.id}
-                </span>
-              )}
             </div>
             <Combobox.Icon class="selector-trigger-icon">
               <ChevronDown class="w-3 h-3" />
