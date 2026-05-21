@@ -65,7 +65,6 @@ export function useInstanceSessionContext(options: InstanceSessionContextOptions
       return
     }
     sessions()
-    getSessionThreads(options.instanceId())
     const sessionFamily = getSessionFamily(options.instanceId(), parentId)
     setActiveSessions(new Map(sessionFamily.map((s) => [s.id, s])))
   })
