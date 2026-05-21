@@ -425,6 +425,9 @@ export class CliProcessManager extends EventEmitter {
     return new Promise<void>((resolve) => {
       const killTimeout = setTimeout(() => {
         console.warn(`[cli] forceStop timeout after 10000ms`)
+        this.child = undefined
+        this.updateStatus({ state: "stopped" })
+        resolve()
       }, 10000)
 
       spawnedChild.on("exit", () => {
@@ -436,8 +439,12 @@ export class CliProcessManager extends EventEmitter {
       })
 
       if (process.platform === "win32") {
-        const { spawnSync } = require("child_process")
-        spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { encoding: "utf8", timeout: 5000 })
+        try {
+          const { spawnSync } = require("child_process")
+          spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { encoding: "utf8", timeout: 5000 })
+        } catch (e) {
+          console.warn("[cli] taskkill failed:", e)
+        }
       } else {
         try {
           process.kill(-pid, "SIGKILL")

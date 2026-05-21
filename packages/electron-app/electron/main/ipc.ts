@@ -1,5 +1,7 @@
 import { BrowserWindow, Notification, app, dialog, ipcMain, powerSaveBlocker, type OpenDialogOptions } from "electron"
+import { spawn } from "child_process"
 import fs from "fs"
+import path from "path"
 import { requestMicrophoneAccess } from "./permissions"
 import type { CliProcessManager, CliStatus } from "./process-manager"
 import type { AppAutoUpdater } from "./auto-updater"
@@ -160,9 +162,29 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
   })
 
   ipcMain.handle("install-update", async () => {
+    // 1. Force-stop the CLI server process tree
     await cliManager.forceStop().catch(() => {})
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    appAutoUpdater?.installNow()
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // 2. Get the downloaded installer path
+    const installerPath = appAutoUpdater?.getInstallerPath()
+    if (!installerPath) {
+      throw new Error("No downloaded installer found")
+    }
+
+    // 3. Resolve the bootstrapper script path
+    const bootstrapScript = app.isPackaged
+      ? path.join(process.resourcesPath, "update-bootstrap.bat")
+      : path.join(app.getAppPath(), "electron", "resources", "update-bootstrap.bat")
+
+    // 4. Launch the bootstrapper: waits for this PID to exit, then runs the installer
+    spawn("cmd.exe", ["/c", bootstrapScript, String(process.pid), installerPath], {
+      detached: true,
+      stdio: "ignore",
+    }).unref()
+
+    // 5. Exit the old app immediately
+    app.exit(0)
   })
 
   ipcMain.handle("get-updater-enabled", () => {

@@ -11,6 +11,7 @@ export class AppAutoUpdater {
   private rollbackManager: ElectronRollbackManager
   private mainWindow: BrowserWindow | null = null
   private cleanupFunctions: Array<() => void> = []
+  private downloadedInstallerPath: string | null = null
 
   constructor() {
     this.rollbackManager = new ElectronRollbackManager()
@@ -18,7 +19,7 @@ export class AppAutoUpdater {
     autoUpdater.autoDownload = false
     autoUpdater.allowPrerelease = false
     autoUpdater.allowDowngrade = false
-    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.autoInstallOnAppQuit = false
 
     this.setupListeners()
   }
@@ -72,6 +73,7 @@ export class AppAutoUpdater {
       this.setProgressBar(1) // 100% green
       // Clear progress bar after 2 seconds
       setTimeout(() => this.setProgressBar(-1), 2000)
+      this.downloadedInstallerPath = info.path
       this.rollbackManager.markInstalling(info.version)
       this.send("update:ready", {
         version: info.version,
@@ -143,6 +145,11 @@ export class AppAutoUpdater {
     autoUpdater.checkForUpdates().catch((err) => {
       this.send("update:error", { message: err.message })
     })
+  }
+
+  /** Get the downloaded installer path */
+  getInstallerPath(): string | null {
+    return this.downloadedInstallerPath
   }
 
   /** Install the downloaded update immediately */
