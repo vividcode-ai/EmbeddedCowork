@@ -81,10 +81,7 @@ function ensureServerDependencies() {
     npm_config_workspaces: "false",
   }
 
-  const npmCli = npmExecPath && npmNodeExecPath ? [npmNodeExecPath, [npmExecPath, ...npmArgs]] : null
-  const result = npmCli
-    ? spawnSync(npmCli[0], npmCli[1], { cwd: serverRoot, stdio: "inherit", env })
-    : spawnSync("npm", npmArgs, { cwd: serverRoot, stdio: "inherit", env, shell: process.platform === "win32" })
+  const result = spawnSync("npm", npmArgs, { cwd: serverRoot, stdio: "inherit", env, shell: process.platform === "win32" })
 
   if (result.status !== 0) {
     if (result.error) {

@@ -157,6 +157,7 @@ async function build(platform) {
     await run(process.execPath, [join(appDir, "scripts", "prepare-resources.js")], {
       cwd: workspaceRoot,
       env: { NODE_PATH: workspaceNodeModulesPath },
+      shell: false,
     })
 
     console.log("\n📦 Step 2/3: Building Electron app...\n")
