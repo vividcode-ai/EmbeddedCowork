@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-solid"
 import { getLogger } from "../lib/logger"
 import { getModelThinkingSelection, setModelThinkingSelection } from "../stores/preferences"
 import { useI18n } from "../lib/i18n"
+import { firstLetterUpper } from "../lib/formatters"
 
 const log = getLogger("session")
 
@@ -60,7 +61,7 @@ export default function ThinkingSelector(props: ThinkingSelectorProps) {
 
   const triggerPrimary = createMemo(() => {
     const selected = currentValue()?.value
-    const variant = selected ?? t("thinkingSelector.variant.default")
+    const variant = selected ? firstLetterUpper(selected) : t("thinkingSelector.variant.default")
     return t("thinkingSelector.label", { variant })
   })
 

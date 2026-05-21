@@ -4,6 +4,7 @@ import { agents, fetchAgents, sessions } from "../stores/sessions"
 import { ChevronDown } from "lucide-solid"
 import type { Agent } from "../types/session"
 import { useI18n } from "../lib/i18n"
+import { firstLetterUpper } from "../lib/formatters"
 import { getLogger } from "../lib/logger"
 const log = getLogger("session")
 
@@ -110,7 +111,7 @@ export default function AgentSelector(props: AgentSelectorProps) {
               {() => (
                 <div class="selector-trigger-label selector-trigger-label--stacked">
                   <span class="selector-trigger-primary selector-trigger-primary--align-left">
-                    {t("agentSelector.trigger.primary", { agent: props.currentAgent || t("agentSelector.none") })}
+                    {t("agentSelector.trigger.primary", { agent: props.currentAgent ? firstLetterUpper(props.currentAgent) : t("agentSelector.none") })}
                   </span>
                 </div>
               )}

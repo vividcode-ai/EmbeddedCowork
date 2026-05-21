@@ -11,6 +11,11 @@ export function formatTokenTotal(value: number): string {
   return value.toLocaleString()
 }
 
+export function firstLetterUpper(s: string): string {
+  if (!s) return s
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 export function formatCompactCount(value: number): string {
   if (value >= 1_000_000_000) {
     return `${(value / 1_000_000_000).toFixed(1)}B`
