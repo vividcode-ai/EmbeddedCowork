@@ -372,7 +372,8 @@
 
 .prompt-input-bottom-bar {
   @apply flex items-center justify-between gap-2 px-3 py-1.5;
-  border-top: 1px solid var(--border-base);
+  border: 1px solid var(--border-base);
+  border-top: none;
   background-color: var(--surface-base);
 }
 
