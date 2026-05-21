@@ -1,4 +1,4 @@
-import { batch, createMemo, type Accessor } from "solid-js"
+import { batch, createEffect, createMemo, type Accessor } from "solid-js"
 import type { ToolState } from "@opencode-ai/sdk/v2"
 import type { Session } from "../../../types/session"
 import {
@@ -129,6 +129,11 @@ export function useInstanceSessionContext(options: InstanceSessionContextOptions
   })
 
   const backgroundProcessList = createMemo(() => getBackgroundProcesses(options.instanceId()))
+
+  createEffect(() => {
+    sessions()
+    activeSessions()
+  })
 
   const handleSessionSelect = (sessionId: string) => {
     const instanceId = options.instanceId()
