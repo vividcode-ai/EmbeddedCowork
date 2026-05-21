@@ -342,6 +342,7 @@ async function updateSessionAgent(instanceId: string, sessionId: string, agent: 
       current.model = nextModel
     }
   })
+  console.log("[updateSessionAgent] agent updated", { sessionId, agent, shouldApplyModel, nextModel })
 
   if (agent && shouldApplyModel) {
     await setAgentModelPreference(instanceId, agent, nextModel)
@@ -383,6 +384,7 @@ async function updateSessionModel(
   withSession(instanceId, sessionId, (current) => {
     current.model = model
   })
+  console.log("[updateSessionModel] model updated", { sessionId, model })
 
   if (session.agent) {
     await setAgentModelPreference(instanceId, session.agent, model)
