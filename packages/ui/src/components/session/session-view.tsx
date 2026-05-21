@@ -334,6 +334,7 @@ export const SessionView: Component<SessionViewProps> = (props) => {
     >
       {(sessionAccessor) => {
         const activeSession = sessionAccessor()
+        console.log("[session-view] session rendered", { id: activeSession?.id, agent: activeSession?.agent, model: activeSession?.model })
         if (!activeSession) return null
         return (
           <div ref={rootRef} class="session-view">
