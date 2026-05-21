@@ -345,20 +345,21 @@ async function hydrateInstanceData(instanceId: string, options?: { force?: boole
     await fetchAgents(instanceId)
     await fetchProviders(instanceId)
 
-    const activeId = activeSessionId().get(instanceId)
-    if (activeId && activeId !== "info") {
-      const storedSession = sessions().get(instanceId)?.get(activeId)
-      if (storedSession && !storedSession.agent) {
-        const instanceAgents = agents().get(instanceId) || []
-        const firstAgent = instanceAgents.find((a) => a.mode !== "subagent" && !a.hidden)
-        if (firstAgent) {
-          const defaultModel = await getDefaultModel(instanceId, firstAgent.name)
-          withSession(instanceId, activeId, (current) => {
-            current.agent = firstAgent.name
-            if (defaultModel.providerId && defaultModel.modelId) {
-              current.model = defaultModel
-            }
-          })
+    const instanceAgentsList = agents().get(instanceId) || []
+    const firstAgent = instanceAgentsList.find((a) => a.mode !== "subagent" && !a.hidden)
+    if (firstAgent) {
+      const defaultModel = await getDefaultModel(instanceId, firstAgent.name)
+      const allInstanceSessions = sessions().get(instanceId)
+      if (allInstanceSessions) {
+        for (const [sid, storedSession] of allInstanceSessions) {
+          if (storedSession && !storedSession.agent) {
+            withSession(instanceId, sid, (current) => {
+              current.agent = firstAgent.name
+              if (defaultModel.providerId && defaultModel.modelId) {
+                current.model = defaultModel
+              }
+            })
+          }
         }
       }
     }
