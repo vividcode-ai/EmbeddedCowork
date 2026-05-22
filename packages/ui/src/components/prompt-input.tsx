@@ -531,6 +531,29 @@ export default function PromptInput(props: PromptInputProps) {
     voiceInput.stopRecording()
   }
 
+  const [sessionEnding, setSessionEnding] = createSignal(false)
+  let endingTimer: number | undefined
+
+  createEffect(() => {
+    if (props.isSessionBusy) {
+      if (endingTimer !== undefined) {
+        clearTimeout(endingTimer)
+        endingTimer = undefined
+      }
+      setSessionEnding(false)
+    } else if (!sessionEnding()) {
+      setSessionEnding(true)
+      endingTimer = window.setTimeout(() => {
+        setSessionEnding(false)
+        endingTimer = undefined
+      }, 260)
+    }
+  })
+
+  onCleanup(() => {
+    if (endingTimer !== undefined) clearTimeout(endingTimer)
+  })
+
   return (
     <div class="prompt-input-container">
       <div
@@ -563,6 +586,16 @@ export default function PromptInput(props: PromptInputProps) {
               workspaceId={props.instanceId}
             />
           </Suspense>
+        </Show>
+
+        <Show when={props.isSessionBusy || sessionEnding()}>
+          <div
+            class="prompt-input-progress"
+            classList={{ "is-hiding": !props.isSessionBusy }}
+            aria-hidden="true"
+          >
+            <div class="prompt-input-progress-bar" />
+          </div>
         </Show>
 
         <div class="flex flex-1 flex-col">

@@ -480,3 +480,33 @@
     padding: 0;
   }
 }
+
+@keyframes prompt-input-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.prompt-input-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 30;
+  opacity: 1;
+  transition: opacity 220ms ease-out;
+}
+
+.prompt-input-progress.is-hiding {
+  opacity: 0;
+}
+
+.prompt-input-progress-bar {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--session-status-working-fg);
+  animation: prompt-input-progress 1.8s ease-in-out infinite;
+}
