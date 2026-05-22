@@ -409,6 +409,7 @@
 
 .prompt-input-bottom-bar .selector-trigger-primary {
   font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .prompt-input-bottom-bar .selector-trigger-label--stacked {

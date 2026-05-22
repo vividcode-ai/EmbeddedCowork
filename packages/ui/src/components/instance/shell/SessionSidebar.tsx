@@ -9,7 +9,6 @@ import IconButton from "@suid/material/IconButton"
 import MenuOpenIcon from "@suid/icons-material/MenuOpen"
 import PushPinIcon from "@suid/icons-material/PushPin"
 import PushPinOutlinedIcon from "@suid/icons-material/PushPinOutlined"
-import InfoOutlinedIcon from "@suid/icons-material/InfoOutlined"
 
 import SessionList from "../../session-list"
 import KeyboardHint from "../../keyboard-hint"
@@ -90,15 +89,6 @@ const SessionSidebar: Component<SessionSidebarProps> = (props) => {
               }}
             >
               <Search class="w-5 h-5" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="inherit"
-              aria-label={props.t("instanceShell.leftPanel.instanceInfo")}
-              title={props.t("instanceShell.leftPanel.instanceInfo")}
-              onClick={() => props.onSelectSession("info")}
-            >
-              <InfoOutlinedIcon fontSize="small" />
             </IconButton>
             <Show when={!props.isPhoneLayout()}>
               <IconButton
