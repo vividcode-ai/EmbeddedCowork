@@ -38,6 +38,8 @@ use std::io::Cursor;
 #[cfg(windows)]
 use zip::ZipArchive;
 #[cfg(windows)]
+use futures::StreamExt;
+#[cfg(windows)]
 use windows_sys::Win32::UI::Shell::SetCurrentProcessExplicitAppUserModelID;
 
 static QUIT_REQUESTED: AtomicBool = AtomicBool::new(false);
@@ -257,7 +259,29 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
         .user_agent("EmbeddedCowork-Updater")
         .build().map_err(|e| e.to_string())?;
     let resp = client.get(&download_url).send().await.map_err(|e| e.to_string())?;
-    let zip_bytes = resp.bytes().await.map_err(|e| e.to_string())?;
+    let total = resp.content_length().unwrap_or(0);
+
+    app.emit("update:progress", serde_json::json!({
+        "status": "downloading", "percent": 0, "total": total, "downloaded": 0
+    })).ok();
+
+    let mut stream = resp.bytes_stream();
+    let mut downloaded: u64 = 0;
+    let mut zip_bytes: Vec<u8> = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| e.to_string())?;
+        downloaded += chunk.len() as u64;
+        zip_bytes.extend_from_slice(&chunk);
+        if total > 0 {
+            let percent = ((downloaded as f64 / total as f64) * 100.0) as u8;
+            app.emit("update:progress", serde_json::json!({
+                "status": "downloading", "percent": percent,
+                "total": total, "downloaded": downloaded
+            })).ok();
+        }
+    }
+
+    app.emit("update:progress", serde_json::json!({"status": "extracting"})).ok();
 
     let temp_dir = std::env::temp_dir().join(format!("ec-update-{version}"));
     let _ = std::fs::remove_dir_all(&temp_dir);
@@ -268,8 +292,14 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
 
     let installer = find_nsis_installer(&temp_dir).ok_or("NSIS installer not found in update archive".to_string())?;
 
+    app.emit("update:progress", serde_json::json!({"status": "installing"})).ok();
+
     let pid = std::process::id();
     let batch_path = temp_dir.join("install.bat");
+    let appdata = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| {
+        std::env::var("APPDATA").unwrap_or_default()
+    });
+    let app_exe = format!(r"{}\Programs\EmbeddedCowork\EmbeddedCowork.exe", appdata);
     let batch_content = format!(
         "@echo off\r\n\
          :WAIT\r\n\
@@ -279,8 +309,9 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
            goto WAIT\r\n\
          )\r\n\
          \"{}\" /S\r\n\
+         if exist \"{app_exe}\" start \"\" \"{app_exe}\"\r\n\
          del \"%~f0\"\r\n",
-        installer.display()
+        installer.display(),
     );
     std::fs::write(&batch_path, batch_content).map_err(|e| e.to_string())?;
 

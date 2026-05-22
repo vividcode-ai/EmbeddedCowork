@@ -53,6 +53,9 @@ export const appMessages = {
   "update.polling.later": "稍后",
   "update.alreadyUpToDate": "已是最新版本！",
   "update.checkFailed": "检查更新失败",
+  "update.extracting": "正在准备安装...",
+  "update.installing": "正在后台安装...",
+  "update.installing.message": "安装完成后将自动启动。",
 
   "rollback.title": "检测到恢复",
   "rollback.message": "上次更新到 v{newVersion} 后未能正常启动。是否回滚到 v{oldVersion}？",
