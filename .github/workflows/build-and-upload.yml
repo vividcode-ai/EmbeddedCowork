@@ -663,10 +663,10 @@ jobs:
           $artifactDir = "packages/tauri-app/release-tauri"
           if (Test-Path $artifactDir) { Remove-Item $artifactDir -Recurse -Force }
           New-Item -ItemType Directory -Path $artifactDir | Out-Null
-          $exe = Get-ChildItem -Path $bundleRoot -Recurse -File -Filter *.exe | Select-Object -First 1
-          if ($null -ne $exe) {
+          $msiDir = Join-Path $bundleRoot "msi"
+          if (Test-Path $msiDir) {
             $dest = Join-Path $artifactDir ("EmbeddedCowork-Tauri-$env:VERSION-windows-x64.zip")
-            Compress-Archive -Path $exe.Directory.FullName -DestinationPath $dest -Force
+            Compress-Archive -Path "$msiDir\*" -DestinationPath $dest -Force
           }
 
       - name: Sign Tauri artifacts (Windows ed25519)
