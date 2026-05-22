@@ -579,13 +579,8 @@ const App: Component = () => {
                 const api = (window as any).electronAPI as any
                 await (api.installUpdateV2?.() ?? Promise.resolve())
               } else if (isTauriHost()) {
-                const { check } = await import("@tauri-apps/plugin-updater")
-                const update = await check()
-                if (update) {
-                  await update.downloadAndInstall()
-                }
                 const { invoke } = await import("@tauri-apps/api/core")
-                await invoke("restart_app")
+                await invoke("install_update")
               }
             },
           },
@@ -633,13 +628,8 @@ const App: Component = () => {
                 const api = (window as any).electronAPI as any
                 await (api.installUpdateV2?.() ?? Promise.resolve())
               } else if (isTauriHost()) {
-                const { check } = await import("@tauri-apps/plugin-updater")
-                const update = await check()
-                if (update) {
-                  await update.downloadAndInstall()
-                }
                 const { invoke } = await import("@tauri-apps/api/core")
-                await invoke("restart_app")
+                await invoke("install_update")
               }
             },
           },

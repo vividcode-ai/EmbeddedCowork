@@ -28,6 +28,7 @@ tauri-plugin-global-shortcut = "2"
 url = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-updater = "2"
+zip = { version = "2", features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security_Cryptography", "Win32_UI_Shell", "Win32_Security", "Win32_System_JobObjects"] }

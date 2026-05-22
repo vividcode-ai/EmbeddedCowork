@@ -13,13 +13,6 @@ import { getLogger } from "../lib/logger"
 
 const log = getLogger("actions")
 
-interface TauriUpdate {
-  version: string
-  downloadAndInstall(cb?: (event: any) => void): Promise<void>
-}
-
-let pendingTauriUpdate: TauriUpdate | null = null
-
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B"
   const k = 1024
@@ -100,7 +93,6 @@ export function UpdateNotification() {
       const update = await check()
       if (update) {
         log.info("Tauri update available:", update.version)
-        pendingTauriUpdate = update as unknown as TauriUpdate
         setShowInstallDialog(true)
       }
     } catch (err) {
@@ -122,32 +114,9 @@ export function UpdateNotification() {
       await api?.installUpdate()
     } else if (host === "tauri") {
       try {
-        let update = pendingTauriUpdate
-        pendingTauriUpdate = null
-        if (!update) {
-          log.warn("Tauri install: no pending update, re-checking")
-          const { check } = await import("@tauri-apps/plugin-updater")
-          const fresh = await check()
-          if (!fresh) return
-          update = fresh as unknown as TauriUpdate
-        }
-        setUpdateStatus("downloading")
-        let total = 0
-        let transferred = 0
-        await update.downloadAndInstall((event) => {
-          if (event.event === 'Started') {
-            total = event.data.contentLength ?? 0
-            transferred = 0
-            setUpdateProgress({ percent: 0, bytesPerSecond: 0, total, transferred })
-          } else if (event.event === 'Progress') {
-            transferred += event.data.chunkLength
-            const percent = total > 0 ? Math.round((transferred / total) * 100) : 0
-            setUpdateProgress({ percent, bytesPerSecond: 0, total, transferred })
-          }
-        })
         const { invoke } = await import("@tauri-apps/api/core")
-        readyForInstall(update.version)
-        await invoke("restart_app")
+        setUpdateStatus("downloading")
+        await invoke("install_update")
       } catch (err) {
         log.error("Tauri install update failed:", err)
         setUpdateStatus("error")

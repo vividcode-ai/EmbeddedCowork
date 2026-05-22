@@ -26,6 +26,8 @@ use tauri_plugin_global_shortcut::{
 use tauri_plugin_updater::UpdaterExt;
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
+use std::io::Cursor;
+use zip::ZipArchive;
 
 #[cfg(windows)]
 use std::ffi::OsStr;
@@ -217,6 +219,77 @@ async fn rollback_update(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn restart_app(app: AppHandle) {
     app.exit(0);
+}
+
+fn find_nsis_installer(dir: &std::path::Path) -> Option<std::path::PathBuf> {
+    let mut entries: Vec<_> = std::fs::read_dir(dir).ok()?.collect();
+    while let Some(Ok(entry)) = entries.pop() {
+        let path = entry.path();
+        if path.is_dir() {
+            if let Ok(read_dir) = std::fs::read_dir(&path) {
+                entries.extend(read_dir);
+            }
+            continue;
+        }
+        let name = path.file_stem()?.to_string_lossy().to_lowercase();
+        if (name.contains("setup") || name.contains("installer")) && path.extension().map_or(false, |e| e == "exe") {
+            return Some(path);
+        }
+    }
+    None
+}
+
+#[cfg(windows)]
+#[tauri::command]
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let response = updater.check().await.map_err(|e| e.to_string())?;
+    let update = response.ok_or("No update available".to_string())?;
+
+    let version = &update.version;
+    let download_url = format!(
+        "https://github.com/vividcode-ai/EmbeddedCowork/releases/download/v{version}/EmbeddedCowork-Tauri-{version}-windows-x64.zip"
+    );
+
+    let client = reqwest::Client::builder()
+        .user_agent("EmbeddedCowork-Updater")
+        .build().map_err(|e| e.to_string())?;
+    let resp = client.get(&download_url).send().await.map_err(|e| e.to_string())?;
+    let zip_bytes = resp.bytes().await.map_err(|e| e.to_string())?;
+
+    let temp_dir = std::env::temp_dir().join(format!("ec-update-{version}"));
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    std::fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+
+    let mut archive = ZipArchive::new(Cursor::new(zip_bytes)).map_err(|e| e.to_string())?;
+    archive.extract(&temp_dir).map_err(|e| e.to_string())?;
+
+    let installer = find_nsis_installer(&temp_dir).ok_or("NSIS installer not found in update archive".to_string())?;
+
+    let pid = std::process::id();
+    let batch_path = temp_dir.join("install.bat");
+    let batch_content = format!(
+        "@echo off\r\n\
+         :WAIT\r\n\
+         tasklist /FI \"PID eq {pid}\" /NH 2>NUL | find /I \"{pid}\" >NUL\r\n\
+         if %errorlevel% EQU 0 (\r\n\
+           timeout /t 1 /nobreak >NUL\r\n\
+           goto WAIT\r\n\
+         )\r\n\
+         \"{}\" /S\r\n\
+         del \"%~f0\"\r\n",
+        installer.display()
+    );
+    std::fs::write(&batch_path, batch_content).map_err(|e| e.to_string())?;
+
+    use std::os::windows::process::CommandExt;
+    std::process::Command::new("cmd")
+        .args(["/c", &batch_path.to_string_lossy()])
+        .creation_flags(0x08000000 | 0x00000200)
+        .spawn().map_err(|e| e.to_string())?;
+
+    app.exit(0);
+    Ok(())
 }
 
 fn is_dev_mode() -> bool {
@@ -638,6 +711,7 @@ fn main() {
             needs_local_certificate_install,
             open_remote_window,
             check_update,
+            install_update,
             rollback_update,
             restart_app
         ])
