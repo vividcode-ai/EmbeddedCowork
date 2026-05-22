@@ -86,11 +86,6 @@
       "icon.ico",
       "icon.png"
     ],
-    "windows": {
-      "nsis": {
-        "closeAppWhenInstalling": true
-      }
-    },
     "targets": [
       "app",
       "appimage",
