@@ -97,6 +97,13 @@ export function UpdateNotification() {
       }
     } catch (err) {
       log.warn("Tauri updater not available:", err)
+      showToastNotification({
+        title: t("update.checkFailed"),
+        message: String(err),
+        variant: "error",
+        duration: 8000,
+        position: "bottom-right",
+      })
     }
   }
 

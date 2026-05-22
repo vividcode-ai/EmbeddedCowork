@@ -586,6 +586,13 @@ const App: Component = () => {
         })
       } catch (err) {
         log.warn("Update poll failed:", err)
+        showToastNotification({
+          title: t("update.checkFailed"),
+          message: String(err),
+          variant: "error",
+          duration: 8000,
+          position: "bottom-right",
+        })
       }
     }
 

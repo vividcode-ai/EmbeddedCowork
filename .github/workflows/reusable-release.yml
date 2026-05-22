@@ -123,7 +123,6 @@ jobs:
     needs:
       - prepare-release
       - build-and-upload
-      - publish-server
     if: ${{ !inputs.prerelease }}
     runs-on: ubuntu-latest
     env:
