@@ -482,17 +482,25 @@
 }
 
 @keyframes prompt-input-progress {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
+  0% {
+    clip-path: inset(0 100% 0 0 round 999px);
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  48% {
+    clip-path: inset(0 0 0 0 round 999px);
+    animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  100% {
+    clip-path: inset(0 0 0 100% round 999px);
+  }
 }
 
 .prompt-input-progress {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 0.75rem;
+  right: 0.75rem;
   height: 2px;
-  overflow: hidden;
   pointer-events: none;
   z-index: 30;
   opacity: 1;
@@ -508,5 +516,6 @@
   height: 100%;
   border-radius: 999px;
   background: var(--session-status-working-fg);
+  clip-path: inset(0 100% 0 0 round 999px);
   animation: prompt-input-progress 1.8s ease-in-out infinite;
 }
