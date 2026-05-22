@@ -6,7 +6,6 @@ import {
   updateState,
   setUpdateStatus,
   setUpdateProgress,
-  readyForInstall,
   clearUpdateError,
 } from "../stores/releases"
 import { getLogger } from "../lib/logger"
@@ -21,11 +20,17 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
+interface UpdateProgressPayload {
+  status: string
+  percent?: number
+  total?: number
+  downloaded?: number
+}
+
 export function UpdateNotification() {
   const { t } = useI18n()
   const [showInstallDialog, setShowInstallDialog] = createSignal(false)
 
-  // Set up platform-specific listeners
   createEffect(() => {
     const host = runtimeEnv.host
 
@@ -55,7 +60,7 @@ export function UpdateNotification() {
 
       unlisteners.push(
         api.onUpdateReady((info: { version: string }) => {
-          readyForInstall(info.version)
+          setUpdateStatus("ready")
           setShowInstallDialog(true)
           log.info("Update ready:", info.version)
         }),
@@ -87,6 +92,35 @@ export function UpdateNotification() {
     }
   })
 
+  if (runtimeEnv.host === "tauri") {
+    createEffect(() => {
+      let unlisten: (() => void) | undefined
+      ;(async () => {
+        const { listen } = await import("@tauri-apps/api/event")
+        const unlistenFn = await listen<UpdateProgressPayload>("update:progress", (event) => {
+          const p = event.payload
+          if (p.status === "downloading") {
+            setUpdateStatus("downloading")
+            setUpdateProgress({
+              percent: p.percent ?? 0,
+              bytesPerSecond: 0,
+              total: p.total ?? 0,
+              transferred: p.downloaded ?? 0,
+            })
+          } else if (p.status === "extracting") {
+            setUpdateStatus("extracting")
+          } else if (p.status === "installing") {
+            setUpdateStatus("installing")
+          }
+        })
+        unlisten = unlistenFn
+      })()
+      onCleanup(() => {
+        unlisten?.()
+      })
+    })
+  }
+
   async function initTauriUpdater() {
     try {
       const { check } = await import("@tauri-apps/plugin-updater")
@@ -112,10 +146,12 @@ export function UpdateNotification() {
     if (host === "electron") {
       const api = (window as any).electronAPI as ElectronAPI | undefined
       await api?.installUpdate()
+      setShowInstallDialog(false)
     } else if (host === "tauri") {
       try {
         const { invoke } = await import("@tauri-apps/api/core")
         setUpdateStatus("downloading")
+        setShowInstallDialog(false)
         await invoke("install_update")
       } catch (err) {
         log.error("Tauri install update failed:", err)
@@ -129,7 +165,6 @@ export function UpdateNotification() {
         })
       }
     }
-    setShowInstallDialog(false)
   }
 
   function handleLater() {
@@ -141,58 +176,64 @@ export function UpdateNotification() {
 
   return (
     <>
-      {/* Download progress bar (fixed bottom-right) */}
-      <Show when={state.status === "downloading" && progress && progress.total > 0}>
-        <div class="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg border border-base bg-surface-primary px-4 py-3 shadow-xl min-w-[240px]">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs text-secondary truncate">
-                {t("update.downloading", {
-                  version: state.version ?? "",
-                  percent: String(Math.round(progress!.percent)),
-                })}
-              </span>
-              <span class="text-xs font-medium text-primary ml-2">
-                {Math.round(progress!.percent)}%
-              </span>
-            </div>
-            <div class="w-full h-1.5 bg-base rounded-full overflow-hidden">
-              <div
-                class="h-full bg-accent rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${progress!.percent}%` }}
-              />
-            </div>
-            <div class="text-[10px] text-muted mt-0.5">
-              {formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}
-            </div>
-          </div>
-        </div>
-      </Show>
-
-      {/* Install dialog */}
-      <Show when={showInstallDialog()}>
+      <Show when={showInstallDialog() || state.status === "downloading" || state.status === "extracting" || state.status === "installing"}>
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
-          <div class="w-full max-w-md rounded-lg border border-base bg-surface-primary p-6 shadow-2xl">
-            <h2 class="text-lg font-semibold text-primary">{t("update.ready.title")}</h2>
-            <p class="mt-2 text-sm text-secondary">
-              {t("update.ready.message", { version: state.version ?? "" })}
-            </p>
-            <div class="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                class="selector-button selector-button-secondary"
-                onClick={handleLater}
-              >
-                {t("update.ready.dismiss")}
-              </button>
-              <button
-                type="button"
-                class="selector-button selector-button-primary"
-                onClick={handleInstall}
-              >
-                {t("update.ready.action")}
-              </button>
-            </div>
+          <div class="w-full max-w-sm rounded-lg border border-base bg-surface-primary p-6 shadow-2xl">
+
+            <Show when={state.status === "downloading" && progress && progress.total > 0}>
+              <h2 class="text-lg font-semibold text-primary mb-3">
+                {t("update.downloading", { version: state.version ?? "", percent: String(Math.round(progress!.percent)) })}
+              </h2>
+              <div class="w-full h-2 bg-base rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-accent rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${progress!.percent}%` }}
+                />
+              </div>
+              <p class="mt-1 text-xs text-muted text-right">{Math.round(progress!.percent)}%</p>
+              <div class="mt-2 text-[10px] text-muted">
+                {formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}
+              </div>
+            </Show>
+
+            <Show when={state.status === "extracting"}>
+              <h2 class="text-lg font-semibold text-primary">{t("update.extracting")}</h2>
+              <div class="mt-3 flex items-center gap-2 text-sm text-secondary">
+                <span class="inline-block w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                {t("update.extracting")}
+              </div>
+            </Show>
+
+            <Show when={state.status === "installing"}>
+              <h2 class="text-lg font-semibold text-primary">{t("update.installing")}</h2>
+              <p class="mt-2 text-sm text-secondary">{t("update.installing.message")}</p>
+              <div class="mt-3 flex items-center gap-2 text-sm text-secondary">
+                <span class="inline-block w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                {t("update.installing")}
+              </div>
+            </Show>
+
+            <Show when={state.status !== "downloading" && state.status !== "extracting" && state.status !== "installing" && showInstallDialog()}>
+              <h2 class="text-lg font-semibold text-primary">{t("update.ready.title")}</h2>
+              <p class="mt-2 text-sm text-secondary">{t("update.ready.message", { version: state.version ?? "" })}</p>
+              <div class="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  class="selector-button selector-button-secondary"
+                  onClick={handleLater}
+                >
+                  {t("update.ready.dismiss")}
+                </button>
+                <button
+                  type="button"
+                  class="selector-button selector-button-primary"
+                  onClick={handleInstall}
+                >
+                  {t("update.ready.action")}
+                </button>
+              </div>
+            </Show>
+
           </div>
         </div>
       </Show>
@@ -200,7 +241,6 @@ export function UpdateNotification() {
   )
 }
 
-/** Typed wrapper for window.electronAPI */
 interface ElectronAPI {
   onUpdateStatus: (cb: (status: string) => void) => () => void
   onUpdateAvailable: (cb: (info: { version: string }) => void) => () => void
