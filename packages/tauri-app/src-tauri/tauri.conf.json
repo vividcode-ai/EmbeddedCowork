@@ -36,7 +36,8 @@
         ]
       },
       "capabilities": [
-        "main-window-native-dialogs"
+        "main-window-native-dialogs",
+        "updater-permissions"
       ]
     }
   },
