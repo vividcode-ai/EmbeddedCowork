@@ -30,18 +30,18 @@
 .prompt-input-field {
   position: relative;
   width: 100%;
-  padding-left: 5px;
-  padding-right: 5px;
 }
 
 .prompt-input {
-  @apply w-full pt-2.5 border-2 text-sm resize-none outline-none transition-colors rounded-md;
+  @apply w-full pt-2.5 border text-sm resize-none outline-none transition-colors rounded-xl;
   padding-inline-start: 0.75rem;
   padding-inline-end: 0.75rem;
   font-family: inherit;
   background-color: var(--surface-base);
   color: var(--text-primary);
   caret-color: var(--text-primary);
+  position: relative;
+  z-index: 2;
   border-color: var(--border-base);
   line-height: var(--line-height-normal);
   padding-bottom: 3rem;
@@ -371,11 +371,15 @@
 }
 
 .prompt-input-bottom-bar {
-  @apply flex items-center justify-between gap-2 py-1.5;
-  padding-inline: calc(0.75rem + 1px);
-  border: 1px solid var(--border-base);
+  @apply flex items-center justify-between gap-2 w-full;
+  padding: calc(0.75rem + 6px) calc(0.75rem + 0.5px) 6px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  margin-top: -0.75rem;
+  border: 0.5px solid var(--border-base);
   border-top: none;
-  border-radius: 0 0 0.375rem 0.375rem;
+  border-radius: 0 0 0.75rem 0.75rem;
   background-color: var(--surface-base);
 }
 
