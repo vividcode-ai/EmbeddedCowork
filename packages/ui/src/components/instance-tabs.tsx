@@ -1,13 +1,9 @@
-import { Component, For, Show, createMemo } from "solid-js"
-import { Dynamic } from "solid-js/web"
+import { Component, For, Show } from "solid-js"
 import InstanceTab from "./instance-tab"
 import KeyboardHint from "./keyboard-hint"
-import { Plus, MonitorUp, Bell, BellOff, Settings } from "lucide-solid"
+import { Plus, Settings } from "lucide-solid"
 import { keyboardRegistry } from "../lib/keyboard-registry"
 import { useI18n } from "../lib/i18n"
-import { isOsNotificationSupportedSync } from "../lib/os-notifications"
-import { canOpenRemoteWindows } from "../lib/runtime-env"
-import { useConfig } from "../stores/preferences"
 import { openSettings } from "../stores/settings-screen"
 import type { AppTabRecord } from "../stores/app-tabs"
 
@@ -21,21 +17,6 @@ interface InstanceTabsProps {
 
 const InstanceTabs: Component<InstanceTabsProps> = (props) => {
   const { t } = useI18n()
-  const { preferences } = useConfig()
-
-  const notificationsSupported = createMemo(() => isOsNotificationSupportedSync())
-  const notificationsEnabled = createMemo(() => Boolean(preferences().osNotificationsEnabled))
-  const notificationIcon = createMemo(() => {
-    if (!notificationsSupported()) return BellOff
-    return notificationsEnabled() ? Bell : BellOff
-  })
-
-  const notificationTitle = createMemo(() => {
-    if (!notificationsSupported()) return t("settings.notifications.status.unsupported")
-    return notificationsEnabled()
-      ? t("settings.notifications.status.enabled")
-      : t("settings.notifications.status.disabled")
-  })
 
   return (
     <div class="tab-bar tab-bar-instance">
@@ -90,26 +71,6 @@ const InstanceTabs: Component<InstanceTabsProps> = (props) => {
              >
                <Settings class="w-4 h-4" />
              </button>
-
-             <button
-               class={`new-tab-button ${!notificationsSupported() ? "opacity-50" : ""}`}
-               onClick={() => openSettings("notifications")}
-               title={notificationTitle()}
-               aria-label={notificationTitle()}
-             >
-              <Dynamic component={notificationIcon()} class="w-4 h-4" />
-            </button>
-
-             <Show when={canOpenRemoteWindows()}>
-               <button
-                 class="new-tab-button tab-remote-button"
-                 onClick={() => openSettings("remote")}
-                 title={t("instanceTabs.remote.title")}
-                 aria-label={t("instanceTabs.remote.ariaLabel")}
-               >
-                 <MonitorUp class="w-4 h-4" />
-               </button>
-             </Show>
           </div>
         </div>
       </div>

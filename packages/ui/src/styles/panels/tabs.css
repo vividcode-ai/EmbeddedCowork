@@ -39,10 +39,6 @@
   @apply flex items-center gap-2 flex-shrink-0;
 }
 
-.tab-remote-button {
-  @apply flex-shrink-0;
-}
-
 .tab-base {
   @apply inline-flex items-center gap-2 px-3 py-2 rounded-t-md max-w-[200px] transition-colors text-sm font-medium;
   font-family: var(--font-family-sans);
