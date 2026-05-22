@@ -13,6 +13,13 @@ import { getLogger } from "../lib/logger"
 
 const log = getLogger("actions")
 
+interface TauriUpdate {
+  version: string
+  downloadAndInstall(cb?: (event: any) => void): Promise<void>
+}
+
+let pendingTauriUpdate: TauriUpdate | null = null
+
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B"
   const k = 1024
@@ -93,6 +100,7 @@ export function UpdateNotification() {
       const update = await check()
       if (update) {
         log.info("Tauri update available:", update.version)
+        pendingTauriUpdate = update as unknown as TauriUpdate
         setShowInstallDialog(true)
       }
     } catch (err) {
@@ -114,9 +122,15 @@ export function UpdateNotification() {
       await api?.installUpdate()
     } else if (host === "tauri") {
       try {
-        const { check } = await import("@tauri-apps/plugin-updater")
-        const update = await check()
-        if (!update) return
+        let update = pendingTauriUpdate
+        pendingTauriUpdate = null
+        if (!update) {
+          log.warn("Tauri install: no pending update, re-checking")
+          const { check } = await import("@tauri-apps/plugin-updater")
+          const fresh = await check()
+          if (!fresh) return
+          update = fresh as unknown as TauriUpdate
+        }
         setUpdateStatus("downloading")
         let total = 0
         let transferred = 0
@@ -137,6 +151,13 @@ export function UpdateNotification() {
       } catch (err) {
         log.error("Tauri install update failed:", err)
         setUpdateStatus("error")
+        showToastNotification({
+          title: t("update.checkFailed"),
+          message: String(err),
+          variant: "error",
+          duration: 8000,
+          position: "bottom-right",
+        })
       }
     }
     setShowInstallDialog(false)
