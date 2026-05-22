@@ -371,7 +371,8 @@
 }
 
 .prompt-input-bottom-bar {
-  @apply flex items-center justify-between gap-2 px-3 py-1.5;
+  @apply flex items-center justify-between gap-2 py-1.5;
+  padding-inline: calc(0.75rem + 1px);
   border: 1px solid var(--border-base);
   border-top: none;
   border-radius: 0 0 0.375rem 0.375rem;
