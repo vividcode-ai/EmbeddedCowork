@@ -117,12 +117,10 @@ export default function ModelSelector(props: ModelSelectorProps) {
 
   const handleChange = async (value: FlatModel | null) => {
     if (!value) return
-    console.log("[model-selector] handleChange", { providerId: value.providerId, modelId: value.id, name: value.name })
     if (instanceProviders().length === 0) {
       await fetchProviders(props.instanceId)
     }
     await props.onModelChange({ providerId: value.providerId, modelId: value.id })
-    console.log("[model-selector] onModelChange completed")
   }
 
   const customFilter = (option: FlatModel, rawInput: string) => {

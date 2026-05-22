@@ -64,15 +64,9 @@ export default function AgentSelector(props: AgentSelectorProps) {
   })
 
 
-  createEffect(() => {
-    console.log("[agent-selector] currentAgent prop changed", props.currentAgent)
-  })
-
   const handleChange = async (value: Agent | null) => {
     if (value && value.name !== props.currentAgent) {
-      console.log("[agent-selector] handleChange", { from: props.currentAgent, to: value.name })
       await props.onAgentChange(value.name)
-      console.log("[agent-selector] onAgentChange completed")
     }
   }
 

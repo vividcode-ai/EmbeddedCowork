@@ -531,10 +531,6 @@ export default function PromptInput(props: PromptInputProps) {
     voiceInput.stopRecording()
   }
 
-  createEffect(() => {
-    console.log("[prompt-input] props", { agent: props.currentAgent, model: props.currentModel, hasOnAgentChange: Boolean(props.onAgentChange), hasOnModelChange: Boolean(props.onModelChange) })
-  })
-
   return (
     <div class="prompt-input-container">
       <div
@@ -703,19 +699,18 @@ export default function PromptInput(props: PromptInputProps) {
               </div>
             </div>
           </div>
+
+          <Show when={props.onAgentChange && props.onModelChange}>
+            <PromptInputBottomBar
+              instanceId={props.instanceId}
+              sessionId={props.sessionId}
+              currentAgent={props.currentAgent!}
+              currentModel={props.currentModel!}
+              onAgentChange={props.onAgentChange!}
+              onModelChange={props.onModelChange!}
+            />
+          </Show>
         </div>
-
-        <Show when={props.onAgentChange && props.onModelChange}>
-          <PromptInputBottomBar
-            instanceId={props.instanceId}
-            sessionId={props.sessionId}
-            currentAgent={props.currentAgent!}
-            currentModel={props.currentModel!}
-            onAgentChange={props.onAgentChange!}
-            onModelChange={props.onModelChange!}
-          />
-        </Show>
-
       </div>
     </div>
   )
