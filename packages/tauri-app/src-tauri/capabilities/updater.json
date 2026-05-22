@@ -2,6 +2,9 @@
   "$schema": "https://schema.tauri.app/capabilities.json",
   "identifier": "updater-permissions",
   "description": "Grant updater plugin permissions for the main window.",
+  "remote": {
+    "urls": ["http://127.0.0.1:*", "http://localhost:*", "http://tauri.localhost/*", "https://tauri.localhost/*"]
+  },
   "windows": ["main"],
   "permissions": [
     "core:default",
