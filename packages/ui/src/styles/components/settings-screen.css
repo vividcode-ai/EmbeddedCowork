@@ -12,7 +12,7 @@
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--border-base);
-  border-radius: 0;
+  border-radius: 1rem;
   box-shadow: 0 32px 96px color-mix(in oklab, var(--overlay-scrim) 55%, transparent);
 }
 
@@ -98,7 +98,7 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.75rem 0.875rem;
-  border-radius: 0;
+  border-radius: 0.375rem;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
@@ -176,7 +176,7 @@
   line-height: 1.2;
 }
 
-.settings-screen-close {
+.modal-surface.settings-screen-shell .settings-screen-close {
   flex-shrink: 0;
   width: 2.25rem;
   height: 2.25rem;
@@ -184,6 +184,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 0.375rem;
 }
 
 .settings-screen-scroll {
@@ -205,7 +206,7 @@
 .settings-card {
   padding: 1.25rem;
   border: 1px solid var(--border-base);
-  border-radius: 0;
+  border-radius: 0.375rem;
   background: color-mix(in oklab, var(--surface-base) 86%, var(--surface-secondary) 14%);
 }
 
@@ -261,7 +262,7 @@
 .settings-card-message {
   padding: 1rem;
   border: 1px dashed var(--border-base);
-  border-radius: 0;
+  border-radius: 0.375rem;
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
@@ -269,7 +270,7 @@
 .settings-card-content {
   padding: 1rem;
   border: 1px solid var(--border-base);
-  border-radius: 0;
+  border-radius: 0.375rem;
   background: var(--surface-base);
 }
 
@@ -317,7 +318,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 0.875rem;
-  border-radius: 0;
+  border-radius: 0.375rem;
   border: 1px solid var(--border-base);
   background: var(--surface-secondary);
   color: var(--text-primary);
@@ -341,7 +342,7 @@
   padding: 0.75rem;
   border: 1px solid var(--border-critical, #e65c5c);
   background: color-mix(in srgb, var(--border-critical, #e65c5c) 10%, transparent);
-  border-radius: 0;
+  border-radius: 0.375rem;
   color: var(--text-primary);
   font-size: var(--font-size-sm);
 }
@@ -375,7 +376,7 @@
   gap: 0.875rem;
   width: 100%;
   padding: 0.95rem;
-  border-radius: 0;
+  border-radius: 0.375rem;
   border: 1px solid var(--border-base);
   background: var(--surface-base);
   color: var(--text-primary);

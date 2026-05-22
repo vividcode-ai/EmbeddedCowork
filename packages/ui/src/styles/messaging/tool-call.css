@@ -6,7 +6,7 @@
   @apply flex flex-col gap-2 p-3 w-full;
   background-color: var(--message-tool-bg);
   color: inherit;
-  border-radius: 1rem 0.5rem 1rem 0.5rem;
+  border-radius: 0.5rem;
 }
 
 .tool-call-header-label {
