@@ -26,8 +26,6 @@ use tauri_plugin_global_shortcut::{
 use tauri_plugin_updater::UpdaterExt;
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
-use std::io::Cursor;
-use zip::ZipArchive;
 
 #[cfg(windows)]
 use std::ffi::OsStr;
@@ -35,6 +33,10 @@ use std::ffi::OsStr;
 use std::iter;
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
+#[cfg(windows)]
+use std::io::Cursor;
+#[cfg(windows)]
+use zip::ZipArchive;
 #[cfg(windows)]
 use windows_sys::Win32::UI::Shell::SetCurrentProcessExplicitAppUserModelID;
 
@@ -290,6 +292,12 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
 
     app.exit(0);
     Ok(())
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+async fn install_update() -> Result<(), String> {
+    Err("Update install is only supported on Windows".to_string())
 }
 
 fn is_dev_mode() -> bool {
