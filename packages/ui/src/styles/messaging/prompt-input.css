@@ -165,6 +165,14 @@
   gap: 0.35rem;
 }
 
+.prompt-overlay-text-interactive {
+  cursor: pointer;
+}
+.prompt-overlay-text-interactive:hover .kbd {
+  color: var(--text-primary);
+  background-color: color-mix(in oklab, var(--accent-primary) 12%, var(--surface-secondary));
+}
+
 .prompt-overlay-warning {
   color: var(--status-warning);
   font-weight: 500;

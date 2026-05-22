@@ -597,7 +597,10 @@ export default function PromptInput(props: PromptInputProps) {
                             <Show when={attachments().length > 0}>
                               <span class="prompt-overlay-text prompt-overlay-muted">{t("promptInput.overlay.attachments", { count: attachments().length })}</span>
                             </Show>
-                            <span class="prompt-overlay-text">
+                            <span
+                              class="prompt-overlay-text pointer-events-auto prompt-overlay-text-interactive"
+                              onClick={() => setMode(mode() === "shell" ? "normal" : "shell")}
+                            >
                               <Kbd>{shellHint().key}</Kbd> {shellHint().text}
                             </span>
                             <Show when={mode() === "shell"}>

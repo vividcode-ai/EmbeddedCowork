@@ -49,6 +49,7 @@ import {
 } from "./stores/instances"
 import {
   getSessions,
+  getSessionThreads,
   activeSessionId,
   setActiveParentSession,
   clearActiveParentSession,
@@ -299,6 +300,11 @@ const App: Component = () => {
       if (session?.id) {
         setActiveParentSession(instanceId, session.id)
         log.info("Created initial session for instance", { instanceId, sessionId: session.id })
+      }
+    } else if (!activeSessionId().get(instanceId)) {
+      const threads = getSessionThreads(instanceId)
+      if (threads.length > 0) {
+        setActiveParentSession(instanceId, threads[0].parent.id)
       }
     }
   }
