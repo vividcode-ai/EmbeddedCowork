@@ -92,35 +92,6 @@ export function UpdateNotification() {
     }
   })
 
-  if (runtimeEnv.host === "tauri") {
-    createEffect(() => {
-      let unlisten: (() => void) | undefined
-      ;(async () => {
-        const { listen } = await import("@tauri-apps/api/event")
-        const unlistenFn = await listen<UpdateProgressPayload>("update:progress", (event) => {
-          const p = event.payload
-          if (p.status === "downloading") {
-            setUpdateStatus("downloading")
-            setUpdateProgress({
-              percent: p.percent ?? 0,
-              bytesPerSecond: 0,
-              total: p.total ?? 0,
-              transferred: p.downloaded ?? 0,
-            })
-          } else if (p.status === "extracting") {
-            setUpdateStatus("extracting")
-          } else if (p.status === "installing") {
-            setUpdateStatus("installing")
-          }
-        })
-        unlisten = unlistenFn
-      })()
-      onCleanup(() => {
-        unlisten?.()
-      })
-    })
-  }
-
   async function initTauriUpdater() {
     try {
       const { check } = await import("@tauri-apps/plugin-updater")
@@ -148,10 +119,26 @@ export function UpdateNotification() {
       await api?.installUpdate()
       setShowInstallDialog(false)
     } else if (host === "tauri") {
+      const { listen } = await import("@tauri-apps/api/event")
+      const unlisten = await listen<UpdateProgressPayload>("update:progress", (event) => {
+        const p = event.payload
+        if (p.status === "downloading") {
+          setUpdateStatus("downloading")
+          setUpdateProgress({
+            percent: p.percent ?? 0,
+            bytesPerSecond: 0,
+            total: p.total ?? 0,
+            transferred: p.downloaded ?? 0,
+          })
+        } else if (p.status === "extracting") {
+          setUpdateStatus("extracting")
+        } else if (p.status === "installing") {
+          setUpdateStatus("installing")
+        }
+      })
       try {
         const { invoke } = await import("@tauri-apps/api/core")
         setUpdateStatus("downloading")
-        setShowInstallDialog(false)
         await invoke("install_update")
       } catch (err) {
         log.error("Tauri install update failed:", err)
@@ -163,6 +150,8 @@ export function UpdateNotification() {
           duration: 8000,
           position: "bottom-right",
         })
+      } finally {
+        unlisten()
       }
     }
   }
@@ -176,7 +165,7 @@ export function UpdateNotification() {
 
   return (
     <>
-      <Show when={showInstallDialog() || state.status === "downloading" || state.status === "extracting" || state.status === "installing"}>
+      <Show when={showInstallDialog() || state.status === "downloading" || state.status === "extracting" || state.status === "installing" || state.status === "error"}>
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div class="w-full max-w-sm rounded-lg border border-base bg-surface-primary p-6 shadow-2xl">
 
