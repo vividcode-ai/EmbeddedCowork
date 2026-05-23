@@ -497,7 +497,7 @@
 
 .prompt-input-progress {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0.75rem;
   right: 0.75rem;
   height: 2px;
@@ -515,7 +515,7 @@
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  background: var(--session-status-working-fg);
+  background: #93c5fd;
   clip-path: inset(0 100% 0 0 round 999px);
   animation: prompt-input-progress 1.8s ease-in-out infinite;
 }

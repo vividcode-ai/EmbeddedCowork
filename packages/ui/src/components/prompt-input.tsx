@@ -1,4 +1,4 @@
-import { Suspense, createEffect, createSignal, lazy, on, onCleanup, Show } from "solid-js"
+import { Suspense, createEffect, createMemo, createSignal, lazy, on, onCleanup, Show } from "solid-js"
 import { Loader2, Mic, Volume2 } from "lucide-solid"
 import { clearAttachments, removeAttachment } from "../stores/attachments"
 import { resolvePastedPlaceholders } from "../lib/prompt-placeholders"
@@ -531,27 +531,18 @@ export default function PromptInput(props: PromptInputProps) {
     voiceInput.stopRecording()
   }
 
-  const [sessionEnding, setSessionEnding] = createSignal(false)
-  let endingTimer: number | undefined
+  const [timeoutDone, setTimeoutDone] = createSignal(true)
 
-  createEffect(() => {
-    if (props.isSessionBusy) {
-      if (endingTimer !== undefined) {
-        clearTimeout(endingTimer)
-        endingTimer = undefined
-      }
-      setSessionEnding(false)
-    } else if (!sessionEnding()) {
-      setSessionEnding(true)
-      endingTimer = window.setTimeout(() => {
-        setSessionEnding(false)
-        endingTimer = undefined
-      }, 260)
-    }
+  const sessionEnding = createMemo(() => {
+    if (props.isSessionBusy) return false
+    return !timeoutDone()
   })
 
-  onCleanup(() => {
-    if (endingTimer !== undefined) clearTimeout(endingTimer)
+  createEffect(() => {
+    if (props.isSessionBusy || timeoutDone()) return
+    setTimeoutDone(false)
+    const timer = setTimeout(() => setTimeoutDone(true), 260)
+    onCleanup(() => clearTimeout(timer))
   })
 
   return (
@@ -586,16 +577,6 @@ export default function PromptInput(props: PromptInputProps) {
               workspaceId={props.instanceId}
             />
           </Suspense>
-        </Show>
-
-        <Show when={props.isSessionBusy || sessionEnding()}>
-          <div
-            class="prompt-input-progress"
-            classList={{ "is-hiding": !props.isSessionBusy }}
-            aria-hidden="true"
-          >
-            <div class="prompt-input-progress-bar" />
-          </div>
         </Show>
 
         <div class="flex flex-1 flex-col">
@@ -745,6 +726,16 @@ export default function PromptInput(props: PromptInputProps) {
               onAgentChange={props.onAgentChange!}
               onModelChange={props.onModelChange!}
             />
+          </Show>
+
+          <Show when={props.isSessionBusy || sessionEnding()}>
+            <div
+              class="prompt-input-progress"
+              classList={{ "is-hiding": !props.isSessionBusy }}
+              aria-hidden="true"
+            >
+              <div class="prompt-input-progress-bar" />
+            </div>
           </Show>
         </div>
       </div>
