@@ -212,7 +212,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
             [ -f "$file" ] || continue
@@ -266,10 +266,6 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
-          gh release view $env:TAG 2>$null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $env:TAG --title $env:TAG --generate-notes
-          }
           Get-ChildItem -Path "packages/electron-app/release" -Filter *.zip -File | ForEach-Object {
             Write-Host "Uploading $($_.FullName)"
             gh release upload $env:TAG $_.FullName --clobber
@@ -320,7 +316,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for file in packages/electron-app/release/*.zip packages/electron-app/release/*.AppImage; do
             [ -f "$file" ] || continue
@@ -436,7 +432,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
             [ -f "$sig" ] || continue
@@ -457,7 +453,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for file in packages/tauri-app/release-tauri/*.zip; do
             [ -f "$file" ] || continue
@@ -571,7 +567,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
             [ -f "$sig" ] || continue
@@ -592,7 +588,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for file in packages/tauri-app/release-tauri/*.zip; do
             [ -f "$file" ] || continue
@@ -726,10 +722,6 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
-          gh release view $env:TAG 2>$null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $env:TAG --title $env:TAG --generate-notes
-          }
           if (Test-Path "packages/tauri-app/release-tauri/signatures") {
             Get-ChildItem -Path "packages/tauri-app/release-tauri/signatures" -Filter *.sig -File | ForEach-Object {
               Write-Host "Uploading $($_.FullName)"
@@ -750,10 +742,6 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         shell: pwsh
         run: |
-          gh release view $env:TAG 2>$null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $env:TAG --title $env:TAG --generate-notes
-          }
           if (Test-Path "packages/tauri-app/release-tauri") {
             Get-ChildItem -Path "packages/tauri-app/release-tauri" -Filter *.zip -File | ForEach-Object {
               Write-Host "Uploading $($_.FullName)"
@@ -897,7 +885,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for sig in packages/tauri-app/release-tauri/signatures/*.sig; do
             [ -f "$sig" ] || continue
@@ -918,7 +906,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for file in packages/tauri-app/release-tauri/*; do
             [ -f "$file" ] || continue
@@ -1067,7 +1055,7 @@ jobs:
         if: ${{ inputs.upload && inputs.tag != '' }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           shopt -s nullglob
           for file in packages/electron-app/release/*.rpm; do
             [ -f "$file" ] || continue
@@ -1122,5 +1110,5 @@ jobs:
 
       - name: Upload tauri-update.json to release
         run: |
-          gh release view "$TAG" &>/dev/null || gh release create "$TAG" --title "$TAG" --generate-notes
+          
           gh release upload "$TAG" "packages/tauri-app/release-tauri/tauri-update.json" --clobber
