@@ -735,6 +735,10 @@ export default function PromptInput(props: PromptInputProps) {
               aria-hidden="true"
             >
               <div class="prompt-input-progress-bar" />
+            <div class="prompt-input-progress-bar" />
+            <div class="prompt-input-progress-bar" />
+            <div class="prompt-input-progress-bar" />
+            <div class="prompt-input-progress-bar" />
             </div>
           </Show>
         </div>

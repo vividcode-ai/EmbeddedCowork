@@ -486,12 +486,15 @@
     clip-path: inset(0 100% 0 0 round 999px);
     animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  48% {
+  9.6% {
     clip-path: inset(0 0 0 0 round 999px);
     animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
   }
-  100% {
+  20% {
     clip-path: inset(0 0 0 100% round 999px);
+  }
+  20.01%, 100% {
+    clip-path: inset(0 100% 0 0 round 999px);
   }
 }
 
@@ -501,6 +504,7 @@
   left: 0.75rem;
   right: 0.75rem;
   height: 2px;
+  overflow: hidden;
   pointer-events: none;
   z-index: 30;
   opacity: 1;
@@ -512,10 +516,17 @@
 }
 
 .prompt-input-progress-bar {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  bottom: 0;
+  height: 2px;
   border-radius: 999px;
   background: #93c5fd;
   clip-path: inset(0 100% 0 0 round 999px);
-  animation: prompt-input-progress 1.8s ease-in-out infinite;
+  animation: prompt-input-progress 5s ease-in-out infinite;
 }
+
+.prompt-input-progress-bar:nth-child(1) { left: 0%; width: 20%; animation-delay: 0s; }
+.prompt-input-progress-bar:nth-child(2) { left: 20%; width: 20%; animation-delay: 1s; }
+.prompt-input-progress-bar:nth-child(3) { left: 40%; width: 20%; animation-delay: 2s; }
+.prompt-input-progress-bar:nth-child(4) { left: 60%; width: 20%; animation-delay: 3s; }
+.prompt-input-progress-bar:nth-child(5) { left: 80%; width: 20%; animation-delay: 4s; }
