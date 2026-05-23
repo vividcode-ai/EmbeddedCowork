@@ -296,10 +296,9 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
 
     let pid = std::process::id();
     let batch_path = temp_dir.join("install.bat");
-    let appdata = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| {
-        std::env::var("APPDATA").unwrap_or_default()
-    });
-    let app_exe = format!(r"{}\Programs\EmbeddedCowork\EmbeddedCowork.exe", appdata);
+    let app_exe = std::env::current_exe()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
     let batch_content = format!(
         "@echo off\r\n\
          :WAIT\r\n\
