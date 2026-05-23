@@ -89,6 +89,18 @@
       "icon.ico",
       "icon.png"
     ],
+    "windows": {
+      "signCommand": {
+        "cmd": "powershell",
+        "args": [
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "../../../script/sign-windows.ps1",
+          "%1"
+        ]
+      }
+    },
     "targets": [
       "app",
       "appimage",
