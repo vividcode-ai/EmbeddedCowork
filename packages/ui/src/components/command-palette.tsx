@@ -226,10 +226,10 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
               class="modal-surface w-full max-w-2xl max-h-[60vh]"
               onKeyDown={handleKeyDown}
             >
-              <Dialog.Title class="sr-only">{t("commandPalette.title")}</Dialog.Title>
               <Dialog.Description class="sr-only">{t("commandPalette.description")}</Dialog.Description>
 
             <div class="modal-search-container">
+              <Dialog.Title class="text-lg font-semibold text-center">{t("commandPalette.title")}</Dialog.Title>
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 modal-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path

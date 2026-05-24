@@ -9,11 +9,9 @@ import {
   type Accessor,
   type Component,
 } from "solid-js"
-import AppBar from "@suid/material/AppBar"
 import Box from "@suid/material/Box"
 import Drawer from "@suid/material/Drawer"
 import IconButton from "@suid/material/IconButton"
-import Toolbar from "@suid/material/Toolbar"
 import useMediaQuery from "@suid/material/useMediaQuery"
 import type { Instance } from "../../types/instance"
 import type { Command } from "../../lib/commands"
@@ -37,7 +35,7 @@ import RightPanel from "./shell/right-panel/RightPanel"
 import { useDrawerChrome } from "./shell/useDrawerChrome"
 import { loading } from "../../stores/sessions"
 
-import { Loader2, Maximize2 } from "lucide-solid"
+import { Loader2 } from "lucide-solid"
 import type { PromptInputApi } from "../prompt-input/types"
 
 import type { LayoutMode } from "./shell/types"
@@ -122,8 +120,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
   const desktopQuery = useMediaQuery("(min-width: 1280px)")
 
   const tabletQuery = useMediaQuery("(min-width: 768px)")
-  const compactHeaderQuery = useMediaQuery("(max-width: 1024px)")
-
   const layoutMode = createMemo<LayoutMode>(() => {
     if (desktopQuery()) return "desktop"
     if (tabletQuery()) return "tablet"
@@ -131,7 +127,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
   })
 
   const isPhoneLayout = createMemo(() => layoutMode() === "phone")
-  const compactHeaderLayout = createMemo(() => isPhoneLayout() || compactHeaderQuery())
   const mobileFullscreen = createMemo(() => props.mobileFullscreenMode && isPhoneLayout())
   const compactPromptLayout = createMemo(() => layoutMode() !== "desktop")
   const leftPinningSupported = createMemo(() => layoutMode() !== "phone")
@@ -571,85 +566,32 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     >
       {renderLeftPanel()}
 
-      <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, minHeight: 0, overflowX: "hidden" }}>
-        <Show when={!mobileFullscreen()}>
-          <AppBar position="sticky" color="default" elevation={0} class="border-b border-base">
-            <Toolbar variant="dense" class="session-toolbar flex flex-wrap items-center gap-2 py-0 min-h-[40px]">
-              <Show
-                when={!compactHeaderLayout()}
-                fallback={
-                  <div class="flex flex-col w-full gap-1.5">
-                    <div class="flex flex-wrap items-center justify-between gap-2 w-full">
-                    <Show when={leftDrawerState() === "floating-closed"}>
-                      <IconButton
-                        ref={setLeftToggleButtonEl}
-                        color="inherit"
-                        onClick={handleLeftAppBarButtonClick}
-                        aria-label={leftAppBarButtonLabel()}
-                        size="small"
-                        aria-expanded={leftDrawerState() !== "floating-closed"}
-                      >
-                       {leftAppBarButtonIcon()}
-                      </IconButton>
-                    </Show>
-
-                    <Show when={isPhoneLayout() && !props.mobileFullscreenMode}>
-                      <IconButton
-                        color="inherit"
-                        onClick={props.onEnterMobileFullscreen}
-                        aria-label={t("instanceShell.fullscreen.enter")}
-                        title={t("instanceShell.fullscreen.enter")}
-                        size="small"
-                      >
-                        <Maximize2 class="w-5 h-5" aria-hidden="true" />
-                      </IconButton>
-                    </Show>
-
-                    <Show when={rightDrawerState() === "floating-closed"}>
-                      <IconButton
-                        ref={setRightToggleButtonEl}
-                        color="inherit"
-                        onClick={handleRightAppBarButtonClick}
-                        aria-label={rightAppBarButtonLabel()}
-                        size="small"
-                        aria-expanded={rightDrawerState() !== "floating-closed"}
-                      >
-                        {rightAppBarButtonIcon()}
-                      </IconButton>
-                    </Show>
-                    </div>
-                </div>
-              }
+      <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, minHeight: 0, overflowX: "hidden", position: "relative" }}>
+        <Show when={!mobileFullscreen() && leftDrawerState() === "floating-closed"}>
+          <div class="absolute top-2 left-2 z-40">
+            <IconButton
+              ref={setLeftToggleButtonEl}
+              color="inherit"
+              onClick={handleLeftAppBarButtonClick}
+              aria-label={leftAppBarButtonLabel()}
+              size="small"
             >
-              <div class="flex flex-1 items-center justify-between gap-2">
-                <Show when={leftDrawerState() === "floating-closed"}>
-                  <IconButton
-                    ref={setLeftToggleButtonEl}
-                    color="inherit"
-                    onClick={handleLeftAppBarButtonClick}
-                    aria-label={leftAppBarButtonLabel()}
-                    size="small"
-                    aria-expanded={leftDrawerState() !== "floating-closed"}
-                  >
-                    {leftAppBarButtonIcon()}
-                  </IconButton>
-                </Show>
-                <Show when={rightDrawerState() === "floating-closed"}>
-                  <IconButton
-                    ref={setRightToggleButtonEl}
-                    color="inherit"
-                    onClick={handleRightAppBarButtonClick}
-                    aria-label={rightAppBarButtonLabel()}
-                    size="small"
-                    aria-expanded={rightDrawerState() !== "floating-closed"}
-                  >
-                    {rightAppBarButtonIcon()}
-                  </IconButton>
-                </Show>
-              </div>
-              </Show>
-            </Toolbar>
-          </AppBar>
+              {leftAppBarButtonIcon()}
+            </IconButton>
+          </div>
+        </Show>
+        <Show when={!mobileFullscreen() && rightDrawerState() === "floating-closed"}>
+          <div class="absolute top-2 right-2 z-40">
+            <IconButton
+              ref={setRightToggleButtonEl}
+              color="inherit"
+              onClick={handleRightAppBarButtonClick}
+              aria-label={rightAppBarButtonLabel()}
+              size="small"
+            >
+              {rightAppBarButtonIcon()}
+            </IconButton>
+          </div>
         </Show>
 
         <Box
