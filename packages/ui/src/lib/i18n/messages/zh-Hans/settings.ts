@@ -65,6 +65,8 @@ export const settingsMessages = {
 
   "contextUsagePanel.headings.tokens": "Tokens",
   "contextUsagePanel.headings.context": "上下文",
+  "statusTab.contextToken": "上下文 token",
+  "statusTab.sessionToken": "会话总 token",
   "contextUsagePanel.labels.input": "输入",
   "contextUsagePanel.labels.output": "输出",
   "contextUsagePanel.labels.cost": "费用",

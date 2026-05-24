@@ -148,7 +148,7 @@
 .assistant-content-bubble {
   background-color: var(--message-assistant-bg);
   border-radius: 0.5rem;
-  padding: 0.6rem 0.65rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .message-item-base:not(.assistant-message) {

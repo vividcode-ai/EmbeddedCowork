@@ -25,8 +25,6 @@ import InfoView from "../info-view"
 import CommandPalette from "../command-palette"
 import PermissionApprovalModal from "../permission-approval-modal"
 import SessionView from "../session/session-view"
-
-import { sseManager } from "../../lib/sse-manager"
 import { getLogger } from "../../lib/logger"
 import { serverApi } from "../../lib/api-client"
 import { loadBackgroundProcesses } from "../../stores/background-processes"
@@ -240,22 +238,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
     onCleanup(() => window.clearInterval(timer))
   })
-
-  const connectionStatus = () => sseManager.getStatus(props.instance.id)
-  const connectionStatusClass = () => {
-    const status = connectionStatus()
-    if (status === "connecting") return "connecting"
-    if (status === "connected") return "connected"
-    return "disconnected"
-  }
-
-  const connectionStatusLabel = () => {
-    const status = connectionStatus()
-    if (status === "connected") return t("instanceShell.connection.connected")
-    if (status === "connecting") return t("instanceShell.connection.connecting")
-    if (status === "error" || status === "disconnected") return t("instanceShell.connection.disconnected")
-    return t("instanceShell.connection.unknown")
-  }
 
   const permissionQueue = createMemo(() => getPermissionQueue(props.instance.id))
 
@@ -611,15 +593,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                       </IconButton>
                     </Show>
 
-                    <div class="flex-1">
-                      <span
-                        class={`status-indicator ${connectionStatusClass()}`}
-                        aria-label={t("instanceShell.connection.ariaLabel", { status: connectionStatusLabel() })}
-                      >
-                        <span class="status-dot" />
-                      </span>
-                    </div>
-
                     <Show when={isPhoneLayout() && !props.mobileFullscreenMode}>
                       <IconButton
                         color="inherit"
@@ -645,12 +618,10 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                       </IconButton>
                     </Show>
                     </div>
-
-
                 </div>
               }
             >
-              <div class="session-toolbar-left flex-1 flex items-center gap-3 min-w-0">
+              <div class="flex flex-1 items-center justify-between gap-2">
                 <Show when={leftDrawerState() === "floating-closed"}>
                   <IconButton
                     ref={setLeftToggleButtonEl}
@@ -663,49 +634,18 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                     {leftAppBarButtonIcon()}
                   </IconButton>
                 </Show>
-
-
-
-                <div class="ml-auto flex items-center session-header-hints">
-                </div>
-              </div>
-
-              <div class="session-toolbar-right flex-1 flex items-center gap-3">
-
-                <div class="ms-auto flex items-center gap-3">
-                  <div class="connection-status-meta flex items-center gap-3">
-                    <Show when={connectionStatus() === "connected"}>
-                      <span class="status-indicator connected">
-                        <span class="status-dot" />
-                        <span class="status-text">{t("instanceShell.connection.connected")}</span>
-                      </span>
-                    </Show>
-                    <Show when={connectionStatus() === "connecting"}>
-                      <span class="status-indicator connecting">
-                        <span class="status-dot" />
-                        <span class="status-text">{t("instanceShell.connection.connecting")}</span>
-                      </span>
-                    </Show>
-                    <Show when={connectionStatus() === "error" || connectionStatus() === "disconnected"}>
-                      <span class="status-indicator disconnected">
-                        <span class="status-dot" />
-                        <span class="status-text">{t("instanceShell.connection.disconnected")}</span>
-                      </span>
-                    </Show>
-                  </div>
-                  <Show when={rightDrawerState() === "floating-closed"}>
-                    <IconButton
-                      ref={setRightToggleButtonEl}
-                      color="inherit"
-                      onClick={handleRightAppBarButtonClick}
-                      aria-label={rightAppBarButtonLabel()}
-                      size="small"
-                      aria-expanded={rightDrawerState() !== "floating-closed"}
-                    >
-                      {rightAppBarButtonIcon()}
-                    </IconButton>
-                  </Show>
-                </div>
+                <Show when={rightDrawerState() === "floating-closed"}>
+                  <IconButton
+                    ref={setRightToggleButtonEl}
+                    color="inherit"
+                    onClick={handleRightAppBarButtonClick}
+                    aria-label={rightAppBarButtonLabel()}
+                    size="small"
+                    aria-expanded={rightDrawerState() !== "floating-closed"}
+                  >
+                    {rightAppBarButtonIcon()}
+                  </IconButton>
+                </Show>
               </div>
               </Show>
             </Toolbar>

@@ -65,6 +65,8 @@ export const settingsMessages = {
 
   "contextUsagePanel.headings.tokens": "Tokens",
   "contextUsagePanel.headings.context": "Contexto",
+  "statusTab.contextToken": "Token de contexto",
+  "statusTab.sessionToken": "Total de sesión",
   "contextUsagePanel.labels.input": "Entrada",
   "contextUsagePanel.labels.output": "Salida",
   "contextUsagePanel.labels.cost": "Costo",

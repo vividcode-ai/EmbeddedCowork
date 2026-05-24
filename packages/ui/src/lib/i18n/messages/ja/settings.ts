@@ -65,6 +65,8 @@ export const settingsMessages = {
 
   "contextUsagePanel.headings.tokens": "トークン",
   "contextUsagePanel.headings.context": "コンテキスト",
+  "statusTab.contextToken": "コンテキスト トークン",
+  "statusTab.sessionToken": "セッション総トークン",
   "contextUsagePanel.labels.input": "入力",
   "contextUsagePanel.labels.output": "出力",
   "contextUsagePanel.labels.cost": "コスト",

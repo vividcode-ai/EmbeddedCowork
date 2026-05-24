@@ -1,4 +1,4 @@
-import { For, Show, type Accessor, type Component } from "solid-js"
+import { For, Show, createMemo, type Accessor, type Component } from "solid-js"
 import type { ToolState } from "@opencode-ai/sdk/v2"
 import { Accordion } from "@kobalte/core"
 import { Tooltip } from "@kobalte/core/tooltip"
@@ -10,6 +10,7 @@ import type { Instance } from "../../../../../types/instance"
 import type { BackgroundProcess } from "../../../../../../../server/src/api-types"
 import type { Session } from "../../../../../types/session"
 
+import { sseManager } from "../../../../../lib/sse-manager"
 import ContextMeter from "../../../../context-meter"
 import { formatTokenTotal } from "../../../../../lib/formatters"
 import ContextUsagePanel from "../../../../session/context-usage-panel"
@@ -45,6 +46,8 @@ interface StatusTabProps {
 const StatusTab: Component<StatusTabProps> = (props) => {
   let statusTabEl: HTMLDivElement | undefined
   const { isHovered: isChangesHovered, handleMouseEnter: handleChangesMouseEnter, handleMouseLeave: handleChangesMouseLeave } = useScrollbarFade(() => statusTabEl)
+
+  const connectionStatus = createMemo(() => sseManager.getStatus(props.instanceId))
 
   const isSectionExpanded = (id: string) => props.expandedItems().includes(id)
 
@@ -338,7 +341,30 @@ const StatusTab: Component<StatusTabProps> = (props) => {
       <Show when={props.activeSession()}>
         {(activeSession) => (
           <div class="status-tab-context-group">
-            <div class="px-4 pt-2 pb-1">
+            <div class="px-4 py-2 border-b border-base flex items-center gap-2">
+              <Show when={connectionStatus() === "connected"}>
+                <span class="status-indicator connected">
+                  <span class="status-dot" />
+                  <span class="status-text">{props.t("instanceShell.connection.connected")}</span>
+                </span>
+              </Show>
+              <Show when={connectionStatus() === "connecting"}>
+                <span class="status-indicator connecting">
+                  <span class="status-dot" />
+                  <span class="status-text">{props.t("instanceShell.connection.connecting")}</span>
+                </span>
+              </Show>
+              <Show when={connectionStatus() === "error" || connectionStatus() === "disconnected"}>
+                <span class="status-indicator disconnected">
+                  <span class="status-dot" />
+                  <span class="status-text">{props.t("instanceShell.connection.disconnected")}</span>
+                </span>
+              </Show>
+            </div>
+            <div class="px-4 py-2 border-b border-base">
+              <div class="text-[10px] uppercase tracking-wide text-muted font-medium mb-1.5">
+                {props.t("statusTab.contextToken")}
+              </div>
               <ContextMeter
                 usedTokens={props.tokenStats().used}
                 availableTokens={props.tokenStats().avail}
@@ -347,7 +373,12 @@ const StatusTab: Component<StatusTabProps> = (props) => {
                 availableLabel={props.t("instanceShell.metrics.availableLabel")}
               />
             </div>
-            <ContextUsagePanel instanceId={props.instanceId} sessionId={activeSession().id} />
+            <div class="px-4 py-2">
+              <div class="text-[10px] uppercase tracking-wide text-muted font-medium mb-1.5">
+                {props.t("statusTab.sessionToken")}
+              </div>
+              <ContextUsagePanel instanceId={props.instanceId} sessionId={activeSession().id} />
+            </div>
           </div>
         )}
       </Show>

@@ -708,6 +708,10 @@
   background-color: var(--surface-secondary);
 }
 
+.status-tab-context-group .session-context-panel {
+  padding: 0;
+}
+
 .session-changes-scroll {
   scrollbar-gutter: stable;
   scrollbar-width: thin;

@@ -65,6 +65,8 @@ export const settingsMessages = {
 
   "contextUsagePanel.headings.tokens": "Tokens",
   "contextUsagePanel.headings.context": "Контекст",
+  "statusTab.contextToken": "Контекст токенов",
+  "statusTab.sessionToken": "Всего токенов сессии",
   "contextUsagePanel.labels.input": "Ввод",
   "contextUsagePanel.labels.output": "Вывод",
   "contextUsagePanel.labels.cost": "Стоимость",

@@ -65,6 +65,8 @@ export const settingsMessages = {
 
   "contextUsagePanel.headings.tokens": "טוקנים",
   "contextUsagePanel.headings.context": "הקשר",
+  "statusTab.contextToken": "טוקני הקשר",
+  "statusTab.sessionToken": "סך טוקני הסשן",
   "contextUsagePanel.labels.input": "קלט",
   "contextUsagePanel.labels.output": "פלט",
   "contextUsagePanel.labels.cost": "עלות",
