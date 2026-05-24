@@ -1,10 +1,11 @@
 import { Component, For, Show } from "solid-js"
 import InstanceTab from "./instance-tab"
 import KeyboardHint from "./keyboard-hint"
-import { Plus, Settings } from "lucide-solid"
+import { Plus, Settings, Terminal } from "lucide-solid"
 import { keyboardRegistry } from "../lib/keyboard-registry"
 import { useI18n } from "../lib/i18n"
 import { openSettings } from "../stores/settings-screen"
+import { showCommandPalette } from "../stores/command-palette"
 import type { AppTabRecord } from "../stores/app-tabs"
 
 interface InstanceTabsProps {
@@ -63,14 +64,25 @@ const InstanceTabs: Component<InstanceTabsProps> = (props) => {
                 />
               </div>
             </Show>
-             <button
-               class="new-tab-button"
-               onClick={() => openSettings("appearance")}
-               title={t("settings.open.title")}
-               aria-label={t("settings.open.ariaLabel")}
-             >
-               <Settings class="w-4 h-4" />
-             </button>
+              <button
+                class="new-tab-button"
+                onClick={() => {
+                  const tab = props.tabs.find((t) => t.id === props.activeTabId)
+                  if (tab?.kind === "instance") showCommandPalette(tab.instance.id)
+                }}
+                title={t("instanceShell.commandPalette.openAriaLabel")}
+                aria-label={t("instanceShell.commandPalette.openAriaLabel")}
+              >
+                <Terminal class="w-4 h-4" />
+              </button>
+              <button
+                class="new-tab-button"
+                onClick={() => openSettings("appearance")}
+                title={t("settings.open.title")}
+                aria-label={t("settings.open.ariaLabel")}
+              >
+                <Settings class="w-4 h-4" />
+              </button>
           </div>
         </div>
       </div>

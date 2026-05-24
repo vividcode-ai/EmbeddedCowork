@@ -20,29 +20,26 @@ import type { Command } from "../../lib/commands"
 import type { BackgroundProcess } from "../../../../server/src/api-types"
 import { keyboardRegistry, type KeyboardShortcut } from "../../lib/keyboard-registry"
 
-import { isOpen as isCommandPaletteOpen, hideCommandPalette, showCommandPalette } from "../../stores/command-palette"
-import Kbd from "../kbd"
+import { isOpen as isCommandPaletteOpen, hideCommandPalette } from "../../stores/command-palette"
 import InfoView from "../info-view"
 import CommandPalette from "../command-palette"
-import PermissionNotificationBanner from "../permission-notification-banner"
 import PermissionApprovalModal from "../permission-approval-modal"
 import SessionView from "../session/session-view"
-import { formatTokenTotal } from "../../lib/formatters"
-import ContextMeter from "../context-meter"
+
 import { sseManager } from "../../lib/sse-manager"
 import { getLogger } from "../../lib/logger"
 import { serverApi } from "../../lib/api-client"
 import { loadBackgroundProcesses } from "../../stores/background-processes"
 import { BackgroundProcessOutputDialog } from "../background-process-output-dialog"
 import { useI18n } from "../../lib/i18n"
-import { getPermissionQueue, getPermissionQueueLength, getQuestionQueueLength, sendPermissionResponse } from "../../stores/instances"
+import { getPermissionQueue, sendPermissionResponse } from "../../stores/instances"
 import SessionSidebar from "./shell/SessionSidebar"
 import { useSessionSidebarRequests } from "./shell/useSessionSidebarRequests"
 import RightPanel from "./shell/right-panel/RightPanel"
 import { useDrawerChrome } from "./shell/useDrawerChrome"
 import { loading } from "../../stores/sessions"
-import { getRetrySeconds, getSessionRetry, getSessionStatus } from "../../stores/session-status"
-import { Loader2, Maximize2, ShieldAlert } from "lucide-solid"
+
+import { Loader2, Maximize2 } from "lucide-solid"
 import type { PromptInputApi } from "../prompt-input/types"
 
 import type { LayoutMode } from "./shell/types"
@@ -63,7 +60,6 @@ import {
   canAutoRespondPermission,
   finishAutoRespondPermission,
   getPermissionAutoAcceptInFlightVersion,
-  isPermissionAutoAcceptEnabled,
 } from "../../stores/permission-auto-accept"
 
 const log = getLogger("session")
@@ -261,12 +257,6 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     return t("instanceShell.connection.unknown")
   }
 
-  const hasPendingRequests = createMemo(() => {
-    const permissions = getPermissionQueueLength(props.instance.id)
-    const questions = getQuestionQueueLength(props.instance.id)
-    return permissions + questions > 0
-  })
-
   const permissionQueue = createMemo(() => getPermissionQueue(props.instance.id))
 
   const activePromptInputApi = createMemo(() => {
@@ -301,101 +291,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
     }
   })
 
-  const yoloModeEnabled = createMemo(() => {
-    const session = activeSessionForInstance()
-    if (!session) return false
-    return isPermissionAutoAcceptEnabled(props.instance.id, session.id)
-  })
-
-  const activeSessionStatusPill = createMemo(() => {
-    const activeSessionId = activeSessionIdForInstance()
-    if (!activeSessionId || activeSessionId === "info") return null
-
-    const activeSession = activeSessionForInstance()
-    const needsPermission = Boolean(activeSession?.pendingPermission)
-    const needsQuestion = Boolean(activeSession?.pendingQuestion)
-    const needsInput = needsPermission || needsQuestion
-
-    if (needsInput) {
-      return {
-        className: "session-permission",
-        text: needsPermission
-          ? t("sessionList.status.needsPermission")
-          : t("sessionList.status.needsInput"),
-        showAlertIcon: true,
-      }
-    }
-
-    const status = getSessionStatus(props.instance.id, activeSessionId)
-    const retry = getSessionRetry(props.instance.id, activeSessionId)
-    const text = retry
-      ? (() => {
-          const seconds = getRetrySeconds(retry.next, now())
-          return seconds > 0 ? t("sessionList.status.retryingIn", { seconds: String(seconds) }) : t("sessionList.status.retrying")
-        })()
-      : status === "working"
-        ? t("sessionList.status.working")
-        : status === "compacting"
-          ? t("sessionList.status.compacting")
-          : t("sessionList.status.idle")
-
-    return {
-      className: `session-${retry ? "retrying" : status}`,
-      text,
-      showAlertIcon: false,
-      title: retry
-        ? t("sessionList.status.retryTooltip", {
-            message: retry.message,
-            attempt: String(retry.attempt),
-          })
-        : undefined,
-    }
-  })
-
-  const renderActiveSessionStatusPill = () => {
-    const pill = activeSessionStatusPill()
-    if (!pill) return null
-    return (
-      <span
-        class={`status-indicator session-status session-status-list ${pill.className} notranslate`}
-        title={pill.title}
-        translate="no"
-      >
-        {pill.showAlertIcon ? <ShieldAlert class="w-3.5 h-3.5" aria-hidden="true" /> : <span class="status-dot" />}
-        {pill.text}
-      </span>
-    )
-  }
-
-  const renderYoloModePill = () => {
-    if (!yoloModeEnabled()) return null
-    return (
-      <span
-        class="status-indicator session-status session-status-list session-yolo-mode"
-        aria-label={t("instanceShell.yoloMode.badgeAriaLabel")}
-        title={t("instanceShell.yoloMode.badgeAriaLabel")}
-      >
-        <span class="status-dot" />
-        {t("instanceShell.yoloMode.badge")}
-      </span>
-    )
-  }
-
-  const renderSessionHeaderIndicators = () => (
-    <div class="flex items-center flex-wrap justify-center gap-2">
-      {renderYoloModePill()}
-      <Show when={hasPendingRequests()} fallback={renderActiveSessionStatusPill()}>
-        <PermissionNotificationBanner
-          instanceId={props.instance.id}
-          onClick={() => setPermissionModalOpen(true)}
-        />
-      </Show>
-    </div>
-  )
-
-  const handleCommandPaletteClick = () => {
-    showCommandPalette(props.instance.id)
-  }
+  
 
   const openBackgroundOutput = (process: BackgroundProcess) => {
     setSelectedBackgroundProcess(process)
@@ -608,6 +504,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
             onCloseRightDrawer={closeRightDrawer}
             onPinRightDrawer={pinRightDrawer}
             onUnpinRightDrawer={unpinRightDrawer}
+            tokenStats={tokenStats}
             promptInputApi={activePromptInputApi}
             setContentEl={setRightDrawerContentEl}
           />
@@ -671,6 +568,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
           onCloseRightDrawer={closeRightDrawer}
           onPinRightDrawer={pinRightDrawer}
           onUnpinRightDrawer={unpinRightDrawer}
+          tokenStats={tokenStats}
           promptInputApi={activePromptInputApi}
           setContentEl={setRightDrawerContentEl}
         />
@@ -713,26 +611,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                       </IconButton>
                     </Show>
 
-                    <div class="flex-1 flex items-center justify-center min-w-0">
-                      {renderSessionHeaderIndicators()}
-                    </div>
-
-                    <div class="flex flex-wrap items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        class="connection-status-button command-palette-button"
-                        onClick={handleCommandPaletteClick}
-                        aria-label={t("instanceShell.commandPalette.openAriaLabel")}
-                        style={{ flex: "0 0 auto", width: "auto" }}
-                      >
-                        {t("instanceShell.commandPalette.button")}
-                      </button>
-                      <span class="connection-status-shortcut-hint kbd-hint">
-                        <Kbd shortcut="cmd+shift+p" />
-                     </span>
-                     </div>
-
-                    <div class="flex-1 flex items-center justify-center min-w-0">
+                    <div class="flex-1">
                       <span
                         class={`status-indicator ${connectionStatusClass()}`}
                         aria-label={t("instanceShell.connection.ariaLabel", { status: connectionStatusLabel() })}
@@ -767,17 +646,7 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                     </Show>
                     </div>
 
-                    <div class="flex flex-wrap items-center justify-center gap-2 pb-1">
-                      <Show when={!showingInfoView()}>
-                        <ContextMeter
-                          usedTokens={tokenStats().used}
-                          availableTokens={tokenStats().avail}
-                          formatTokens={formatTokenTotal}
-                          usedLabel={t("instanceShell.metrics.usedLabel")}
-                          availableLabel={t("instanceShell.metrics.availableLabel")}
-                        />
-                      </Show>
-                    </div>
+
                 </div>
               }
             >
@@ -795,37 +664,13 @@ const InstanceShell2: Component<InstanceShellProps> = (props) => {
                   </IconButton>
                 </Show>
 
-                <Show when={!showingInfoView()}>
-                  <ContextMeter
-                    usedTokens={tokenStats().used}
-                    availableTokens={tokenStats().avail}
-                    formatTokens={formatTokenTotal}
-                    usedLabel={t("instanceShell.metrics.usedLabel")}
-                    availableLabel={t("instanceShell.metrics.availableLabel")}
-                  />
-                </Show>
+
 
                 <div class="ml-auto flex items-center session-header-hints">
-                  {renderSessionHeaderIndicators()}
                 </div>
               </div>
 
-              <div class="session-toolbar-center flex items-center justify-center gap-2 min-w-[160px]">
-                <button
-                  type="button"
-                  class="connection-status-button command-palette-button"
-                  onClick={handleCommandPaletteClick}
-                  aria-label={t("instanceShell.commandPalette.openAriaLabel")}
-                  style={{ flex: "0 0 auto", width: "auto" }}
-                >
-                  {t("instanceShell.commandPalette.button")}
-                </button>
-              </div>
-
               <div class="session-toolbar-right flex-1 flex items-center gap-3">
-                <span class="connection-status-shortcut-hint kbd-hint">
-                  <Kbd shortcut="cmd+shift+p" />
-                </span>
 
                 <div class="ms-auto flex items-center gap-3">
                   <div class="connection-status-meta flex items-center gap-3">

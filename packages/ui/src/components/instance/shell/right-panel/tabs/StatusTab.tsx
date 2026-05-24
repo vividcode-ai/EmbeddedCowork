@@ -10,6 +10,8 @@ import type { Instance } from "../../../../../types/instance"
 import type { BackgroundProcess } from "../../../../../../../server/src/api-types"
 import type { Session } from "../../../../../types/session"
 
+import ContextMeter from "../../../../context-meter"
+import { formatTokenTotal } from "../../../../../lib/formatters"
 import ContextUsagePanel from "../../../../session/context-usage-panel"
 import { TodoListView } from "../../../../tool-call/renderers/todo"
 import InstanceServiceStatus from "../../../../instance-service-status"
@@ -27,6 +29,7 @@ interface StatusTabProps {
   activeSessionDiffs: Accessor<any[] | undefined>
 
   latestTodoState: Accessor<ToolState | null>
+  tokenStats: Accessor<{ used: number; avail: number | null }>
 
   backgroundProcessList: Accessor<BackgroundProcess[]>
   onOpenBackgroundOutput: (process: BackgroundProcess) => void
@@ -334,7 +337,18 @@ const StatusTab: Component<StatusTabProps> = (props) => {
     >
       <Show when={props.activeSession()}>
         {(activeSession) => (
-          <ContextUsagePanel instanceId={props.instanceId} sessionId={activeSession().id} class="status-tab-context-panel" />
+          <div class="status-tab-context-group">
+            <div class="px-4 pt-2 pb-1">
+              <ContextMeter
+                usedTokens={props.tokenStats().used}
+                availableTokens={props.tokenStats().avail}
+                formatTokens={formatTokenTotal}
+                usedLabel={props.t("instanceShell.metrics.usedLabel")}
+                availableLabel={props.t("instanceShell.metrics.availableLabel")}
+              />
+            </div>
+            <ContextUsagePanel instanceId={props.instanceId} sessionId={activeSession().id} />
+          </div>
         )}
       </Show>
 

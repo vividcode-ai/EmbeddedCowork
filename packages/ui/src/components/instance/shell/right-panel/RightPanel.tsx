@@ -81,6 +81,7 @@ interface RightPanelProps {
   activeSessionDiffs: Accessor<any[] | undefined>
 
   latestTodoState: Accessor<ToolState | null>
+  tokenStats: Accessor<{ used: number; avail: number | null }>
   backgroundProcessList: Accessor<BackgroundProcess[]>
   onOpenBackgroundOutput: (process: BackgroundProcess) => void
   onStopBackgroundProcess: (processId: string) => Promise<void> | void
@@ -943,6 +944,7 @@ const RightPanel: Component<RightPanelProps> = (props) => {
               activeSession={props.activeSession}
               activeSessionDiffs={props.activeSessionDiffs}
               latestTodoState={props.latestTodoState}
+              tokenStats={props.tokenStats}
               backgroundProcessList={props.backgroundProcessList}
               onOpenBackgroundOutput={props.onOpenBackgroundOutput}
               onStopBackgroundProcess={props.onStopBackgroundProcess}

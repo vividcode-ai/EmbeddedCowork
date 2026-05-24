@@ -703,9 +703,8 @@
   @apply flex flex-col h-full min-h-0;
 }
 
-.status-tab-context-panel {
-  @apply border-b;
-  border-color: var(--border-base);
+.status-tab-context-group {
+  border-bottom: 1px solid var(--border-base);
   background-color: var(--surface-secondary);
 }
 
