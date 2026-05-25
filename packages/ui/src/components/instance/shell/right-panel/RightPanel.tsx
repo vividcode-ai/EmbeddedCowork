@@ -44,9 +44,7 @@ import {
   RIGHT_PANEL_CHANGES_LIST_OPEN_NONPHONE_KEY,
   RIGHT_PANEL_CHANGES_LIST_OPEN_PHONE_KEY,
   RIGHT_PANEL_CHANGES_SPLIT_WIDTH_KEY,
-  RIGHT_PANEL_FILES_LIST_OPEN_NONPHONE_KEY,
-  RIGHT_PANEL_FILES_LIST_OPEN_PHONE_KEY,
-  RIGHT_PANEL_FILES_SPLIT_WIDTH_KEY,
+
   RIGHT_PANEL_GIT_CHANGES_LIST_OPEN_NONPHONE_KEY,
   RIGHT_PANEL_GIT_CHANGES_LIST_OPEN_PHONE_KEY,
   RIGHT_PANEL_GIT_CHANGES_STAGED_OPEN_NONPHONE_KEY,
@@ -136,14 +134,11 @@ const RightPanel: Component<RightPanelProps> = (props) => {
   )
 
   const [changesSplitWidth, setChangesSplitWidth] = createSignal(320)
-  const [filesSplitWidth, setFilesSplitWidth] = createSignal(320)
   const [gitChangesSplitWidth, setGitChangesSplitWidth] = createSignal(320)
-  const [activeSplitResize, setActiveSplitResize] = createSignal<"changes" | "git-changes" | "files" | null>(null)
+  const [activeSplitResize, setActiveSplitResize] = createSignal<"changes" | "git-changes" | null>(null)
   const [splitResizeStartX, setSplitResizeStartX] = createSignal(0)
   const [splitResizeStartWidth, setSplitResizeStartWidth] = createSignal(0)
 
-  const [filesListOpen, setFilesListOpen] = createSignal(true)
-  const [filesListTouched, setFilesListTouched] = createSignal(false)
   const [changesListOpen, setChangesListOpen] = createSignal(true)
   const [changesListTouched, setChangesListTouched] = createSignal(false)
   const [gitChangesListOpen, setGitChangesListOpen] = createSignal(true)
@@ -155,17 +150,14 @@ const RightPanel: Component<RightPanelProps> = (props) => {
 
   const listLayoutKey = createMemo(() => (props.isPhoneLayout() ? "phone" : "nonphone"))
 
-  const listOpenStorageKey = (tab: "changes" | "git-changes" | "files") => {
+  const listOpenStorageKey = (tab: "changes" | "git-changes") => {
     const layout = listLayoutKey()
     if (tab === "changes") {
       return layout === "phone" ? RIGHT_PANEL_CHANGES_LIST_OPEN_PHONE_KEY : RIGHT_PANEL_CHANGES_LIST_OPEN_NONPHONE_KEY
     }
-    if (tab === "git-changes") {
-      return layout === "phone"
-        ? RIGHT_PANEL_GIT_CHANGES_LIST_OPEN_PHONE_KEY
-        : RIGHT_PANEL_GIT_CHANGES_LIST_OPEN_NONPHONE_KEY
-    }
-    return layout === "phone" ? RIGHT_PANEL_FILES_LIST_OPEN_PHONE_KEY : RIGHT_PANEL_FILES_LIST_OPEN_NONPHONE_KEY
+    return layout === "phone"
+      ? RIGHT_PANEL_GIT_CHANGES_LIST_OPEN_PHONE_KEY
+      : RIGHT_PANEL_GIT_CHANGES_LIST_OPEN_NONPHONE_KEY
   }
 
   const gitSectionStorageKey = (section: "staged" | "unstaged") => {
@@ -180,7 +172,7 @@ const RightPanel: Component<RightPanelProps> = (props) => {
       : RIGHT_PANEL_GIT_CHANGES_UNSTAGED_OPEN_NONPHONE_KEY
   }
 
-  const persistListOpen = (tab: "changes" | "git-changes" | "files", value: boolean) => {
+  const persistListOpen = (tab: "changes" | "git-changes", value: boolean) => {
     if (typeof window === "undefined") return
     window.localStorage.setItem(listOpenStorageKey(tab), value ? "true" : "false")
   }
@@ -194,15 +186,6 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     // Refresh persisted visibility when layout changes (phone vs non-phone).
     const layout = listLayoutKey()
     layout
-
-    const filesPersisted = readStoredBool(listOpenStorageKey("files"))
-    if (filesPersisted !== null) {
-      setFilesListOpen(filesPersisted)
-      setFilesListTouched(true)
-    } else {
-      setFilesListOpen(true)
-      setFilesListTouched(false)
-    }
 
     const changesPersisted = readStoredBool(listOpenStorageKey("changes"))
     if (changesPersisted !== null) {
@@ -227,16 +210,6 @@ const RightPanel: Component<RightPanelProps> = (props) => {
 
     const unstagedPersisted = readStoredBool(gitSectionStorageKey("unstaged"))
     setGitUnstagedOpen(unstagedPersisted ?? true)
-  })
-
-  createEffect(() => {
-    // Default behavior: when nothing is selected, keep the file list open.
-    // Once the user explicitly toggles it, we stop auto-opening.
-    if (rightPanelTab() !== "files") return
-    if (filesListTouched()) return
-    if (!browserSelectedPath()) {
-      setFilesListOpen(true)
-    }
   })
 
   createEffect(() => {
@@ -273,18 +246,15 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     if (!props.rightDrawerWidthInitialized()) return
     setSplitWidthsInitialized(true)
     setChangesSplitWidth(clampSplitWidth(readStoredPanelWidth(RIGHT_PANEL_CHANGES_SPLIT_WIDTH_KEY, 320)))
-    setFilesSplitWidth(clampSplitWidth(readStoredPanelWidth(RIGHT_PANEL_FILES_SPLIT_WIDTH_KEY, 320)))
     setGitChangesSplitWidth(clampSplitWidth(readStoredPanelWidth(RIGHT_PANEL_GIT_CHANGES_SPLIT_WIDTH_KEY, 320)))
   })
 
-  const persistSplitWidth = (mode: "changes" | "git-changes" | "files", width: number) => {
+  const persistSplitWidth = (mode: "changes" | "git-changes", width: number) => {
     if (typeof window === "undefined") return
     const key =
       mode === "changes"
         ? RIGHT_PANEL_CHANGES_SPLIT_WIDTH_KEY
-        : mode === "git-changes"
-          ? RIGHT_PANEL_GIT_CHANGES_SPLIT_WIDTH_KEY
-          : RIGHT_PANEL_FILES_SPLIT_WIDTH_KEY
+        : RIGHT_PANEL_GIT_CHANGES_SPLIT_WIDTH_KEY
     window.localStorage.setItem(key, String(width))
   }
 
@@ -302,15 +272,14 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     const delta = (event.clientX - splitResizeStartX()) * (isRtl ? -1 : 1)
     const next = clampSplitWidth(splitResizeStartWidth() + delta)
     if (mode === "changes") setChangesSplitWidth(next)
-    else if (mode === "git-changes") setGitChangesSplitWidth(next)
-    else setFilesSplitWidth(next)
+    else setGitChangesSplitWidth(next)
   }
 
   function splitMouseUp() {
     const mode = activeSplitResize()
     if (mode) {
       const width =
-        mode === "changes" ? changesSplitWidth() : mode === "git-changes" ? gitChangesSplitWidth() : filesSplitWidth()
+        mode === "changes" ? changesSplitWidth() : gitChangesSplitWidth()
       persistSplitWidth(mode, width)
     }
     stopSplitResize()
@@ -326,15 +295,14 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     const delta = (touch.clientX - splitResizeStartX()) * (isRtl ? -1 : 1)
     const next = clampSplitWidth(splitResizeStartWidth() + delta)
     if (mode === "changes") setChangesSplitWidth(next)
-    else if (mode === "git-changes") setGitChangesSplitWidth(next)
-    else setFilesSplitWidth(next)
+    else setGitChangesSplitWidth(next)
   }
 
   function splitTouchEnd() {
     const mode = activeSplitResize()
     if (mode) {
       const width =
-        mode === "changes" ? changesSplitWidth() : mode === "git-changes" ? gitChangesSplitWidth() : filesSplitWidth()
+        mode === "changes" ? changesSplitWidth() : gitChangesSplitWidth()
       persistSplitWidth(mode, width)
     }
     stopSplitResize()
@@ -347,22 +315,22 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     onTouchEnd: splitTouchEnd,
   })
 
-  const startSplitResize = (mode: "changes" | "git-changes" | "files", clientX: number) => {
+  const startSplitResize = (mode: "changes" | "git-changes", clientX: number) => {
     if (typeof document === "undefined") return
     setActiveSplitResize(mode)
     setSplitResizeStartX(clientX)
     setSplitResizeStartWidth(
-      mode === "changes" ? changesSplitWidth() : mode === "git-changes" ? gitChangesSplitWidth() : filesSplitWidth(),
+      mode === "changes" ? changesSplitWidth() : gitChangesSplitWidth(),
     )
     splitPointerDrag.start()
   }
 
-  const handleSplitResizeMouseDown = (mode: "changes" | "git-changes" | "files") => (event: MouseEvent) => {
+  const handleSplitResizeMouseDown = (mode: "changes" | "git-changes") => (event: MouseEvent) => {
     event.preventDefault()
     startSplitResize(mode, event.clientX)
   }
 
-  const handleSplitResizeTouchStart = (mode: "changes" | "git-changes" | "files") => (event: TouchEvent) => {
+  const handleSplitResizeTouchStart = (mode: "changes" | "git-changes") => (event: TouchEvent) => {
     const touch = event.touches[0]
     if (!touch) return
     event.preventDefault()
@@ -510,10 +478,6 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     setBrowserSelectedDirty(false)
     setBrowserSelectedOriginalContent(null)
 
-    // Phone: treat file selection as a commit action and close the overlay.
-    if (props.isPhoneLayout()) {
-      setFilesListOpen(false)
-    }
     try {
       const content = await requestData<FileContent>(browserClient().file.read({ path }), "file.read")
       const type = (content as any)?.type
@@ -653,15 +617,6 @@ const RightPanel: Component<RightPanelProps> = (props) => {
     setChangesListOpen((current) => {
       const next = !current
       persistListOpen("changes", next)
-      return next
-    })
-  }
-
-  const toggleFilesList = () => {
-    setFilesListTouched(true)
-    setFilesListOpen((current) => {
-      const next = !current
-      persistListOpen("files", next)
       return next
     })
   }
@@ -924,12 +879,6 @@ const RightPanel: Component<RightPanelProps> = (props) => {
               onRefresh={() => void refreshFilesTab()}
               onSave={(content: string) => void saveBrowserFile(content)}
               onContentChange={(content: string) => handleBrowserFileChange(content)}
-              listOpen={filesListOpen}
-              onToggleList={toggleFilesList}
-              splitWidth={filesSplitWidth}
-              onResizeMouseDown={handleSplitResizeMouseDown("files")}
-              onResizeTouchStart={handleSplitResizeTouchStart("files")}
-              isPhoneLayout={props.isPhoneLayout}
             />
           </Suspense>
         </Show>

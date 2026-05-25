@@ -294,29 +294,88 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
 
     app.emit("update:progress", serde_json::json!({"status": "installing"})).ok();
 
+    // Let the user see "installing" message before we exit
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    app.emit("update:progress", serde_json::json!({"status": "preparing-exit"})).ok();
+    std::thread::sleep(std::time::Duration::from_millis(500));
+
     let pid = std::process::id();
-    let batch_path = temp_dir.join("install.bat");
+    let ps_path = temp_dir.join("install.ps1");
     let app_exe = std::env::current_exe()
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default();
-    let batch_content = format!(
-        "@echo off\r\n\
-         :WAIT\r\n\
-         tasklist /FI \"PID eq {pid}\" /NH 2>NUL | find /I \"{pid}\" >NUL\r\n\
-         if %errorlevel% EQU 0 (\r\n\
-           timeout /t 1 /nobreak >NUL\r\n\
-           goto WAIT\r\n\
-         )\r\n\
-         \"{}\" /S\r\n\
-         if exist \"{app_exe}\" start \"\" \"{app_exe}\"\r\n\
-         del \"%~f0\"\r\n",
-        installer.display(),
+    let temp_dir_str = temp_dir.to_string_lossy().to_string();
+
+    let ps_content = format!(
+        r#"Add-Type -AssemblyName System.Windows.Forms
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "EmbeddedCowork"
+$form.Width = 420
+$form.Height = 135
+$form.StartPosition = "CenterScreen"
+$form.TopMost = $true
+$form.FormBorderStyle = "FixedDialog"
+$form.ControlBox = $false
+$form.MaximizeBox = $false
+$form.MinimizeBox = $false
+
+$label = New-Object System.Windows.Forms.Label
+$label.Text = "Waiting for app to exit..."
+$label.Width = 380
+$label.Height = 30
+$label.Location = New-Object System.Drawing.Point(20, 18)
+$label.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Regular)
+$form.Controls.Add($label)
+
+$bar = New-Object System.Windows.Forms.ProgressBar
+$bar.Style = "Marquee"
+$bar.Width = 380
+$bar.Height = 20
+$bar.Location = New-Object System.Drawing.Point(20, 58)
+$form.Controls.Add($bar)
+
+$form.Show()
+$form.Refresh()
+[System.Windows.Forms.Application]::DoEvents()
+
+# Wait for the old app process to exit
+do {{
+    Start-Sleep -Milliseconds 300
+    [System.Windows.Forms.Application]::DoEvents()
+}} while ((Get-Process -Id {pid} -ErrorAction SilentlyContinue))
+
+$label.Text = "Installing update..."
+[System.Windows.Forms.Application]::DoEvents()
+
+# Run NSIS installer silently (our window shows progress instead)
+Start-Process -Wait -FilePath "{installer}" -ArgumentList "/S"
+
+$label.Text = "Starting app..."
+[System.Windows.Forms.Application]::DoEvents()
+
+Start-Process "{app_exe}"
+
+# Cleanup temp files after a short delay
+Start-Job -ScriptBlock {{ param($d) Start-Sleep 3; Remove-Item -Recurse -Force $d -ErrorAction SilentlyContinue }} -ArgumentList '{temp_dir}' | Out-Null
+
+$form.Close()
+"#,
+        pid = pid,
+        installer = installer.to_string_lossy(),
+        app_exe = app_exe,
+        temp_dir = temp_dir_str,
     );
-    std::fs::write(&batch_path, batch_content).map_err(|e| e.to_string())?;
+    std::fs::write(&ps_path, ps_content).map_err(|e| e.to_string())?;
 
     use std::os::windows::process::CommandExt;
-    std::process::Command::new("cmd")
-        .args(["/c", &batch_path.to_string_lossy()])
+    std::process::Command::new("powershell")
+        .args([
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            &ps_path.to_string_lossy(),
+        ])
         .creation_flags(0x08000000 | 0x00000200)
         .spawn().map_err(|e| e.to_string())?;
 

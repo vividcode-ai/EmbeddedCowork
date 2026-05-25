@@ -215,7 +215,7 @@ function parseSemverCore(value: string): { major: number; minor: number; patch: 
 
 // ── Auto-update store ──
 
-export type UpdateStatus = "idle" | "checking" | "downloading" | "extracting" | "installing" | "ready" | "error" | "no-update"
+export type UpdateStatus = "idle" | "checking" | "downloading" | "extracting" | "installing" | "preparing-exit" | "ready" | "error" | "no-update"
 
 export interface AppUpdateState {
   status: UpdateStatus

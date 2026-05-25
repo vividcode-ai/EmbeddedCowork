@@ -20,6 +20,13 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.ceil(seconds)}s`
+  const m = Math.floor(seconds / 60)
+  const s = Math.ceil(seconds % 60)
+  return `${m}m ${s}s`
+}
+
 interface UpdateProgressPayload {
   status: string
   percent?: number
@@ -27,9 +34,56 @@ interface UpdateProgressPayload {
   downloaded?: number
 }
 
+function StepIndicator(props: { steps: string[]; current: number }) {
+  return (
+    <div class="flex items-center justify-between mb-5">
+      {props.steps.map((label, i) => {
+        const isComplete = i < props.current
+        const isActive = i === props.current
+        return (
+          <>
+            {i > 0 && (
+              <div
+                class={`flex-1 h-0.5 mx-2 transition-colors duration-300 ${
+                  isComplete ? "bg-accent" : "bg-base"
+                }`}
+              />
+            )}
+            <div class="flex flex-col items-center gap-1 min-w-0">
+              <div
+                class={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                  isComplete
+                    ? "bg-accent text-white"
+                    : isActive
+                      ? "bg-accent/20 text-accent border-2 border-accent"
+                      : "bg-base text-muted"
+                }`}
+              >
+                {isComplete ? "✓" : i + 1}
+              </div>
+              <span
+                class={`text-[10px] whitespace-nowrap transition-colors duration-300 ${
+                  isComplete || isActive ? "text-primary font-medium" : "text-muted"
+                }`}
+              >
+                {label}
+              </span>
+            </div>
+          </>
+        )
+      })}
+    </div>
+  )
+}
+
 export function UpdateNotification() {
   const { t } = useI18n()
   const [showInstallDialog, setShowInstallDialog] = createSignal(false)
+  const [downloadSpeed, setDownloadSpeed] = createSignal(0)
+  const [downloadEta, setDownloadEta] = createSignal(0)
+  let lastChunkTime = 0
+  let lastChunkDownloaded = 0
+  let speedSample = 0
 
   createEffect(() => {
     const host = runtimeEnv.host
@@ -55,6 +109,13 @@ export function UpdateNotification() {
       unlisteners.push(
         api.onUpdateProgress((progress: { percent: number; bytesPerSecond: number; total: number; transferred: number }) => {
           setUpdateProgress(progress)
+          if (progress.bytesPerSecond > 0) {
+            setDownloadSpeed(progress.bytesPerSecond)
+            if (progress.total > 0 && progress.transferred < progress.total) {
+              const remaining = progress.total - progress.transferred
+              setDownloadEta(remaining / progress.bytesPerSecond)
+            }
+          }
         }),
       )
 
@@ -114,6 +175,16 @@ export function UpdateNotification() {
 
   async function handleInstall() {
     const host = runtimeEnv.host
+
+    // Store pre-update version for post-update toast
+    try {
+      const { getVersion } = await import("@tauri-apps/api/app")
+      const currentVersion = await getVersion()
+      localStorage.setItem("embeddedcowork:preUpdateVersion", currentVersion)
+    } catch {
+      localStorage.setItem("embeddedcowork:preUpdateVersion", "0.0.0")
+    }
+
     if (host === "electron") {
       const api = (window as any).electronAPI as ElectronAPI | undefined
       await api?.installUpdate()
@@ -130,10 +201,28 @@ export function UpdateNotification() {
             total: p.total ?? 0,
             transferred: p.downloaded ?? 0,
           })
+
+          // Calculate download speed using time-delta
+          const now = Date.now()
+          const transferredSinceLast = (p.downloaded ?? 0) - lastChunkDownloaded
+          const timeSinceLast = now - lastChunkTime
+          if (lastChunkTime > 0 && timeSinceLast > 0) {
+            speedSample = transferredSinceLast / (timeSinceLast / 1000)
+            speedSample = speedSample > 0 ? speedSample : downloadSpeed()
+            setDownloadSpeed(speedSample)
+            const remaining = (p.total ?? 0) - (p.downloaded ?? 0)
+            if (speedSample > 0) {
+              setDownloadEta(remaining / speedSample)
+            }
+          }
+          lastChunkTime = now
+          lastChunkDownloaded = p.downloaded ?? 0
         } else if (p.status === "extracting") {
           setUpdateStatus("extracting")
         } else if (p.status === "installing") {
           setUpdateStatus("installing")
+        } else if (p.status === "preparing-exit") {
+          setUpdateStatus("preparing-exit")
         }
       })
       try {
@@ -163,11 +252,36 @@ export function UpdateNotification() {
   const state = updateState()
   const progress = state.progress
 
+  const stepOrder = (() => {
+    switch (state.status) {
+      case "downloading":
+        return 0
+      case "extracting":
+        return 1
+      case "installing":
+      case "preparing-exit":
+        return 2
+      default:
+        return -1
+    }
+  })()
+
+  const steps = [
+    t("update.step.download"),
+    t("update.step.prepare"),
+    t("update.step.install"),
+  ]
+
   return (
     <>
-      <Show when={showInstallDialog() || state.status === "downloading" || state.status === "extracting" || state.status === "installing" || state.status === "error"}>
+      <Show when={showInstallDialog() || state.status === "downloading" || state.status === "extracting" || state.status === "installing" || state.status === "preparing-exit" || state.status === "error"}>
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div class="w-full max-w-sm rounded-lg border border-base bg-surface-primary p-6 shadow-2xl">
+
+            {/* Step indicator */}
+            <Show when={stepOrder >= 0}>
+              <StepIndicator steps={steps} current={stepOrder} />
+            </Show>
 
             <Show when={state.status === "downloading" && progress && progress.total > 0}>
               <h2 class="text-lg font-semibold text-primary mb-3">
@@ -180,29 +294,44 @@ export function UpdateNotification() {
                 />
               </div>
               <p class="mt-1 text-xs text-muted text-right">{Math.round(progress!.percent)}%</p>
-              <div class="mt-2 text-[10px] text-muted">
-                {formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}
+              <div class="mt-2 text-xs text-muted flex justify-between">
+                <span>{formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}</span>
+                <Show when={downloadSpeed() > 0}>
+                  <span class="text-accent">
+                    {t("update.downloadSpeed", { speed: formatBytes(downloadSpeed()) })}
+                    {downloadEta() > 0 && downloadEta() < 3600 && (
+                      <> · {t("update.eta", { time: formatDuration(downloadEta()) })}</>
+                    )}
+                  </span>
+                </Show>
               </div>
             </Show>
 
             <Show when={state.status === "extracting"}>
-              <h2 class="text-lg font-semibold text-primary">{t("update.extracting")}</h2>
-              <div class="mt-3 flex items-center gap-2 text-sm text-secondary">
-                <span class="inline-block w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                {t("update.extracting")}
+              <div class="flex flex-col items-center py-4">
+                <span class="inline-block w-8 h-8 border-[3px] border-accent border-t-transparent rounded-full animate-spin mb-3" />
+                <h2 class="text-lg font-semibold text-primary">{t("update.extracting")}</h2>
               </div>
             </Show>
 
             <Show when={state.status === "installing"}>
-              <h2 class="text-lg font-semibold text-primary">{t("update.installing")}</h2>
-              <p class="mt-2 text-sm text-secondary">{t("update.installing.message")}</p>
-              <div class="mt-3 flex items-center gap-2 text-sm text-secondary">
-                <span class="inline-block w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                {t("update.installing")}
+              <div class="flex flex-col items-center py-4">
+                <span class="inline-block w-8 h-8 border-[3px] border-accent border-t-transparent rounded-full animate-spin mb-3" />
+                <h2 class="text-lg font-semibold text-primary">{t("update.installing")}</h2>
+                <p class="mt-2 text-sm text-secondary text-center">{t("update.installing.message")}</p>
               </div>
             </Show>
 
-            <Show when={state.status !== "downloading" && state.status !== "extracting" && state.status !== "installing" && showInstallDialog()}>
+            <Show when={state.status === "preparing-exit"}>
+              <div class="flex flex-col items-center py-4">
+                <span class="inline-block w-8 h-8 border-[3px] border-accent border-t-transparent rounded-full animate-spin mb-3" />
+                <h2 class="text-lg font-semibold text-primary whitespace-pre-line text-center">
+                  {t("update.preparingExit")}
+                </h2>
+              </div>
+            </Show>
+
+            <Show when={state.status !== "downloading" && state.status !== "extracting" && state.status !== "installing" && state.status !== "preparing-exit" && showInstallDialog()}>
               <h2 class="text-lg font-semibold text-primary">{t("update.ready.title")}</h2>
               <p class="mt-2 text-sm text-secondary">{t("update.ready.message", { version: state.version ?? "" })}</p>
               <div class="mt-6 flex justify-end gap-3">

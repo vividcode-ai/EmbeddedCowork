@@ -42,6 +42,13 @@ export const appMessages = {
 
   "update.checking": "Checking for updates...",
   "update.downloading": "Downloading {version} ({percent}%)",
+  "update.downloadSpeed": "{speed}/s",
+  "update.eta": "{time} remaining",
+  "update.step.download": "Download",
+  "update.step.prepare": "Prepare",
+  "update.step.install": "Install",
+  "update.step.complete": "Complete",
+  "update.preparingExit": "Update ready ✅\nInstalling update...\nThe app will close and restart automatically.",
   "update.ready.title": "Update ready",
   "update.ready.message": "EmbeddedCowork {version} has been downloaded.",
   "update.ready.action": "Restart & Install",
@@ -57,6 +64,7 @@ export const appMessages = {
   "update.extracting": "Preparing install...",
   "update.installing": "Installing...",
   "update.installing.message": "The app will restart automatically after installation.",
+  "update.success": "Upgraded to {version} ✨",
 
   "rollback.title": "Recovery detected",
   "rollback.message": "The previous update to v{newVersion} didn't start properly. Roll back to v{oldVersion}?",

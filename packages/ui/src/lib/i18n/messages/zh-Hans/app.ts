@@ -41,6 +41,13 @@ export const appMessages = {
 
   "update.checking": "正在检查更新...",
   "update.downloading": "正在下载 {version} ({percent}%)",
+  "update.downloadSpeed": "{speed}/s",
+  "update.eta": "剩余 {time}",
+  "update.step.download": "下载更新",
+  "update.step.prepare": "准备安装",
+  "update.step.install": "正在安装",
+  "update.step.complete": "升级完成",
+  "update.preparingExit": "升级准备已完成 ✅\n正在安装更新...\n应用将自动关闭，安装完成后自动重启",
   "update.ready.title": "更新就绪",
   "update.ready.message": "EmbeddedCowork {version} 已下载完成。",
   "update.ready.action": "立即重启安装",
@@ -56,6 +63,7 @@ export const appMessages = {
   "update.extracting": "正在准备安装...",
   "update.installing": "正在后台安装...",
   "update.installing.message": "安装完成后将自动启动。",
+  "update.success": "已升级到 {version} ✨",
 
   "rollback.title": "检测到恢复",
   "rollback.message": "上次更新到 v{newVersion} 后未能正常启动。是否回滚到 v{oldVersion}？",

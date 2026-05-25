@@ -602,6 +602,39 @@ const App: Component = () => {
     onCleanup(() => clearInterval(interval))
   })
 
+  // ── Post-update success notification ──
+  onMount(() => {
+    if (!isDesktopHost()) return
+    const preVersion = localStorage.getItem("embeddedcowork:preUpdateVersion")
+    if (!preVersion) return
+    localStorage.removeItem("embeddedcowork:preUpdateVersion")
+
+    const checkVersion = async () => {
+      try {
+        let currentVersion: string | null = null
+        if (isTauriHost()) {
+          const { getVersion } = await import("@tauri-apps/api/app")
+          currentVersion = await getVersion()
+        } else if (isElectronHost()) {
+          const api = (window as any).electronAPI as any
+          currentVersion = await (api.getAppVersion?.() ?? Promise.resolve(null))
+        }
+        if (currentVersion && currentVersion !== preVersion) {
+          showToastNotification({
+            title: t("update.success", { version: currentVersion }),
+            message: "",
+            variant: "success",
+            duration: 8000,
+            position: "bottom-right",
+          })
+        }
+      } catch (err) {
+        log.warn("Failed to detect post-update version:", err)
+      }
+    }
+    void checkVersion()
+  })
+
   async function handleCheckForUpdates() {
     if (!isDesktopHost() || !isUpdaterEnabled()) return
     try {
