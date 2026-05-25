@@ -91,6 +91,30 @@
   background-color: var(--surface-hover);
 }
 
+/* In gutter mode, suppress full-width hover background since highlight
+   is rendered on a nested element with side margins + border-radius. */
+.panel-list[data-highlight-gutter] .panel-list-item:hover {
+  background-color: transparent;
+}
+
+/* Replace full-width border-bottom with a gutter-aligned separator. */
+.panel-list[data-highlight-gutter] .panel-list-item {
+  border-bottom: none;
+}
+
+.panel-list[data-highlight-gutter] .panel-list-item::after {
+  content: '';
+  display: block;
+  height: 1px;
+  margin-inline: 0.5rem;
+  background-color: var(--border-base);
+  pointer-events: none;
+}
+
+.panel-list[data-highlight-gutter] .panel-list-item:last-child::after {
+  display: none;
+}
+
 .panel-list-item-highlight {
   background-color: var(--list-item-highlight-bg) !important;
   box-shadow: inset 0 0 0 1px var(--list-item-highlight-border);

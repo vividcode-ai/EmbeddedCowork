@@ -621,48 +621,51 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                       >
                         <div
                           class="panel-list flex-1 min-h-0"
+                          data-highlight-gutter
                           ref={(el) => (recentListRef = el)}
                         >
                           <For each={remoteServers()}>
                             {(server, index) => (
-                              <div
-                                class="panel-list-item"
-                                classList={{
-                                  "panel-list-item-highlight": focusMode() === "recent" && selectedIndex() === index(),
-                                }}
-                              >
-                                <div class="flex items-center gap-2 w-full">
-                                  <button
-                                    data-list-index={index()}
-                                    class="panel-list-item-content flex-1"
-                                    onClick={() => void handleConnectSavedServer(server.id)}
-                                    onMouseEnter={() => {
-                                      setFocusMode("recent")
-                                      setSelectedIndex(index())
-                                    }}
-                                  >
-                                    <div class="flex items-center justify-between gap-3 w-full">
-                                      <div class="flex-1 min-w-0 text-left">
-                                        <div class="flex items-center gap-2 mb-1">
-                                          <Globe class="w-4 h-4 flex-shrink-0 icon-muted" />
-                                          <span class="text-sm font-medium truncate text-primary">{server.name}</span>
+                              <div class="panel-list-item">
+                                <div
+                                  class="mx-2 rounded-md"
+                                  classList={{
+                                    "panel-list-item-highlight": focusMode() === "recent" && selectedIndex() === index(),
+                                  }}
+                                >
+                                  <div class="flex items-center gap-2 w-full">
+                                    <button
+                                      data-list-index={index()}
+                                      class="panel-list-item-content flex-1"
+                                      onClick={() => void handleConnectSavedServer(server.id)}
+                                      onMouseEnter={() => {
+                                        setFocusMode("recent")
+                                        setSelectedIndex(index())
+                                      }}
+                                    >
+                                      <div class="flex items-center justify-between gap-3 w-full">
+                                        <div class="flex-1 min-w-0 text-left">
+                                          <div class="flex items-center gap-2 mb-1">
+                                            <Globe class="w-4 h-4 flex-shrink-0 icon-muted" />
+                                            <span class="text-sm font-medium truncate text-primary">{server.name}</span>
+                                          </div>
+                                          <div class="flex items-center gap-2 pl-6 text-xs text-muted min-w-0">
+                                            <span class="font-mono truncate-start flex-1 min-w-0">{server.baseUrl}</span>
+                                          </div>
                                         </div>
-                                        <div class="flex items-center gap-2 pl-6 text-xs text-muted min-w-0">
-                                          <span class="font-mono truncate-start flex-1 min-w-0">{server.baseUrl}</span>
-                                        </div>
+                                        <Show when={connectingServerId() === server.id} fallback={<kbd class="kbd" style={{ visibility: (focusMode() === "recent" && selectedIndex() === index()) ? "visible" : "hidden" }}>↵</kbd>}>
+                                          <Loader2 class="w-4 h-4 animate-spin icon-muted" />
+                                        </Show>
                                       </div>
-                                      <Show when={connectingServerId() === server.id} fallback={<Show when={focusMode() === "recent" && selectedIndex() === index()}><kbd class="kbd">↵</kbd></Show>}>
-                                        <Loader2 class="w-4 h-4 animate-spin icon-muted" />
-                                      </Show>
-                                    </div>
-                                  </button>
-                                  <button
-                                    onClick={() => removeRemoteServerProfile(server.id)}
-                                    class="p-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30 opacity-70 hover:opacity-100 rounded"
-                                    title={t("folderSelection.servers.remove")}
-                                  >
-                                    <Trash2 class="w-3.5 h-3.5 transition-colors icon-muted hover:text-red-600 dark:hover:text-red-400" />
-                                  </button>
+                                    </button>
+                                    <button
+                                      onClick={() => removeRemoteServerProfile(server.id)}
+                                      class="p-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30 opacity-70 hover:opacity-100 rounded"
+                                      title={t("folderSelection.servers.remove")}
+                                    >
+                                      <Trash2 class="w-3.5 h-3.5 transition-colors icon-muted hover:text-red-600 dark:hover:text-red-400" />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -685,6 +688,7 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                     >
                       <div
                         class="panel-list flex-1 min-h-0"
+                        data-highlight-gutter
                         ref={(el) => (recentListRef = el)}
                       >
                         <For each={folders()}>
@@ -692,50 +696,54 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                             <div
                               class="panel-list-item"
                               classList={{
-                                "panel-list-item-highlight": focusMode() === "recent" && selectedIndex() === index(),
                                 "panel-list-item-disabled": isLoading(),
                               }}
                             >
-                              <div class="flex items-center gap-2 w-full">
-                                <button
-                                  data-list-index={index()}
-                                  class="panel-list-item-content flex-1"
-                                  disabled={isLoading()}
-                                  onClick={() => handleFolderSelect(folder.path)}
-                                  onMouseEnter={() => {
-                                    if (isLoading()) return
-                                    setFocusMode("recent")
-                                    setSelectedIndex(index())
-                                  }}
-                                >
-                                  <div class="flex items-center justify-between gap-3 w-full">
-                                    <div class="flex-1 min-w-0">
-                                      <div class="flex items-center gap-2 mb-1">
-                                        <Folder class="w-4 h-4 flex-shrink-0 icon-muted" />
-                                        <span class="text-sm font-medium truncate text-primary">
-                                          {splitFolderPath(folder.path).baseName}
-                                        </span>
+                              <div
+                                class="mx-2 rounded-md"
+                                classList={{
+                                  "panel-list-item-highlight": focusMode() === "recent" && selectedIndex() === index(),
+                                }}
+                              >
+                                <div class="flex items-center gap-2 w-full">
+                                  <button
+                                    data-list-index={index()}
+                                    class="panel-list-item-content flex-1"
+                                    disabled={isLoading()}
+                                    onClick={() => handleFolderSelect(folder.path)}
+                                    onMouseEnter={() => {
+                                      if (isLoading()) return
+                                      setFocusMode("recent")
+                                      setSelectedIndex(index())
+                                    }}
+                                  >
+                                    <div class="flex items-center justify-between gap-3 w-full">
+                                      <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                          <Folder class="w-4 h-4 flex-shrink-0 icon-muted" />
+                                          <span class="text-sm font-medium truncate text-primary">
+                                            {splitFolderPath(folder.path).baseName}
+                                          </span>
+                                        </div>
+                                        <div class="flex items-center gap-2 pl-6 text-xs text-muted min-w-0">
+                                          <span class="font-mono truncate-start flex-1 min-w-0">
+                                            {getDisplayPath(folder.path)}
+                                          </span>
+                                          <span class="flex-shrink-0">{formatRelativeTime(folder.lastAccessed)}</span>
+                                        </div>
                                       </div>
-                                      <div class="flex items-center gap-2 pl-6 text-xs text-muted min-w-0">
-                                        <span class="font-mono truncate-start flex-1 min-w-0">
-                                          {getDisplayPath(folder.path)}
-                                        </span>
-                                        <span class="flex-shrink-0">{formatRelativeTime(folder.lastAccessed)}</span>
-                                      </div>
+                                      <kbd class="kbd" style={{ visibility: (focusMode() === "recent" && selectedIndex() === index()) ? "visible" : "hidden" }}>↵</kbd>
                                     </div>
-                                    <Show when={focusMode() === "recent" && selectedIndex() === index()}>
-                                      <kbd class="kbd">↵</kbd>
-                                    </Show>
-                                  </div>
-                                </button>
-                                <button
-                                  onClick={(e) => handleRemove(folder.path, e)}
-                                  disabled={isLoading()}
-                                  class="p-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30 opacity-70 hover:opacity-100 rounded"
-                                  title={t("folderSelection.recent.remove")}
-                                >
-                                  <Trash2 class="w-3.5 h-3.5 transition-colors icon-muted hover:text-red-600 dark:hover:text-red-400" />
-                                </button>
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleRemove(folder.path, e)}
+                                    disabled={isLoading()}
+                                    class="p-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30 opacity-70 hover:opacity-100 rounded"
+                                    title={t("folderSelection.recent.remove")}
+                                  >
+                                    <Trash2 class="w-3.5 h-3.5 transition-colors icon-muted hover:text-red-600 dark:hover:text-red-400" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           )}
