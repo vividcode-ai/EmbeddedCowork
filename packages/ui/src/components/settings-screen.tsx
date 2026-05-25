@@ -15,6 +15,7 @@ import { OpenCodeSettingsSection } from "./settings/opencode-settings-section"
 import { RemoteAccessSettingsSection } from "./settings/remote-access-settings-section"
 import { SpeechSettingsSection } from "./settings/speech-settings-section"
 import { SideCarsSettingsSection } from "./settings/sidecars-settings-section"
+import VersionPill from "./version-pill"
 import { canOpenRemoteWindows } from "../lib/runtime-env"
 
 export const SettingsScreen: Component = () => {
@@ -92,6 +93,12 @@ export const SettingsScreen: Component = () => {
                   }}
                 </For>
               </nav>
+
+              <div class="flex-1" />
+
+              <div class="settings-screen-nav-footer">
+                <VersionPill />
+              </div>
             </aside>
 
             <div class="settings-screen-content">

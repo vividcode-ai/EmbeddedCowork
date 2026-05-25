@@ -1,25 +1,22 @@
 import { Dialog } from "@kobalte/core/dialog"
-import { Select } from "@kobalte/core/select"
 import { Component, createSignal, Show, For, onMount, onCleanup, createEffect } from "solid-js"
-import { Folder, Clock, Trash2, FolderPlus, Settings, ChevronRight, MonitorUp, Star, Languages, ChevronDown, X, Globe, Loader2 } from "lucide-solid"
+import { Folder, Clock, Trash2, FolderPlus, MonitorUp, Star, Globe, Loader2 } from "lucide-solid"
 import { useConfig } from "../stores/preferences"
 import DirectoryBrowserDialog from "./directory-browser-dialog"
 import Kbd from "./kbd"
 import { openNativeFolderDialog, supportsNativeDialogsInCurrentWindow } from "../lib/native/native-functions"
 import { useFolderDrop } from "../lib/hooks/use-folder-drop"
-import VersionPill from "./version-pill"
 import { FeishuIcon, GitHubMarkIcon } from "./brand-icons"
 import { githubStars } from "../stores/github-stars"
 import { formatCompactCount } from "../lib/formatters"
-import { useI18n, type Locale } from "../lib/i18n"
+import { useI18n } from "../lib/i18n"
 import { showAlertDialog } from "../stores/alerts"
-import { openSettings, settingsOpen } from "../stores/settings-screen"
+import { settingsOpen } from "../stores/settings-screen"
 import { openExternalUrl } from "../lib/external-url"
 import { serverApi } from "../lib/api-client"
 import { canOpenRemoteWindows, isTauriHost } from "../lib/runtime-env"
 import { openRemoteServerWindow } from "../lib/native/remote-window"
 
-const embeddedCoworkLoag = new URL("../images/EmbeddedCowork-Icon.png", import.meta.url).href
 const GITHUB_URL = "https://github.com/vividcode-ai/EmbeddedCowork"
 const Feishu_URL = "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=5c8uf71e-5ad6-4d0e-9bff-6be85f48aba8"
 
@@ -38,14 +35,13 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
     recentFolders,
     removeRecentFolder,
     preferences,
-    updatePreferences,
     serverSettings,
     remoteServers,
     saveRemoteServerProfile,
     markRemoteServerConnected,
     removeRemoteServerProfile,
   } = useConfig()
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
   const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [focusMode, setFocusMode] = createSignal<"recent" | "new" | null>("recent")
   const [selectedBinary, setSelectedBinary] = createSignal(serverSettings().opencodeBinary || "opencode")
@@ -60,20 +56,6 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
   const [connectingServerId, setConnectingServerId] = createSignal<string | null>(null)
   let recentListRef: HTMLDivElement | undefined
 
-  type LanguageOption = { value: Locale; label: string }
-
-  const languageOptions: LanguageOption[] = [
-    { value: "en", label: "English" },
-    { value: "es", label: "Español" },
-    { value: "fr", label: "Français" },
-    { value: "ru", label: "Русский" },
-    { value: "ja", label: "日本語" },
-    { value: "zh-Hans", label: "简体中文" },
-    { value: "he", label: "עברית" },
-  ]
-
-  const selectedLanguageOption = () => languageOptions.find((opt) => opt.value === locale()) ?? languageOptions[0]
-  
   const folders = () => recentFolders()
   const serverList = () => remoteServers()
   const isLoading = () => Boolean(props.isLoading)
@@ -474,7 +456,7 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
   return (
     <>
       <div
-        class="flex h-screen w-full items-start justify-center overflow-hidden py-6 px-4 sm:px-6 relative"
+        class="flex flex-col py-6 px-4 sm:px-6 relative w-full"
         style="background-color: var(--surface-secondary)"
         onDragEnter={folderDrop.bind.onDragEnter}
         onDragOver={folderDrop.bind.onDragOver}
@@ -482,90 +464,10 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
         onDrop={folderDrop.bind.onDrop}
       >
         <div
-          class="w-full max-w-5xl h-full px-4 sm:px-8 pb-2 flex flex-col overflow-hidden"
+          class="w-full max-w-[870px] px-4 sm:px-8 pb-2 flex flex-col h-[470px] max-h-[85vh] overflow-hidden"
           aria-busy={isLoading() ? "true" : "false"}
         >
-          <div class="absolute top-4" style="inset-inline-start: 1.5rem;">
-            <Select<LanguageOption>
-              value={selectedLanguageOption()}
-              onChange={(value) => {
-                if (!value) return
-                if (value.value === locale()) return
-                updatePreferences({ locale: value.value })
-              }}
-              options={languageOptions}
-              optionValue="value"
-              optionTextValue="label"
-              itemComponent={(itemProps) => (
-                <Select.Item item={itemProps.item} class="selector-option">
-                  <Select.ItemLabel class="selector-option-label">{itemProps.item.rawValue.label}</Select.ItemLabel>
-                </Select.Item>
-              )}
-            >
-              <Select.Trigger
-                class="selector-trigger"
-                aria-label={t("folderSelection.language.ariaLabel")}
-                title={t("folderSelection.language.ariaLabel")}
-              >
-                <Languages class="w-4 h-4 icon-muted" aria-hidden="true" />
-                <div class="flex-1 min-w-0">
-                  <Select.Value<LanguageOption>>
-                    {(state) => (
-                      <span class="selector-trigger-primary selector-trigger-primary--align-left">
-                        {state.selectedOption()?.label}
-                      </span>
-                    )}
-                  </Select.Value>
-                </div>
-                <Select.Icon class="selector-trigger-icon">
-                  <ChevronDown class="w-3 h-3" />
-                </Select.Icon>
-              </Select.Trigger>
-
-              <Select.Portal>
-                <Select.Content class="selector-popover min-w-[180px]">
-                  <Select.Listbox class="selector-listbox" />
-                </Select.Content>
-              </Select.Portal>
-            </Select>
-          </div>
-          <div class="absolute top-4 flex items-center gap-2" style="inset-inline-end: 1.5rem;">
-            <button
-              type="button"
-              class="selector-button selector-button-secondary w-auto p-2 inline-flex items-center justify-center"
-              onClick={() => openSettings("appearance")}
-              aria-label={t("settings.open.title")}
-              title={t("settings.open.title")}
-            >
-              <Settings class="w-4 h-4" />
-            </button>
-            <Show when={canUseRemoteServerWindows()}>
-              <button
-                type="button"
-                class="selector-button selector-button-secondary w-auto p-2 inline-flex items-center justify-center"
-                onClick={() => openSettings("remote")}
-                aria-label={t("instanceTabs.remote.ariaLabel")}
-                title={t("instanceTabs.remote.title")}
-              >
-                <MonitorUp class="w-4 h-4" />
-              </button>
-            </Show>
-            <Show when={props.onClose}>
-              <button
-                type="button"
-                class="selector-button selector-button-secondary w-auto p-2 inline-flex items-center justify-center"
-                onClick={() => props.onClose?.()}
-                aria-label={t("app.launchError.close")}
-                title={t("app.launchError.closeTitle")}
-              >
-                <X class="w-4 h-4" />
-              </button>
-            </Show>
-          </div>
           <div class="mb-6 text-center shrink-0">
-            <div class="mb-3 flex justify-center">
-              <img src={embeddedCoworkLoag} alt={t("folderSelection.logoAlt")} class="h-32 w-auto sm:h-48" loading="lazy" />
-            </div>
             <h1 class="mb-2 text-3xl font-semibold text-primary">Embedded Cowork</h1>
             <div class="mt-3 flex justify-center gap-2">
               <a
@@ -718,7 +620,7 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                         }
                       >
                         <div
-                          class="panel-list panel-list--fill flex-1 min-h-0 overflow-auto"
+                          class="panel-list flex-1 min-h-0"
                           ref={(el) => (recentListRef = el)}
                         >
                           <For each={remoteServers()}>
@@ -729,7 +631,7 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                                   "panel-list-item-highlight": focusMode() === "recent" && selectedIndex() === index(),
                                 }}
                               >
-                                <div class="flex items-center gap-2 w-full px-1">
+                                <div class="flex items-center gap-2 w-full">
                                   <button
                                     data-list-index={index()}
                                     class="panel-list-item-content flex-1"
@@ -782,7 +684,7 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                       }
                     >
                       <div
-                        class="panel-list panel-list--fill flex-1 min-h-0 overflow-auto"
+                        class="panel-list flex-1 min-h-0"
                         ref={(el) => (recentListRef = el)}
                       >
                         <For each={folders()}>
@@ -794,7 +696,7 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                                 "panel-list-item-disabled": isLoading(),
                               }}
                             >
-                              <div class="flex items-center gap-2 w-full px-1">
+                              <div class="flex items-center gap-2 w-full">
                                 <button
                                   data-list-index={index()}
                                   class="panel-list-item-content flex-1"
@@ -895,22 +797,6 @@ const FolderSelectionView: Component<FolderSelectionViewProps> = (props) => {
                   </Show>
                 </div>
 
-                {/* OpenCode settings section */}
-                <div class="panel-section w-full">
-                  <button onClick={() => openSettings("opencode")} class="panel-section-header w-full justify-between">
-                    <div class="flex items-center gap-2">
-                      <Settings class="w-4 h-4 icon-muted" />
-                      <span class="text-sm font-medium text-secondary">{t("folderSelection.opencode")}</span>
-                    </div>
-                    <ChevronRight class="w-4 h-4 icon-muted" />
-                  </button>
-                </div>
-              </div>
-
-              <div class="panel shrink-0">
-                <div class="panel-body flex items-center justify-center">
-                  <VersionPill />
-                </div>
               </div>
             </div>
 
