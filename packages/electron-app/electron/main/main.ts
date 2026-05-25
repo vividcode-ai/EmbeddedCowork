@@ -4,7 +4,6 @@ import https from "node:https"
 import { existsSync, mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { fileURLToPath } from "url"
-import { createApplicationMenu } from "./menu"
 import { setupCliIPC } from "./ipc"
 import { configureMediaPermissionHandlers } from "./permissions"
 import { CliProcessManager } from "./process-manager"
@@ -379,7 +378,6 @@ function finalizeCliSwap(url: string) {
       loadingWindow = null
     }
     mainWindow?.maximize()
-    createApplicationMenu(mainWindow!, appAutoUpdater)
   }).catch((error) => console.error("[cli] failed to load CLI view:", error))
 }
 

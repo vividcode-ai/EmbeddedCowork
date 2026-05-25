@@ -8,13 +8,11 @@ mod linux_tls;
 
 use cli_manager::{CliProcessManager, CliStatus};
 use keepawake::KeepAwake;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::menu::{MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::plugin::{Builder as PluginBuilder, TauriPlugin};
 use tauri::webview::Webview;
 use tauri::{
@@ -44,9 +42,6 @@ use windows_sys::Win32::UI::Shell::SetCurrentProcessExplicitAppUserModelID;
 
 static QUIT_REQUESTED: AtomicBool = AtomicBool::new(false);
 const DEFAULT_ZOOM_LEVEL: f64 = 1.0;
-const ZOOM_STEP: f64 = 0.1;
-const MIN_ZOOM_LEVEL: f64 = 0.2;
-const MAX_ZOOM_LEVEL: f64 = 5.0;
 const LOCAL_WINDOW_CONTEXT_SCRIPT: &str = "window.__EMBEDDEDCOWORK_WINDOW_CONTEXT__ = 'local';";
 const REMOTE_WINDOW_CONTEXT_SCRIPT: &str = "window.__EMBEDDEDCOWORK_WINDOW_CONTEXT__ = 'remote';";
 
@@ -181,11 +176,20 @@ fn wake_lock_stop(state: tauri::State<AppState>) -> Result<(), String> {
 
 // ── Update Commands ──
 
+#[derive(Serialize)]
+struct UpdateInfo {
+    version: String,
+    download_url: String,
+}
+
 #[tauri::command]
-async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
+async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
     let updater = app.updater().map_err(|e| e.to_string())?;
     let response = updater.check().await.map_err(|e| e.to_string())?;
-    Ok(response.map(|update| update.version.clone()))
+    Ok(response.map(|update| UpdateInfo {
+        version: update.version.clone(),
+        download_url: update.download_url.to_string(),
+    }))
 }
 
 #[tauri::command]
@@ -201,6 +205,7 @@ async fn rollback_update(app: AppHandle) -> Result<(), String> {
 
     let content = std::fs::read_to_string(&meta_path).map_err(|e| e.to_string())?;
     #[derive(serde::Deserialize)]
+    #[allow(dead_code)]
     struct UpdateMeta {
         state: String,
         old_version: String,
@@ -624,72 +629,10 @@ fn emit_folder_drop_event(
     }
 }
 
-fn clamp_zoom_level(value: f64) -> f64 {
-    value.clamp(MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL)
-}
-
-fn set_main_window_zoom(app_handle: &AppHandle, next_zoom: f64) {
-    if let Some(window) = app_handle.get_webview_window("main") {
-        let normalized = clamp_zoom_level(next_zoom);
-        if window.set_zoom(normalized).is_ok() {
-            if let Ok(mut zoom_level) = app_handle.state::<AppState>().zoom_level.lock() {
-                *zoom_level = normalized;
-            }
-        }
-    }
-}
-
-fn reload_main_window(app_handle: &AppHandle) {
-    if let Some(window) = app_handle.get_webview_window("main") {
-        let _ = window.reload();
-    }
-}
-
-fn force_reload_main_window(app_handle: &AppHandle) {
-    if let Some(window) = app_handle.get_webview_window("main") {
-        if let Ok(mut url) = window.url() {
-            if should_allow_internal(&url) {
-                let reload_token = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_millis()
-                    .to_string();
-
-                let existing_pairs: Vec<(String, String)> = url
-                    .query_pairs()
-                    .into_owned()
-                    .filter(|(key, _)| key != "__embeddedcowork_force_reload")
-                    .collect();
-
-                {
-                    let mut pairs = url.query_pairs_mut();
-                    pairs.clear();
-                    for (key, value) in existing_pairs {
-                        pairs.append_pair(&key, &value);
-                    }
-                    pairs.append_pair("__embeddedcowork_force_reload", &reload_token);
-                }
-
-                let _ = window.navigate(url);
-                return;
-            }
-        }
-
-        let _ = window.reload();
-    }
-}
-
 fn toggle_fullscreen_window(app_handle: &AppHandle) {
     if let Some(window) = app_handle.get_webview_window("main") {
         let next_fullscreen = !window.is_fullscreen().unwrap_or(false);
         let _ = window.set_fullscreen(next_fullscreen);
-        if cfg!(not(target_os = "macos")) {
-            if next_fullscreen {
-                let _ = window.hide_menu();
-            } else {
-                let _ = window.show_menu();
-            }
-        }
     }
 }
 
@@ -754,7 +697,6 @@ fn main() {
         })
         .setup(|app| {
             set_windows_app_user_model_id();
-            build_menu(&app.handle())?;
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.eval(LOCAL_WINDOW_CONTEXT_SCRIPT);
                 let updater_enabled = !is_dev_mode();
@@ -804,100 +746,6 @@ fn main() {
             rollback_update,
             restart_app
         ])
-        .on_menu_event(|app_handle, event| {
-            match event.id().0.as_str() {
-                // File menu
-                "new_instance" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.emit("menu:newInstance", ());
-                    }
-                }
-                "quit" => {
-                    app_handle.exit(0);
-                }
-
-                // View menu
-                "reload" => {
-                    reload_main_window(app_handle);
-                }
-                "force_reload" => {
-                    force_reload_main_window(app_handle);
-                }
-                "toggle_devtools" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        if window.is_devtools_open() {
-                            window.close_devtools();
-                        } else {
-                            window.open_devtools();
-                        }
-                    }
-                }
-                "reset_zoom" => {
-                    set_main_window_zoom(app_handle, DEFAULT_ZOOM_LEVEL);
-                }
-                "zoom_in" => {
-                    if let Ok(zoom_level) = app_handle.state::<AppState>().zoom_level.lock() {
-                        set_main_window_zoom(app_handle, *zoom_level + ZOOM_STEP);
-                    }
-                }
-                "zoom_out" => {
-                    if let Ok(zoom_level) = app_handle.state::<AppState>().zoom_level.lock() {
-                        set_main_window_zoom(app_handle, *zoom_level - ZOOM_STEP);
-                    }
-                }
-
-                "toggle_fullscreen" => {
-                    toggle_fullscreen_window(app_handle);
-                }
-
-                // Window menu
-                "minimize" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.minimize();
-                    }
-                }
-                "zoom" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.maximize();
-                    }
-                }
-                "close_window" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.close();
-                    }
-                }
-
-                // App menu (macOS)
-                // Help menu
-                "check_updates" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.emit("menu:checkForUpdates", ());
-                    }
-                }
-
-                "about" => {
-                    // TODO: Implement about dialog
-                    println!("About menu item clicked");
-                }
-                "hide" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.hide();
-                    }
-                }
-                "hide_others" => {
-                    // TODO: Hide other app windows
-                    println!("Hide Others menu item clicked");
-                }
-                "show_all" => {
-                    // TODO: Show all app windows
-                    println!("Show All menu item clicked");
-                }
-
-                _ => {
-                    println!("Unhandled menu event: {}", event.id().0);
-                }
-            }
-        })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| match event {
@@ -969,177 +817,4 @@ fn main() {
             }
             _ => {}
         });
-}
-
-fn build_menu(app: &AppHandle) -> tauri::Result<()> {
-    let is_mac = cfg!(target_os = "macos");
-    let is_linux = cfg!(target_os = "linux");
-
-    // Create submenus
-    let mut submenus = Vec::new();
-
-    // App menu (macOS only)
-    if is_mac {
-        let app_menu = SubmenuBuilder::new(app, "EmbeddedCowork")
-            .text("about", "About EmbeddedCowork")
-            .separator()
-            .text("hide", "Hide EmbeddedCowork")
-            .text("hide_others", "Hide Others")
-            .text("show_all", "Show All")
-            .separator()
-            .text("quit", "Quit EmbeddedCowork")
-            .build()?;
-        submenus.push(app_menu);
-    }
-
-    // File menu - create New Instance with accelerator
-    let new_instance_item = MenuItem::with_id(
-        app,
-        "new_instance",
-        "New Instance",
-        true,
-        Some("CmdOrCtrl+N"),
-    )?;
-
-    let file_menu = if is_mac {
-        SubmenuBuilder::new(app, "File")
-            .item(&new_instance_item)
-            .separator()
-            .close_window()
-            .build()?
-    } else {
-        SubmenuBuilder::new(app, "File")
-            .item(&new_instance_item)
-            .separator()
-            .text("quit", "Quit")
-            .build()?
-    };
-    submenus.push(file_menu);
-
-    let reload_item = MenuItem::with_id(app, "reload", "Reload", true, Some("CmdOrCtrl+R"))?;
-    let force_reload_item = MenuItem::with_id(
-        app,
-        "force_reload",
-        "Force Reload",
-        true,
-        Some("CmdOrCtrl+Shift+R"),
-    )?;
-    let toggle_devtools_item = MenuItem::with_id(
-        app,
-        "toggle_devtools",
-        "Toggle Developer Tools",
-        true,
-        Some("Alt+CmdOrCtrl+I"),
-    )?;
-    let reset_zoom_item =
-        MenuItem::with_id(app, "reset_zoom", "Actual Size", true, Some("CmdOrCtrl+0"))?;
-    let zoom_in_item = MenuItem::with_id(
-        app,
-        "zoom_in",
-        if is_mac { "Zoom In" } else { "Zoom In\tCtrl++" },
-        true,
-        None::<&str>,
-    )?;
-    let zoom_out_item = MenuItem::with_id(
-        app,
-        "zoom_out",
-        if is_mac {
-            "Zoom Out"
-        } else {
-            "Zoom Out\tCtrl+-"
-        },
-        true,
-        None::<&str>,
-    )?;
-    let toggle_fullscreen_item = MenuItem::with_id(
-        app,
-        "toggle_fullscreen",
-        if is_mac {
-            "Toggle Full Screen"
-        } else {
-            "Toggle Full Screen\tF11"
-        },
-        true,
-        if is_mac {
-            Some("Ctrl+Cmd+F")
-        } else {
-            None::<&str>
-        },
-    )?;
-    let close_window_item =
-        MenuItem::with_id(app, "close_window", "Close", true, Some("CmdOrCtrl+W"))?;
-
-    // Edit menu with predefined items for standard functionality
-    let edit_menu = SubmenuBuilder::new(app, "Edit")
-        .undo()
-        .redo()
-        .separator()
-        .cut()
-        .copy()
-        .paste()
-        .separator()
-        .select_all()
-        .build()?;
-    submenus.push(edit_menu);
-
-    // View menu
-    let view_menu = SubmenuBuilder::new(app, "View")
-        .item(&reload_item)
-        .item(&force_reload_item)
-        .item(&toggle_devtools_item)
-        .separator()
-        .item(&reset_zoom_item)
-        .item(&zoom_in_item)
-        .item(&zoom_out_item)
-        .separator()
-        .item(&toggle_fullscreen_item)
-        .build()?;
-    submenus.push(view_menu);
-
-    // Help menu
-    let check_updates_item = MenuItem::with_id(
-        app,
-        "check_updates",
-        "Check for Updates",
-        true,
-        Some("CmdOrCtrl+U"),
-    )?;
-
-    let help_menu = SubmenuBuilder::new(app, "Help")
-        .item(&check_updates_item)
-        .build()?;
-    submenus.push(help_menu);
-
-    // Window menu
-    let window_menu = if is_linux {
-        SubmenuBuilder::new(app, "Window")
-            .text("minimize", "Minimize")
-            .text("zoom", "Zoom")
-            .separator()
-            .item(&close_window_item)
-            .build()?
-    } else if is_mac {
-        SubmenuBuilder::new(app, "Window")
-            .minimize()
-            .maximize()
-            .build()?
-    } else {
-        SubmenuBuilder::new(app, "Window")
-            .minimize()
-            .maximize()
-            .separator()
-            .close_window()
-            .build()?
-    };
-    submenus.push(window_menu);
-
-    // Build the main menu with all submenus
-    let submenu_refs: Vec<&dyn tauri::menu::IsMenuItem<_>> = submenus
-        .iter()
-        .map(|s| s as &dyn tauri::menu::IsMenuItem<_>)
-        .collect();
-    let menu = MenuBuilder::new(app).items(&submenu_refs).build()?;
-
-    app.set_menu(menu)?;
-    Ok(())
 }

@@ -156,11 +156,11 @@ export function UpdateNotification() {
 
   async function initTauriUpdater() {
     try {
-      const { check } = await import("@tauri-apps/plugin-updater")
-      const update = await check()
-      if (update) {
-        log.info("Tauri update available:", update.version)
-        setUpdateState((prev) => ({ ...prev, version: update.version }))
+      const { invoke } = await import("@tauri-apps/api/core")
+      const info = await invoke<{ version: string; download_url: string } | null>("check_update")
+      if (info) {
+        log.info("Tauri update available:", info.version)
+        setUpdateState((prev) => ({ ...prev, version: info.version, downloadUrl: info.download_url }))
         setShowInstallDialog(true)
       }
     } catch (err) {
@@ -192,20 +192,14 @@ export function UpdateNotification() {
       await api?.installUpdate()
       setShowInstallDialog(false)
     } else if (host === "tauri") {
-      const { check } = await import("@tauri-apps/plugin-updater")
-      const update = await check()
-      if (!update) {
-        log.warn("No update available when install was requested")
-        setShowInstallDialog(false)
-        return
-      }
-      const downloadUrl = (update as any).downloadUrl ?? (update as any).download_url ?? ""
+      const state = updateState()
+      const downloadUrl = state.downloadUrl
       if (!downloadUrl) {
-        log.error("Update object missing download URL", update)
+        log.error("No download URL available for Tauri update install")
         setUpdateStatus("error")
         showToastNotification({
           title: t("update.checkFailed"),
-          message: "Missing download URL in update response",
+          message: "Missing download URL",
           variant: "error",
           duration: 8000,
           position: "bottom-right",
@@ -251,7 +245,7 @@ export function UpdateNotification() {
       try {
         const { invoke } = await import("@tauri-apps/api/core")
         setUpdateStatus("downloading")
-        await invoke("install_update", { version: update.version, download_url: downloadUrl })
+        await invoke("install_update", { version: state.version, download_url: downloadUrl })
       } catch (err) {
         log.error("Tauri install update failed:", err)
         setUpdateStatus("error")

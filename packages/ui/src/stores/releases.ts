@@ -220,6 +220,7 @@ export type UpdateStatus = "idle" | "checking" | "downloading" | "extracting" | 
 export interface AppUpdateState {
   status: UpdateStatus
   version?: string
+  downloadUrl?: string
   progress?: {
     percent: number
     bytesPerSecond: number

@@ -562,34 +562,32 @@ const App: Component = () => {
           result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
         } else if (isTauriHost()) {
           const { invoke } = await import("@tauri-apps/api/core")
-          const version = await invoke<string | null>("check_update")
-          result = { updateAvailable: version != null, version: version ?? undefined }
-        } else return
-        if (!result.updateAvailable || toastHandle !== undefined) return
-        toastHandle = showToastNotification({
-          title: t("update.polling.available.title"),
-          message: t("update.polling.available.message", { version: result.version ?? "" }),
-          variant: "info",
-          duration: Number.POSITIVE_INFINITY,
-          position: "bottom-right",
-          action: {
-            label: t("update.polling.install"),
-            onClick: async () => {
-              if (isElectronHost()) {
-                const api = (window as any).electronAPI as any
-                await (api.installUpdateV2?.() ?? Promise.resolve())
-              } else if (isTauriHost()) {
-                const { invoke } = await import("@tauri-apps/api/core")
-                const { check } = await import("@tauri-apps/plugin-updater")
-                const update = await check()
-                if (!update) return
-                const downloadUrl = (update as any).downloadUrl ?? (update as any).download_url ?? ""
-                if (!downloadUrl) return
-                await invoke("install_update", { version: update.version, download_url: downloadUrl })
-              }
+          const info = await invoke<{ version: string; download_url: string } | null>("check_update")
+          result = { updateAvailable: info != null, version: info?.version ?? undefined }
+          if (!info || toastHandle !== undefined) return
+          // Store the download URL for the toast action closure
+          const tauriDlUrl = info.download_url
+          toastHandle = showToastNotification({
+            title: t("update.polling.available.title"),
+            message: t("update.polling.available.message", { version: result.version ?? "" }),
+            variant: "info",
+            duration: Number.POSITIVE_INFINITY,
+            position: "bottom-right",
+            action: {
+              label: t("update.polling.install"),
+              onClick: async () => {
+                if (isElectronHost()) {
+                  const api = (window as any).electronAPI as any
+                  await (api.installUpdateV2?.() ?? Promise.resolve())
+                } else if (isTauriHost()) {
+                  const { invoke } = await import("@tauri-apps/api/core")
+                  if (!tauriDlUrl) return
+                  await invoke("install_update", { version: result.version, download_url: tauriDlUrl })
+                }
+              },
             },
-          },
-        })
+          })
+        } else return
       } catch (err) {
         log.warn("Update poll failed:", err)
         showToastNotification({
@@ -649,43 +647,40 @@ const App: Component = () => {
         result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
       } else if (isTauriHost()) {
         const { invoke } = await import("@tauri-apps/api/core")
-        const version = await invoke<string | null>("check_update")
-        result = { updateAvailable: version != null, version: version ?? undefined }
-      } else return
-      if (result.updateAvailable) {
-        showToastNotification({
-          title: t("update.polling.available.title"),
-          message: t("update.polling.available.message", { version: result.version ?? "" }),
-          variant: "info",
-          duration: Number.POSITIVE_INFINITY,
-          position: "bottom-right",
-          action: {
-            label: t("update.polling.install"),
-            onClick: async () => {
-              if (isElectronHost()) {
-                const api = (window as any).electronAPI as any
-                await (api.installUpdateV2?.() ?? Promise.resolve())
-              } else if (isTauriHost()) {
-                const { invoke } = await import("@tauri-apps/api/core")
-                const { check } = await import("@tauri-apps/plugin-updater")
-                const update = await check()
-                if (!update) return
-                const downloadUrl = (update as any).downloadUrl ?? (update as any).download_url ?? ""
-                if (!downloadUrl) return
-                await invoke("install_update", { version: update.version, download_url: downloadUrl })
-              }
+        const info = await invoke<{ version: string; download_url: string } | null>("check_update")
+        result = { updateAvailable: info != null, version: info?.version ?? undefined }
+        // result and info are available, tauriDlUrl is set
+        if (result.updateAvailable) {
+          showToastNotification({
+            title: t("update.polling.available.title"),
+            message: t("update.polling.available.message", { version: result.version ?? "" }),
+            variant: "info",
+            duration: Number.POSITIVE_INFINITY,
+            position: "bottom-right",
+            action: {
+              label: t("update.polling.install"),
+              onClick: async () => {
+                if (isElectronHost()) {
+                  const api = (window as any).electronAPI as any
+                  await (api.installUpdateV2?.() ?? Promise.resolve())
+                } else if (isTauriHost()) {
+                  const { invoke } = await import("@tauri-apps/api/core")
+                  if (!tauriDlUrl) return
+                  await invoke("install_update", { version: result.version, download_url: tauriDlUrl })
+                }
+              },
             },
-          },
-        })
-      } else {
-        showToastNotification({
-          title: t("update.alreadyUpToDate"),
-          message: "",
-          variant: "success",
-          duration: 3000,
-          position: "bottom-right",
-        })
-      }
+          })
+        } else {
+          showToastNotification({
+            title: t("update.alreadyUpToDate"),
+            message: "",
+            variant: "success",
+            duration: 3000,
+            position: "bottom-right",
+          })
+        }
+      } else return
     } catch (err) {
       showToastNotification({
         title: t("update.checkFailed"),
