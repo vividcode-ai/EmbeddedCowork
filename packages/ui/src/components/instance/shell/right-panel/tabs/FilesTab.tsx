@@ -46,6 +46,31 @@ const FilesTab: Component<FilesTabProps> = (props) => {
     }
   })
 
+  // Sync position/size signals to DOM via ref, avoiding JSX style conflicts
+  // that cause Dialog portal content to re-create on re-render
+  createEffect(() => {
+    const open = modalOpen()
+    const el = modalContentEl
+    if (!open || !el) return
+
+    if (isMaximized()) {
+      // CSS .file-modal-content--maximized handles layout via !important rules
+      return
+    }
+
+    const pos = windowPos()
+    const size = windowSize()
+
+    el.style.transform = `translate(${pos.x}px, ${pos.y}px)`
+    if (size) {
+      el.style.width = `${size.w}px`
+      el.style.height = `${size.h}px`
+    } else {
+      el.style.width = ''
+      el.style.height = ''
+    }
+  })
+
   onCleanup(() => {
     document.removeEventListener("mousemove", handleHeaderMouseMove)
     document.removeEventListener("mouseup", handleHeaderMouseUp)
@@ -257,16 +282,10 @@ const FilesTab: Component<FilesTabProps> = (props) => {
     `file-modal-content${isMaximized() ? " file-modal-content--maximized" : ""}`
 
   const renderModalContent = () => {
-    const size = windowSize()
     return (
     <div
       class={contentClass()}
       ref={modalContentEl}
-      style={{
-        transform: isMaximized() ? undefined : `translate(${windowPos().x}px, ${windowPos().y}px)`,
-        width: size ? `${size.w}px` : undefined,
-        height: size ? `${size.h}px` : undefined,
-      }}
       onMouseMove={handleContentMouseMove}
       onMouseDown={handleContentMouseDown}
     >

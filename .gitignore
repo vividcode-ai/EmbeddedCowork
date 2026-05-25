@@ -9,9 +9,11 @@ out/
 .dir-locals.el
 .opencode/bashOutputs/
 
+
 # Local runtime artifacts
 .codenomad/
 .embedcowork/
+.claude/
 .sisyphus
 .tmp/
 packages/cloudflare/.wrangler/
