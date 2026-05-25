@@ -854,7 +854,7 @@ const App: Component = () => {
               clearLaunchError()
             }}
           >
-            <div onClick={(e) => e.stopPropagation()} class="max-h-[90vh] overflow-auto rounded-xl">
+            <div onClick={(e) => e.stopPropagation()} class="max-h-[90vh] max-w-[870px] w-full overflow-auto rounded-xl">
               <FolderSelectionView
                 onSelectFolder={handleSelectFolder}
                 isLoading={isSelectingFolder()}

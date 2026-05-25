@@ -1,7 +1,7 @@
 import { Select } from "@kobalte/core/select"
 import { createEffect, createMemo, createSignal, For, type Component } from "solid-js"
 import { Check, ChevronDown, Laptop, Moon, Sun } from "lucide-solid"
-import { useI18n } from "../../lib/i18n"
+import { useI18n, type Locale } from "../../lib/i18n"
 import { useTheme, type ThemeMode } from "../../lib/theme"
 import { useConfig } from "../../stores/preferences"
 import { getBehaviorSettings, type BehaviorSetting } from "../../lib/settings/behavior-registry"
@@ -12,8 +12,19 @@ const themeModeOptions: Array<{ value: ThemeMode; icon: typeof Laptop }> = [
   { value: "dark", icon: Moon },
 ]
 
+type LanguageOption = { value: Locale; label: string }
+const languageOptions: LanguageOption[] = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Español" },
+  { value: "fr", label: "Français" },
+  { value: "ru", label: "Русский" },
+  { value: "ja", label: "日本語" },
+  { value: "zh-Hans", label: "简体中文" },
+  { value: "he", label: "עברית" },
+]
+
 export const AppearanceSettingsSection: Component = () => {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { themeMode, setThemeMode } = useTheme()
   const {
     preferences,
@@ -251,6 +262,59 @@ export const AppearanceSettingsSection: Component = () => {
               </button>
             )
           })}
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <div>
+            <h3 class="settings-card-title">{t("settings.appearance.language.title")}</h3>
+            <p class="settings-card-subtitle">{t("settings.appearance.language.subtitle")}</p>
+          </div>
+          <span class="settings-scope-badge">{t("settings.scope.device")}</span>
+        </div>
+        <div class="settings-stack">
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-title">{t("settings.appearance.language.select")}</div>
+            </div>
+            <Select<LanguageOption>
+              value={languageOptions.find((opt) => opt.value === locale()) ?? languageOptions[0]}
+              onChange={(value) => {
+                if (!value) return
+                if (value.value === locale()) return
+                updatePreferences({ locale: value.value })
+              }}
+              options={languageOptions}
+              optionValue="value"
+              optionTextValue="label"
+              itemComponent={(itemProps) => (
+                <Select.Item item={itemProps.item} class="selector-option">
+                  <Select.ItemLabel class="selector-option-label">{itemProps.item.rawValue.label}</Select.ItemLabel>
+                </Select.Item>
+              )}
+            >
+              <Select.Trigger class="selector-trigger" aria-label={t("settings.appearance.language.select")}>
+                <div class="flex-1 min-w-0">
+                  <Select.Value<LanguageOption>>
+                    {(state) => (
+                      <span class="selector-trigger-primary selector-trigger-primary--align-left">
+                        {state.selectedOption()?.label}
+                      </span>
+                    )}
+                  </Select.Value>
+                </div>
+                <Select.Icon class="selector-trigger-icon">
+                  <ChevronDown class="w-3 h-3" />
+                </Select.Icon>
+              </Select.Trigger>
+              <Select.Portal>
+                <Select.Content class="selector-popover">
+                  <Select.Listbox class="selector-listbox" />
+                </Select.Content>
+              </Select.Portal>
+            </Select>
+          </div>
         </div>
       </div>
 

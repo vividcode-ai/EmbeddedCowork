@@ -447,6 +447,7 @@
 .panel-list {
   @apply max-h-[400px] overflow-y-auto w-full min-w-0;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .panel-list--fill {

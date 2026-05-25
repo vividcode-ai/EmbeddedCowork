@@ -86,6 +86,11 @@
   color: var(--text-muted);
 }
 
+.settings-screen-nav-footer {
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in oklab, var(--border-base) 82%, transparent);
+}
+
 .settings-screen-nav-list {
   display: flex;
   flex-direction: column;
