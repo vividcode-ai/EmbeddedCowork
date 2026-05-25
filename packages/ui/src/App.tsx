@@ -580,7 +580,12 @@ const App: Component = () => {
                 await (api.installUpdateV2?.() ?? Promise.resolve())
               } else if (isTauriHost()) {
                 const { invoke } = await import("@tauri-apps/api/core")
-                await invoke("install_update")
+                const { check } = await import("@tauri-apps/plugin-updater")
+                const update = await check()
+                if (!update) return
+                const downloadUrl = (update as any).downloadUrl ?? (update as any).download_url ?? ""
+                if (!downloadUrl) return
+                await invoke("install_update", { version: update.version, download_url: downloadUrl })
               }
             },
           },
@@ -662,7 +667,12 @@ const App: Component = () => {
                 await (api.installUpdateV2?.() ?? Promise.resolve())
               } else if (isTauriHost()) {
                 const { invoke } = await import("@tauri-apps/api/core")
-                await invoke("install_update")
+                const { check } = await import("@tauri-apps/plugin-updater")
+                const update = await check()
+                if (!update) return
+                const downloadUrl = (update as any).downloadUrl ?? (update as any).download_url ?? ""
+                if (!downloadUrl) return
+                await invoke("install_update", { version: update.version, download_url: downloadUrl })
               }
             },
           },

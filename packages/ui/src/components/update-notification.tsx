@@ -192,6 +192,27 @@ export function UpdateNotification() {
       await api?.installUpdate()
       setShowInstallDialog(false)
     } else if (host === "tauri") {
+      const { check } = await import("@tauri-apps/plugin-updater")
+      const update = await check()
+      if (!update) {
+        log.warn("No update available when install was requested")
+        setShowInstallDialog(false)
+        return
+      }
+      const downloadUrl = (update as any).downloadUrl ?? (update as any).download_url ?? ""
+      if (!downloadUrl) {
+        log.error("Update object missing download URL", update)
+        setUpdateStatus("error")
+        showToastNotification({
+          title: t("update.checkFailed"),
+          message: "Missing download URL in update response",
+          variant: "error",
+          duration: 8000,
+          position: "bottom-right",
+        })
+        return
+      }
+
       const { listen } = await import("@tauri-apps/api/event")
       const unlisten = await listen<UpdateProgressPayload>("update:progress", (event) => {
         const p = event.payload
@@ -230,7 +251,7 @@ export function UpdateNotification() {
       try {
         const { invoke } = await import("@tauri-apps/api/core")
         setUpdateStatus("downloading")
-        await invoke("install_update")
+        await invoke("install_update", { version: update.version, download_url: downloadUrl })
       } catch (err) {
         log.error("Tauri install update failed:", err)
         setUpdateStatus("error")

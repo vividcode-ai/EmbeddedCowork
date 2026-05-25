@@ -245,13 +245,7 @@ fn find_nsis_installer(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 
 #[cfg(windows)]
 #[tauri::command]
-async fn install_update(app: AppHandle) -> Result<(), String> {
-    let updater = app.updater().map_err(|e| e.to_string())?;
-    let response = updater.check().await.map_err(|e| e.to_string())?;
-    let update = response.ok_or("No update available".to_string())?;
-
-    let version = &update.version;
-    let download_url = update.download_url.clone();
+async fn install_update(app: AppHandle, version: String, download_url: String) -> Result<(), String> {
 
     let client = reqwest::Client::builder()
         .user_agent("EmbeddedCowork-Updater")
