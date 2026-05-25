@@ -557,37 +557,41 @@ const App: Component = () => {
     const pollUpdate = async () => {
       try {
         let result: { updateAvailable: boolean; version?: string }
+        let tauriDlUrl: string | undefined
+
         if (isElectronHost()) {
           const api = (window as any).electronAPI as any
           result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
         } else if (isTauriHost()) {
           const { invoke } = await import("@tauri-apps/api/core")
           const info = await invoke<{ version: string; download_url: string } | null>("check_update")
-          result = { updateAvailable: info != null, version: info?.version ?? undefined }
-          if (!info || toastHandle !== undefined) return
-          // Store the download URL for the toast action closure
-          const tauriDlUrl = info.download_url
-          toastHandle = showToastNotification({
-            title: t("update.polling.available.title"),
-            message: t("update.polling.available.message", { version: result.version ?? "" }),
-            variant: "info",
-            duration: Number.POSITIVE_INFINITY,
-            position: "bottom-right",
-            action: {
-              label: t("update.polling.install"),
-              onClick: async () => {
-                if (isElectronHost()) {
-                  const api = (window as any).electronAPI as any
-                  await (api.installUpdateV2?.() ?? Promise.resolve())
-                } else if (isTauriHost()) {
-                  const { invoke } = await import("@tauri-apps/api/core")
-                  if (!tauriDlUrl) return
-                  await invoke("install_update", { version: result.version, download_url: tauriDlUrl })
-                }
-              },
-            },
-          })
+          if (!info) return
+          result = { updateAvailable: true, version: info.version }
+          tauriDlUrl = info.download_url
         } else return
+
+        if (!result.updateAvailable || toastHandle !== undefined) return
+
+        toastHandle = showToastNotification({
+          title: t("update.polling.available.title"),
+          message: t("update.polling.available.message", { version: result.version ?? "" }),
+          variant: "info",
+          duration: Number.POSITIVE_INFINITY,
+          position: "bottom-right",
+          action: {
+            label: t("update.polling.install"),
+            onClick: async () => {
+              if (isElectronHost()) {
+                const api = (window as any).electronAPI as any
+                await (api.installUpdateV2?.() ?? Promise.resolve())
+              } else if (isTauriHost()) {
+                const { invoke } = await import("@tauri-apps/api/core")
+                if (!tauriDlUrl) return
+                await invoke("install_update", { version: result.version, download_url: tauriDlUrl })
+              }
+            },
+          },
+        })
       } catch (err) {
         log.warn("Update poll failed:", err)
         showToastNotification({
@@ -642,6 +646,8 @@ const App: Component = () => {
     if (!isDesktopHost() || !isUpdaterEnabled()) return
     try {
       let result: { updateAvailable: boolean; version?: string }
+      let tauriDlUrl: string | undefined
+
       if (isElectronHost()) {
         const api = (window as any).electronAPI as any
         result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
@@ -649,8 +655,10 @@ const App: Component = () => {
         const { invoke } = await import("@tauri-apps/api/core")
         const info = await invoke<{ version: string; download_url: string } | null>("check_update")
         result = { updateAvailable: info != null, version: info?.version ?? undefined }
-        // result and info are available, tauriDlUrl is set
-        if (result.updateAvailable) {
+        tauriDlUrl = info?.download_url
+      } else return
+
+      if (result.updateAvailable) {
           showToastNotification({
             title: t("update.polling.available.title"),
             message: t("update.polling.available.message", { version: result.version ?? "" }),
@@ -680,7 +688,6 @@ const App: Component = () => {
             position: "bottom-right",
           })
         }
-      } else return
     } catch (err) {
       showToastNotification({
         title: t("update.checkFailed"),
@@ -827,19 +834,27 @@ const App: Component = () => {
                   <div class="animate-spin rounded-full h-8 w-8 border-2 border-base" />
                 </div>
               }>
-                <FolderSelectionView
-                  onSelectFolder={handleSelectFolder}
-                  isLoading={isSelectingFolder()}
-                  onOpenSidecar={handleOpenSidecarPicker}
+                <div class="flex items-center justify-center h-full w-full">
+                  <FolderSelectionView
+                    onSelectFolder={handleSelectFolder}
+                    isLoading={isSelectingFolder()}
+                    onOpenSidecar={handleOpenSidecarPicker}
                 />
+                </div>
               </Show>
             </Show>
           </Show>
         </Show>
 
         <Show when={showFolderSelection()}>
-          <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-            <div class="w-full h-full relative">
+          <div
+            class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+            onClick={() => {
+              setShowFolderSelection(false)
+              clearLaunchError()
+            }}
+          >
+            <div onClick={(e) => e.stopPropagation()} class="max-h-[90vh] overflow-auto rounded-xl">
               <FolderSelectionView
                 onSelectFolder={handleSelectFolder}
                 isLoading={isSelectingFolder()}
