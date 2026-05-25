@@ -587,7 +587,7 @@ const App: Component = () => {
               } else if (isTauriHost()) {
                 const { invoke } = await import("@tauri-apps/api/core")
                 if (!tauriDlUrl) return
-                await invoke("install_update", { version: result.version, download_url: tauriDlUrl })
+                await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
               }
             },
           },
@@ -674,7 +674,7 @@ const App: Component = () => {
                 } else if (isTauriHost()) {
                   const { invoke } = await import("@tauri-apps/api/core")
                   if (!tauriDlUrl) return
-                  await invoke("install_update", { version: result.version, download_url: tauriDlUrl })
+                  await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
                 }
               },
             },

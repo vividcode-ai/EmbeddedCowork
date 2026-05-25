@@ -245,7 +245,7 @@ export function UpdateNotification() {
       try {
         const { invoke } = await import("@tauri-apps/api/core")
         setUpdateStatus("downloading")
-        await invoke("install_update", { version: state.version, download_url: downloadUrl })
+        await invoke("install_update", { version: state.version, downloadUrl })
       } catch (err) {
         log.error("Tauri install update failed:", err)
         setUpdateStatus("error")
