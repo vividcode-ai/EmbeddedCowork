@@ -4,6 +4,7 @@ import { isElectronHost, isTauriHost, runtimeEnv } from "../lib/runtime-env"
 import { showToastNotification } from "../lib/notifications"
 import {
   updateState,
+  setUpdateState,
   setUpdateStatus,
   setUpdateProgress,
   clearUpdateError,
@@ -159,6 +160,7 @@ export function UpdateNotification() {
       const update = await check()
       if (update) {
         log.info("Tauri update available:", update.version)
+        setUpdateState((prev) => ({ ...prev, version: update.version }))
         setShowInstallDialog(true)
       }
     } catch (err) {
@@ -283,28 +285,38 @@ export function UpdateNotification() {
               <StepIndicator steps={steps} current={stepOrder} />
             </Show>
 
-            <Show when={state.status === "downloading" && progress && progress.total > 0}>
-              <h2 class="text-lg font-semibold text-primary mb-3">
-                {t("update.downloading", { version: state.version ?? "", percent: String(Math.round(progress!.percent)) })}
-              </h2>
-              <div class="w-full h-2 bg-base rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-accent rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${progress!.percent}%` }}
-                />
-              </div>
-              <p class="mt-1 text-xs text-muted text-right">{Math.round(progress!.percent)}%</p>
-              <div class="mt-2 text-xs text-muted flex justify-between">
-                <span>{formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}</span>
-                <Show when={downloadSpeed() > 0}>
-                  <span class="text-accent">
-                    {t("update.downloadSpeed", { speed: formatBytes(downloadSpeed()) })}
-                    {downloadEta() > 0 && downloadEta() < 3600 && (
-                      <> · {t("update.eta", { time: formatDuration(downloadEta()) })}</>
-                    )}
-                  </span>
-                </Show>
-              </div>
+            <Show when={state.status === "downloading"}>
+              <Show when={progress && progress.total > 0} fallback={
+                <div class="flex flex-col items-center py-4">
+                  <span class="inline-block w-8 h-8 border-[3px] border-accent border-t-transparent rounded-full animate-spin mb-3" />
+                  <h2 class="text-lg font-semibold text-primary">
+                    {t("update.downloading", { version: state.version ?? "", percent: "0" })}
+                  </h2>
+                  <p class="mt-2 text-sm text-secondary">{t("update.connecting")}</p>
+                </div>
+              }>
+                <h2 class="text-lg font-semibold text-primary mb-3">
+                  {t("update.downloading", { version: state.version ?? "", percent: String(Math.round(progress!.percent)) })}
+                </h2>
+                <div class="w-full h-2 bg-base rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-accent rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress!.percent}%` }}
+                  />
+                </div>
+                <p class="mt-1 text-xs text-muted text-right">{Math.round(progress!.percent)}%</p>
+                <div class="mt-2 text-xs text-muted flex justify-between">
+                  <span>{formatBytes(progress!.transferred)} / {formatBytes(progress!.total)}</span>
+                  <Show when={downloadSpeed() > 0}>
+                    <span class="text-accent">
+                      {t("update.downloadSpeed", { speed: formatBytes(downloadSpeed()) })}
+                      {downloadEta() > 0 && downloadEta() < 3600 && (
+                        <> · {t("update.eta", { time: formatDuration(downloadEta()) })}</>
+                      )}
+                    </span>
+                  </Show>
+                </div>
+              </Show>
             </Show>
 
             <Show when={state.status === "extracting"}>

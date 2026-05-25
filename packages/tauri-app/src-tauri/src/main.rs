@@ -251,14 +251,12 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
     let update = response.ok_or("No update available".to_string())?;
 
     let version = &update.version;
-    let download_url = format!(
-        "https://github.com/vividcode-ai/EmbeddedCowork/releases/download/v{version}/EmbeddedCowork-Tauri-{version}-windows-x64.zip"
-    );
+    let download_url = update.download_url.clone();
 
     let client = reqwest::Client::builder()
         .user_agent("EmbeddedCowork-Updater")
         .build().map_err(|e| e.to_string())?;
-    let resp = client.get(&download_url).send().await.map_err(|e| e.to_string())?;
+    let resp = client.get(download_url).send().await.map_err(|e| e.to_string())?;
     let total = resp.content_length().unwrap_or(0);
 
     app.emit("update:progress", serde_json::json!({

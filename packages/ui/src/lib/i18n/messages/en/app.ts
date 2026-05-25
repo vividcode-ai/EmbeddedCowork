@@ -48,6 +48,7 @@ export const appMessages = {
   "update.step.prepare": "Prepare",
   "update.step.install": "Install",
   "update.step.complete": "Complete",
+  "update.connecting": "Connecting to update server...",
   "update.preparingExit": "Update ready ✅\nInstalling update...\nThe app will close and restart automatically.",
   "update.ready.title": "Update ready",
   "update.ready.message": "EmbeddedCowork {version} has been downloaded.",

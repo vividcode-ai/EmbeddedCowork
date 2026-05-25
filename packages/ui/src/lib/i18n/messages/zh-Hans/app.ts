@@ -47,6 +47,7 @@ export const appMessages = {
   "update.step.prepare": "准备安装",
   "update.step.install": "正在安装",
   "update.step.complete": "升级完成",
+  "update.connecting": "正在连接更新服务器...",
   "update.preparingExit": "升级准备已完成 ✅\n正在安装更新...\n应用将自动关闭，安装完成后自动重启",
   "update.ready.title": "更新就绪",
   "update.ready.message": "EmbeddedCowork {version} 已下载完成。",
