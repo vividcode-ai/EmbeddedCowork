@@ -585,7 +585,13 @@ const App: Component = () => {
                 const api = (window as any).electronAPI as any
                 await (api.installUpdateV2?.() ?? Promise.resolve())
               } else if (isTauriHost()) {
-                const { invoke } = await import("@tauri-apps/api/core")
+                let invoke: typeof import("@tauri-apps/api/core")["invoke"]
+                try {
+                  invoke = (await import("@tauri-apps/api/core")).invoke
+                } catch {
+                  log.error("Failed to import @tauri-apps/api/core")
+                  return
+                }
                 if (!tauriDlUrl) return
                 try {
                   await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
@@ -683,7 +689,13 @@ const App: Component = () => {
                   const api = (window as any).electronAPI as any
                   await (api.installUpdateV2?.() ?? Promise.resolve())
                 } else if (isTauriHost()) {
-                  const { invoke } = await import("@tauri-apps/api/core")
+                  let invoke: typeof import("@tauri-apps/api/core")["invoke"]
+                  try {
+                    invoke = (await import("@tauri-apps/api/core")).invoke
+                  } catch {
+                    log.error("Failed to import @tauri-apps/api/core")
+                    return
+                  }
                   if (!tauriDlUrl) return
                   try {
                     await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })

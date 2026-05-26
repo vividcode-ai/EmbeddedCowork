@@ -10,6 +10,8 @@ import {
   clearUpdateError,
 } from "../stores/releases"
 import { getLogger } from "../lib/logger"
+import { invoke } from "@tauri-apps/api/core"
+import { listen } from "@tauri-apps/api/event"
 
 const log = getLogger("actions")
 
@@ -156,7 +158,6 @@ export function UpdateNotification() {
 
   async function initTauriUpdater() {
     try {
-      const { invoke } = await import("@tauri-apps/api/core")
       const info = await invoke<{ version: string; downloadUrl: string } | null>("check_update")
       if (info) {
         log.info("Tauri update available:", info.version)
@@ -207,7 +208,6 @@ export function UpdateNotification() {
         return
       }
 
-      const { listen } = await import("@tauri-apps/api/event")
       const unlisten = await listen<UpdateProgressPayload>("update:progress", (event) => {
         const p = event.payload
         if (p.status === "downloading") {
@@ -243,7 +243,6 @@ export function UpdateNotification() {
         }
       })
       try {
-        const { invoke } = await import("@tauri-apps/api/core")
         setUpdateStatus("downloading")
         await invoke("install_update", { version: state.version, downloadUrl })
       } catch (err) {
