@@ -190,7 +190,7 @@ export function UpdateNotification() {
 
     if (host === "electron") {
       const api = (window as any).electronAPI as ElectronAPI | undefined
-      await api?.installUpdate()
+      await api?.installUpdateV2()
       setShowInstallDialog(false)
     } else if (host === "tauri") {
       const state = updateState()
@@ -394,5 +394,6 @@ interface ElectronAPI {
   onRollbackNeeded: (cb: (data: { oldVersion: string; newVersion: string }) => void) => () => void
   checkForUpdates: () => Promise<void>
   installUpdate: () => Promise<void>
+  installUpdateV2: () => Promise<void>
   rollbackUpdate: () => Promise<void>
 }
