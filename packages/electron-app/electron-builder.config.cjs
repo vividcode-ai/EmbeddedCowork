@@ -89,7 +89,6 @@ const config = {
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
-    closeAppWhenInstalling: true,
   },
   linux: {
     target: [
