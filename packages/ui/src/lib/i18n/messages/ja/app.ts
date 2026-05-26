@@ -39,4 +39,6 @@ export const appMessages = {
   "theme.mode.dark": "ダーク",
   "theme.toggle.title": "テーマ：{mode}",
   "theme.toggle.ariaLabel": "テーマ：{mode}",
+
+  "update.ready.action": "バックグラウンドでサイレントアップグレード",
 } as const

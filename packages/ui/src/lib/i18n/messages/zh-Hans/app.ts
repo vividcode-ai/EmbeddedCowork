@@ -51,7 +51,7 @@ export const appMessages = {
   "update.preparingExit": "升级准备已完成 ✅\n正在安装更新...\n应用将自动关闭，安装完成后自动重启",
   "update.ready.title": "更新就绪",
   "update.ready.message": "EmbeddedCowork {version} 已下载完成。",
-  "update.ready.action": "立即重启安装",
+  "update.ready.action": "后台静默升级",
   "update.ready.dismiss": "稍后再说",
   "update.error": "更新失败：{error}",
   "update.noUpdate": "已是最新版本。",

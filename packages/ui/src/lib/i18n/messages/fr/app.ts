@@ -38,4 +38,6 @@ export const appMessages = {
   "theme.mode.dark": "Sombre",
   "theme.toggle.title": "Thème : {mode}",
   "theme.toggle.ariaLabel": "Thème : {mode}",
+
+  "update.ready.action": "Mise à jour silencieuse en arrière-plan",
 } as const

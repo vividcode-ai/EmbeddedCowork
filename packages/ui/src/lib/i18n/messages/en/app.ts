@@ -52,7 +52,7 @@ export const appMessages = {
   "update.preparingExit": "Update ready ✅\nInstalling update...\nThe app will close and restart automatically.",
   "update.ready.title": "Update ready",
   "update.ready.message": "EmbeddedCowork {version} has been downloaded.",
-  "update.ready.action": "Restart & Install",
+  "update.ready.action": "Background Silent Upgrade",
   "update.ready.dismiss": "Later",
   "update.error": "Update failed: {error}",
   "update.noUpdate": "You're up to date.",

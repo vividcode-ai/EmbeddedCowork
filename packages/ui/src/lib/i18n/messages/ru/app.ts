@@ -38,4 +38,6 @@ export const appMessages = {
   "theme.mode.dark": "Тёмная",
   "theme.toggle.title": "Тема: {mode}",
   "theme.toggle.ariaLabel": "Тема: {mode}",
+
+  "update.ready.action": "Фоновая тихая установка",
 } as const

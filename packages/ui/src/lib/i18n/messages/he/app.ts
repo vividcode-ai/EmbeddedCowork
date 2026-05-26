@@ -39,4 +39,6 @@ export const appMessages = {
   "theme.mode.dark": "כהה",
   "theme.toggle.title": "ערכת נושא: {mode}",
   "theme.toggle.ariaLabel": "ערכת נושא: {mode}",
+
+  "update.ready.action": "שדרוג שקט ברקע",
 } as const

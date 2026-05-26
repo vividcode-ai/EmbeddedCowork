@@ -208,10 +208,12 @@ export function UpdateNotification() {
         return
       }
 
+      // hide dialog for silent background upgrade
+      setShowInstallDialog(false)
+
       const unlisten = await listen<UpdateProgressPayload>("update:progress", (event) => {
         const p = event.payload
         if (p.status === "downloading") {
-          setUpdateStatus("downloading")
           setUpdateProgress({
             percent: p.percent ?? 0,
             bytesPerSecond: 0,
@@ -235,19 +237,17 @@ export function UpdateNotification() {
           lastChunkTime = now
           lastChunkDownloaded = p.downloaded ?? 0
         } else if (p.status === "extracting") {
-          setUpdateStatus("extracting")
+          // no-op
         } else if (p.status === "installing") {
-          setUpdateStatus("installing")
+          // no-op
         } else if (p.status === "preparing-exit") {
-          setUpdateStatus("preparing-exit")
+          // no-op
         }
       })
       try {
-        setUpdateStatus("downloading")
         await invoke("install_update", { version: state.version, downloadUrl })
       } catch (err) {
         log.error("Tauri install update failed:", err)
-        setUpdateStatus("error")
         showToastNotification({
           title: t("update.checkFailed"),
           message: String(err),
@@ -291,7 +291,7 @@ export function UpdateNotification() {
   return (
     <>
       <Show when={showInstallDialog() || state.status === "downloading" || state.status === "extracting" || state.status === "installing" || state.status === "preparing-exit" || state.status === "error"}>
-        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black">
           <div class="w-full max-w-sm rounded-lg border border-base bg-surface-primary p-6 shadow-2xl">
 
             {/* Step indicator */}
