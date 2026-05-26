@@ -177,6 +177,7 @@ fn wake_lock_stop(state: tauri::State<AppState>) -> Result<(), String> {
 // ── Update Commands ──
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct UpdateInfo {
     version: String,
     download_url: String,
@@ -249,7 +250,7 @@ fn find_nsis_installer(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 }
 
 #[cfg(windows)]
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 async fn install_update(app: AppHandle, version: String, download_url: String) -> Result<(), String> {
 
     let client = reqwest::Client::builder()

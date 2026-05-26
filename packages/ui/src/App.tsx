@@ -564,10 +564,10 @@ const App: Component = () => {
           result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
         } else if (isTauriHost()) {
           const { invoke } = await import("@tauri-apps/api/core")
-          const info = await invoke<{ version: string; download_url: string } | null>("check_update")
+          const info = await invoke<{ version: string; downloadUrl: string } | null>("check_update")
           if (!info) return
           result = { updateAvailable: true, version: info.version }
-          tauriDlUrl = info.download_url
+          tauriDlUrl = info.downloadUrl
         } else return
 
         if (!result.updateAvailable || toastHandle !== undefined) return
@@ -587,7 +587,18 @@ const App: Component = () => {
               } else if (isTauriHost()) {
                 const { invoke } = await import("@tauri-apps/api/core")
                 if (!tauriDlUrl) return
-                await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
+                try {
+                  await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
+                } catch (err) {
+                  log.error("Tauri install update failed:", err)
+                  showToastNotification({
+                    title: t("update.checkFailed"),
+                    message: String(err),
+                    variant: "error",
+                    duration: 8000,
+                    position: "bottom-right",
+                  })
+                }
               }
             },
           },
@@ -653,9 +664,9 @@ const App: Component = () => {
         result = await (api.checkUpdate?.() ?? Promise.resolve({ updateAvailable: false }))
       } else if (isTauriHost()) {
         const { invoke } = await import("@tauri-apps/api/core")
-        const info = await invoke<{ version: string; download_url: string } | null>("check_update")
+        const info = await invoke<{ version: string; downloadUrl: string } | null>("check_update")
         result = { updateAvailable: info != null, version: info?.version ?? undefined }
-        tauriDlUrl = info?.download_url
+        tauriDlUrl = info?.downloadUrl
       } else return
 
       if (result.updateAvailable) {
@@ -674,7 +685,18 @@ const App: Component = () => {
                 } else if (isTauriHost()) {
                   const { invoke } = await import("@tauri-apps/api/core")
                   if (!tauriDlUrl) return
-                  await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
+                  try {
+                    await invoke("install_update", { version: result.version, downloadUrl: tauriDlUrl })
+                  } catch (err) {
+                    log.error("Tauri install update failed:", err)
+                    showToastNotification({
+                      title: t("update.checkFailed"),
+                      message: String(err),
+                      variant: "error",
+                      duration: 8000,
+                      position: "bottom-right",
+                    })
+                  }
                 }
               },
             },

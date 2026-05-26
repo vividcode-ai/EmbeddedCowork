@@ -157,10 +157,10 @@ export function UpdateNotification() {
   async function initTauriUpdater() {
     try {
       const { invoke } = await import("@tauri-apps/api/core")
-      const info = await invoke<{ version: string; download_url: string } | null>("check_update")
+      const info = await invoke<{ version: string; downloadUrl: string } | null>("check_update")
       if (info) {
         log.info("Tauri update available:", info.version)
-        setUpdateState((prev) => ({ ...prev, version: info.version, downloadUrl: info.download_url }))
+        setUpdateState((prev) => ({ ...prev, version: info.version, downloadUrl: info.downloadUrl }))
         setShowInstallDialog(true)
       }
     } catch (err) {
