@@ -245,6 +245,8 @@ function MessageContentItem(props: MessageContentItemProps) {
     const current = record()
     if (!current) return false
     if (current.role !== "user") return false
+    // Messages actively being sent are not queued
+    if (current.status === "sending") return false
     const lastAssistant = props.lastAssistantIndex()
     return lastAssistant === -1 || props.messageIndex > lastAssistant
   })

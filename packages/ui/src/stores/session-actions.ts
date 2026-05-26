@@ -105,7 +105,6 @@ async function sendMessage(
       id: textPartId,
       type: "text" as const,
       text: resolvedPrompt,
-      synthetic: true,
       renderCache: undefined,
     },
   ]
