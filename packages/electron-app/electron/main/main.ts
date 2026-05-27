@@ -654,6 +654,10 @@ app.whenReady().then(() => {
 app.on("before-quit", async (event) => {
   if (appAutoUpdater.isUpdating) {
     await cliManager.forceStop().catch(() => {})
+    // Exit immediately (bypass window close sequence) so the NSIS
+    // installer (already spawned by quitAndInstall) does not detect
+    // the old app still running and block the update.
+    app.exit(0)
     return
   }
   event.preventDefault()
