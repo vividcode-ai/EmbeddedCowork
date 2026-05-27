@@ -16,6 +16,8 @@
     "dev": "npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
     "dev:electron": "npm run dev --workspace @vividcodeAI/embeddedcowork-electron-app",
     "dev:tauri": "npm run dev --workspace @embeddedcowork/tauri-app",
+    "rust-dev": "node scripts/rust-dev.mjs",
+    "rust-dev:tauri": "cargo run --manifest-path packages/server-rust/Cargo.toml -- --host 127.0.0.1 --http-port 18081 --http --password embeddedcowork-dev --log-level info --generate-token --unrestricted-root",
     "build": "npm run build --workspace @vividcodeAI/embeddedcowork-electron-app",
     "build:tauri": "npm run build --workspace @embeddedcowork/tauri-app",
     "build:ui": "npm run build --workspace @embeddedcowork/ui",

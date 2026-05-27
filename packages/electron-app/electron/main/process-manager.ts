@@ -147,8 +147,8 @@ export class CliProcessManager extends EventEmitter {
 
     const listeningMode = this.resolveListeningMode()
     const host = resolveHostForMode(listeningMode)
-    const args = this.buildCliArgs(options, host)
     const cliEntry = this.resolveCliEntry(options)
+    const args = this.isRustMode() ? this.buildRustCliArgs(options, host) : this.buildCliArgs(options, host)
 
     let child: ManagedChild
 
@@ -653,6 +653,11 @@ export class CliProcessManager extends EventEmitter {
   }
 
   private resolveCliEntry(options: StartOptions): CliEntryResolution {
+    if (this.isRustMode()) {
+      const entry = this.resolveRustServerEntry()
+      return { entry, runner: "standalone" }
+    }
+
     if (options.dev) {
       const tsxPath = this.resolveTsx()
       if (!tsxPath) {
@@ -717,6 +722,52 @@ export class CliProcessManager extends EventEmitter {
     }
 
     throw new Error(`Unable to locate standalone EmbeddedCowork server executable (${executableName}). Run npm run build:standalone --workspace @vividcodeai/embeddedcowork.`)
+  }
+
+  private isRustMode(): boolean {
+    return process.env.EMBEDDEDCOWORK_RUST_SERVER === '1'
+  }
+
+  private resolveRustServerEntry(): string {
+    // Check explicit path override
+    const explicit = process.env.EMBEDDEDCOWORK_RUST_SERVER_PATH
+    if (explicit && existsSync(explicit)) {
+      return explicit
+    }
+
+    const executableName = process.platform === "win32" ? "embeddedcowork-server.exe" : "embeddedcowork-server"
+    const candidates = [
+      path.resolve(process.cwd(), "..", "server-rust", "target", "debug", executableName),
+      path.resolve(process.cwd(), "..", "server-rust", "target", "release", executableName),
+    ]
+
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate
+      }
+    }
+
+    throw new Error(`Rust server binary not found. Run 'cargo build --manifest-path packages/server-rust/Cargo.toml' first.`)
+  }
+
+  private buildRustCliArgs(options: StartOptions, host: string): string[] {
+    // Rust server doesn't use "serve" subcommand
+    const args = ["--host", host, "--generate-token", "--auth-cookie-name", this.authCookieName, "--unrestricted-root"]
+
+    if (options.dev) {
+      args.push("--http", "--http-port", "0")
+    } else {
+      args.push("--http")
+    }
+
+    if (options.dev) {
+      const devServer = process.env.VITE_DEV_SERVER_URL || process.env.ELECTRON_RENDERER_URL || "http://localhost:3000"
+      const rawLogLevel = (process.env.CLI_LOG_LEVEL ?? "info").trim()
+      const logLevel = rawLogLevel.length > 0 ? rawLogLevel.toLowerCase() : "info"
+      args.push("--ui-dev-server-url", devServer, "--log-level", logLevel)
+    }
+
+    return args
   }
 
   private shouldUsePackagedShellSupervisor(options: StartOptions, cliEntry: CliEntryResolution): boolean {
