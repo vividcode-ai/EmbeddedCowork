@@ -126,6 +126,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    hmr: {
+      clientPort: 3000,
+      host: "localhost",
+    },
   },
   build: {
     outDir: "dist",

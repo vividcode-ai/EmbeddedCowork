@@ -1,0 +1,102 @@
+[package]
+name = "embeddedcowork-server"
+version = "0.0.53"
+edition = "2021"
+description = "EmbeddedCowork Server - Rust Implementation"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+
+# HTTP
+axum = { version = "0.7", features = ["macros", "ws"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "fs", "set-header", "trace"] }
+http = "1"
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+toml = "0.8"
+
+# CLI args
+clap = { version = "4", features = ["derive", "env"] }
+
+# Logging / Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+# TLS / Crypto
+rcgen = "0.12"
+rustls = "0.23"
+rustls-pemfile = "2"
+x509-parser = "0.16"
+ring = "0.17"
+base64 = "0.22"
+sha2 = "0.10"
+hex = "0.4"
+uuid = { version = "1", features = ["v4"] }
+rand = "0.8"
+hmac = "0.12"
+scrypt = { version = "0.11", features = ["simple"] }
+password-hash = "0.5"
+constant_time_eq = "0.3"
+
+# TLS
+tokio-rustls = "0.26"
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "stream", "blocking", "multipart"] }
+
+# WebSocket
+tokio-tungstenite = "0.24"
+
+# SSE parsing
+eventsource-stream = "0.2"
+
+# File watching / archiving
+# tar, zip, flate2 removed (need cmake, unused currently)
+
+# Glob / File system
+glob = "0.3"
+
+# Fuzzy search
+fuzzy-matcher = "0.3"
+
+# Async trait support
+async-trait = "0.1"
+
+# Validation
+validator = { version = "0.17", features = ["derive"] }
+
+# Time / Date
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# URL
+url = "2"
+percent-encoding = "2"
+
+# ZIP extraction (for remote UI updates)
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
+# Time (used by rcgen for certificate validity)
+time = "0.3"
+
+# Process management (uses tokio built-in signals)
+
+# Async streams
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures = "0.3"
+
+# Platform directories
+dirs = "5"
