@@ -1,6 +1,6 @@
 import { BrowserWindow, Notification, app, dialog, ipcMain, powerSaveBlocker, type OpenDialogOptions } from "electron"
 import fs from "fs"
-import { spawn, spawnSync } from "child_process"
+import { spawnSync } from "child_process"
 import { requestMicrophoneAccess } from "./permissions"
 import type { CliProcessManager, CliStatus } from "./process-manager"
 import type { AppAutoUpdater } from "./auto-updater"
@@ -161,58 +161,22 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
   })
 
   ipcMain.handle("install-update", async () => {
-    // 1. Force-stop the CLI server process tree before quitting
+    // 1. Force-stop the CLI server process tree
     await cliManager.forceStop().catch(() => {})
 
-    // 2. Get the downloaded installer path from electron-updater
-    const installerPath = appAutoUpdater?.getInstallerPath()
-    if (!installerPath) {
-      console.error("[install-update] no installer path available")
-      return { ok: false as const, reason: "no installer path" }
-    }
-
-    // 3. On Windows: spawn installer directly (bypassing quitAndInstall
-    //    entirely) to avoid the NSIS race condition where the installer
-    //    detects the old app still running.
-    //
-    //    The root cause has two parts:
-    //    (a) quitAndInstall → app.quit() → before-quit handler is async,
-    //        which yields to the event loop; NSIS detects us before
-    //        app.exit(0) runs.
-    //    (b) Even after app.exit(0), Electron child processes (renderer,
-    //        GPU, utility) share the EmbeddedCowork.exe name and survive
-    //        as orphans — NSIS still detects them.
+    // 2. On Windows, also kill CLI server by image name (belt-and-suspenders)
     if (process.platform === "win32") {
-      // Kill CLI server binary by image name (belt-and-suspenders)
       spawnSync("taskkill", ["/F", "/IM", "embeddedcowork-server.exe"], {
         encoding: "utf8",
         timeout: 5000,
       })
-
-      // Spawn the downloaded NSIS installer detached so it survives
-      // our exit (including taskkill /F /IM below).
-      spawn(installerPath, ["--updated"], {
-        detached: true,
-        stdio: "ignore",
-      }).unref()
-
-      // Brief pause to let the installer process initialize
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      // Kill ALL EmbeddedCowork.exe processes (main + orphan children).
-      // This kills the current process — the detached installer survives.
-      spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
-        encoding: "utf8",
-        timeout: 5000,
-      })
-
-      // Fallback: if we're somehow still alive, exit cleanly
-      app.exit(0)
-      return { ok: true as const }
     }
 
-    // Non-Windows: use standard quitAndInstall (no NSIS race condition)
-    appAutoUpdater!.installNow()
+    // 3. Use quitAndInstall(). This spawns the installer and calls app.quit().
+    //    The before-quit handler (synchronous in the isUpdating branch) then
+    //    kills orphan child processes and calls app.exit(0) before the NSIS
+    //    installer can detect the old app still running.
+    appAutoUpdater?.installNow()
     return { ok: true as const }
   })
 

@@ -657,10 +657,21 @@ app.on("before-quit", async (event) => {
     // Synchronous kill — no await, so Electron cannot continue the
     // quit sequence before we exit. The NSIS installer must not
     // detect any EmbeddedCowork.exe process running.
-    spawnSync("taskkill", ["/F", "/IM", "embeddedcowork-server.exe"], {
-      encoding: "utf8",
-      timeout: 3000,
-    })
+    if (process.platform === "win32") {
+      // Kill CLI server binary by image name
+      spawnSync("taskkill", ["/F", "/IM", "embeddedcowork-server.exe"], {
+        encoding: "utf8",
+        timeout: 3000,
+      })
+      // Kill all OTHER EmbeddedCowork.exe processes (orphan children
+      // like renderer, GPU, utility) but NOT the current process.
+      // NSIS installer scans by executable name, so orphans with the
+      // same name would be detected as "still running".
+      spawnSync("taskkill", ["/F", "/FI", `PID ne ${process.pid}`, "/IM", "EmbeddedCowork.exe"], {
+        encoding: "utf8",
+        timeout: 3000,
+      })
+    }
     app.exit(0)
     return
   }
