@@ -28,6 +28,8 @@
     "prepare-ui": "node ./scripts/copy-ui-dist.mjs",
     "prepare-config": "node ./scripts/copy-opencode-config.mjs",
     "dev": "cross-env EMBEDDEDCOWORK_DEV=1 EMBEDDEDCOWORK_SERVER_PASSWORD=embeddedcowork-dev CLI_UI_DEV_SERVER=http://localhost:3000 CLI_HTTPS=false CLI_HTTP=true tsx src/index.ts",
+    "rust-dev": "node ../../scripts/rust-dev.mjs",
+    "rust-dev:tauri": "cargo run --manifest-path ../server-rust/Cargo.toml -- --host 127.0.0.1 --http-port 18081 --http --password embeddedcowork-dev --log-level info --generate-token --unrestricted-root",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

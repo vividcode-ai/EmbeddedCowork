@@ -1,0 +1,10 @@
+pub mod git_mutations;
+pub mod git_status;
+pub mod git_worktrees;
+pub mod instance_events;
+pub mod manager;
+pub mod opencode_auth;
+pub mod runtime;
+pub mod spawn;
+pub mod worktree_directory;
+pub mod worktree_map;
