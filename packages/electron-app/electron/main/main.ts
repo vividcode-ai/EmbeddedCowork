@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, nativeImage, session, shell } from "electron"
 import http from "node:http"
 import https from "node:https"
+import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { fileURLToPath } from "url"
@@ -653,10 +654,13 @@ app.whenReady().then(() => {
 
 app.on("before-quit", async (event) => {
   if (appAutoUpdater.isUpdating) {
-    await cliManager.forceStop().catch(() => {})
-    // Exit immediately (bypass window close sequence) so the NSIS
-    // installer (already spawned by quitAndInstall) does not detect
-    // the old app still running and block the update.
+    // Synchronous kill — no await, so Electron cannot continue the
+    // quit sequence before we exit. The NSIS installer must not
+    // detect any EmbeddedCowork.exe process running.
+    spawnSync("taskkill", ["/F", "/IM", "embeddedcowork-server.exe"], {
+      encoding: "utf8",
+      timeout: 3000,
+    })
     app.exit(0)
     return
   }
