@@ -12,7 +12,7 @@ out/
 
 # Local runtime artifacts
 .codenomad/
-.embedcowork/
+.embeddedcowork/
 .claude/
 .sisyphus
 .tmp/
