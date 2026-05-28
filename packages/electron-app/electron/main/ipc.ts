@@ -171,7 +171,7 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
         timeout: 5000,
       })
 
-      // 3. Get installer path (fixed to use downloadedFile, not deprecated path)
+      // 3. Get installer path (must use downloadedFile, not the deprecated path)
       const installerPath = appAutoUpdater?.getInstallerPath()
       if (!installerPath) {
         console.error("[install-update] no installer path, falling back to quitAndInstall")
@@ -186,34 +186,38 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       }
 
       // 4. Write launcher batch file to temp directory.
-      //    The launcher waits ~7 seconds (ping delay) then runs the installer.
-      //    This ensures ALL EmbeddedCowork.exe processes are dead before the
-      //    NSIS installer checks for running instances.
+      //    The launcher waits ~14 seconds (ping -n 15), then runs the installer.
+      //    This gives the OS time to fully terminate all processes before
+      //    the NSIS installer checks for running instances.
       const tmpDir = app.getPath("temp")
       const launcherPath = `${tmpDir}\\ec-update-${Date.now()}.cmd`
       const batContent =
-        `@echo off\r\nping 127.0.0.1 -n 8 > nul\r\n"${installerPath}" --updated\r\ndel "%~f0"\r\n`
+        `@echo off\r\nping 127.0.0.1 -n 15 > nul\r\n"${installerPath}" --updated\r\ndel "%~f0"\r\n`
 
       try {
         fs.writeFileSync(launcherPath, batContent, "utf8")
 
-        // 5. Spawn launcher detached (survives our exit)
+        // 5. Spawn launcher DETACHED — survives our exit
         spawn(launcherPath, [], {
           detached: true,
           stdio: "ignore",
           windowsHide: true,
         }).unref()
 
-        // 6. Kill ALL EmbeddedCowork.exe processes (including ourselves).
-        //    The launcher (cmd.exe) survives and runs the installer after
-        //    ~7 seconds, by which time all our processes are fully terminated.
-        spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
-          encoding: "utf8",
-          timeout: 5000,
-        })
+        // 6. Spawn taskkill DETACHED — survives our exit and continues
+        //    killing orphan processes even after we're terminated by it.
+        //    CRITICAL: if taskkill is not detached, Windows Job Object may
+        //    terminate it when our process exits, leaving orphans alive.
+        spawn("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
+          detached: true,
+          stdio: "ignore",
+          windowsHide: true,
+        }).unref()
 
-        // Fallback: if we're somehow still alive
-        app.exit(0)
+        // 7. Exit immediately. The detached taskkill handles process cleanup.
+        //    The detached launcher runs the installer ~14s later when all
+        //    EmbeddedCowork.exe processes are guaranteed to be dead.
+        process.exit(0)
       } catch (err) {
         console.error("[install-update] launcher failed:", err)
         appAutoUpdater?.installNow()
