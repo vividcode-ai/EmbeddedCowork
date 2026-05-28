@@ -186,13 +186,21 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       }
 
       // 4. Write launcher batch file to temp directory.
-      //    The launcher waits ~14 seconds (ping -n 15), then runs the installer.
-      //    This gives the OS time to fully terminate all processes before
-      //    the NSIS installer checks for running instances.
+      //    The launcher batch immediately kills ALL EmbeddedCowork.exe
+      //    processes (including orphan children) via taskkill,
+      //    waits ~9 seconds for OS cleanup, then runs the installer.
+      //
+      //    The batch is spawned DETACHED — it creates a NEW process
+      //    group OUTSIDE Electron's Job Object. This is CRITICAL:
+      //    if taskkill were spawned from our process (non-detached),
+      //    Windows Job Object would terminate it when our process
+      //    exits, leaving orphan children alive for the installer to
+      //    detect. With detached, the batch and its children survive
+      //    our exit and complete the cleanup.
       const tmpDir = app.getPath("temp")
       const launcherPath = `${tmpDir}\\ec-update-${Date.now()}.cmd`
       const batContent =
-        `@echo off\r\nping 127.0.0.1 -n 15 > nul\r\n"${installerPath}" --updated\r\ndel "%~f0"\r\n`
+        `@echo off\r\ntaskkill /f /im EmbeddedCowork.exe > nul 2>&1\r\nping 127.0.0.1 -n 10 > nul\r\n"${installerPath}" --updated\r\ndel "%~f0"\r\n`
 
       try {
         fs.writeFileSync(launcherPath, batContent, "utf8")
@@ -204,19 +212,10 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
           windowsHide: true,
         }).unref()
 
-        // 6. Spawn taskkill DETACHED — survives our exit and continues
-        //    killing orphan processes even after we're terminated by it.
-        //    CRITICAL: if taskkill is not detached, Windows Job Object may
-        //    terminate it when our process exits, leaving orphans alive.
-        spawn("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
-          detached: true,
-          stdio: "ignore",
-          windowsHide: true,
-        }).unref()
-
-        // 7. Exit immediately. The detached taskkill handles process cleanup.
-        //    The detached launcher runs the installer ~14s later when all
-        //    EmbeddedCowork.exe processes are guaranteed to be dead.
+        // 6. Exit immediately. The detached batch handles everything:
+        //    - Kills all EmbeddedCowork.exe processes (including orphans)
+        //    - Waits for OS cleanup (~9 seconds)
+        //    - Runs the installer with zero interference
         process.exit(0)
       } catch (err) {
         console.error("[install-update] launcher failed:", err)
