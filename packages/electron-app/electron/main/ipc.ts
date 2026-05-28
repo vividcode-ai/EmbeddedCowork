@@ -1,6 +1,6 @@
 import { BrowserWindow, Notification, app, dialog, ipcMain, powerSaveBlocker, type OpenDialogOptions } from "electron"
 import fs from "fs"
-import { spawnSync } from "child_process"
+import { spawn, spawnSync } from "child_process"
 import { requestMicrophoneAccess } from "./permissions"
 import type { CliProcessManager, CliStatus } from "./process-manager"
 import type { AppAutoUpdater } from "./auto-updater"
@@ -164,18 +164,65 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
     // 1. Force-stop the CLI server process tree
     await cliManager.forceStop().catch(() => {})
 
-    // 2. On Windows, also kill CLI server by image name (belt-and-suspenders)
     if (process.platform === "win32") {
+      // 2. Kill CLI server by image name (belt-and-suspenders)
       spawnSync("taskkill", ["/F", "/IM", "embeddedcowork-server.exe"], {
         encoding: "utf8",
         timeout: 5000,
       })
+
+      // 3. Get installer path (fixed to use downloadedFile, not deprecated path)
+      const installerPath = appAutoUpdater?.getInstallerPath()
+      if (!installerPath) {
+        console.error("[install-update] no installer path, falling back to quitAndInstall")
+        appAutoUpdater?.installNow()
+        return { ok: true as const }
+      }
+
+      if (!fs.existsSync(installerPath)) {
+        console.error("[install-update] installer not found at", installerPath)
+        appAutoUpdater?.installNow()
+        return { ok: true as const }
+      }
+
+      // 4. Write launcher batch file to temp directory.
+      //    The launcher waits ~7 seconds (ping delay) then runs the installer.
+      //    This ensures ALL EmbeddedCowork.exe processes are dead before the
+      //    NSIS installer checks for running instances.
+      const tmpDir = app.getPath("temp")
+      const launcherPath = `${tmpDir}\\ec-update-${Date.now()}.cmd`
+      const batContent =
+        `@echo off\r\nping 127.0.0.1 -n 8 > nul\r\n"${installerPath}" --updated\r\ndel "%~f0"\r\n`
+
+      try {
+        fs.writeFileSync(launcherPath, batContent, "utf8")
+
+        // 5. Spawn launcher detached (survives our exit)
+        spawn(launcherPath, [], {
+          detached: true,
+          stdio: "ignore",
+          windowsHide: true,
+        }).unref()
+
+        // 6. Kill ALL EmbeddedCowork.exe processes (including ourselves).
+        //    The launcher (cmd.exe) survives and runs the installer after
+        //    ~7 seconds, by which time all our processes are fully terminated.
+        spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
+          encoding: "utf8",
+          timeout: 5000,
+        })
+
+        // Fallback: if we're somehow still alive
+        app.exit(0)
+      } catch (err) {
+        console.error("[install-update] launcher failed:", err)
+        appAutoUpdater?.installNow()
+      }
+
+      return { ok: true as const }
     }
 
-    // 3. Use quitAndInstall(). This spawns the installer and calls app.quit().
-    //    The before-quit handler (synchronous in the isUpdating branch) then
-    //    kills orphan child processes and calls app.exit(0) before the NSIS
-    //    installer can detect the old app still running.
+    // Non-Windows: use standard quitAndInstall
     appAutoUpdater?.installNow()
     return { ok: true as const }
   })

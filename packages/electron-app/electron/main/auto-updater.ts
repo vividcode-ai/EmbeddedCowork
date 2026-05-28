@@ -73,7 +73,7 @@ export class AppAutoUpdater {
       this.setProgressBar(1) // 100% green
       // Clear progress bar after 2 seconds
       setTimeout(() => this.setProgressBar(-1), 2000)
-      this.downloadedInstallerPath = info.path
+      this.downloadedInstallerPath = info.downloadedFile
       this.rollbackManager.markInstalling(info.version)
       this.send("update:ready", {
         version: info.version,
