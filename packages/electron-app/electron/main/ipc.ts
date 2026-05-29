@@ -224,11 +224,17 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
           timeout: 5000,
         })
 
-        // 7. Exit immediately. The detached batch handles the rest:
+        // 7. Exit immediately using app.exit() (NOT process.exit()).
+        //    app.exit() calls TerminateProcess directly without running
+        //    Node.js exit hooks, avoiding any event-loop processing that
+        //    could allow orphaned child processes to live long enough for
+        //    the NSIS installer to detect them.
+        //
+        //    The detached batch handles the rest:
         //    - Kills any remaining EmbeddedCowork.exe processes (should be none)
         //    - Waits for OS cleanup (~9 seconds)
         //    - Runs the installer with zero interference
-        process.exit(0)
+        app.exit(0)
       } catch (err) {
         console.error("[install-update] launcher failed:", err)
         appAutoUpdater?.installNow()
