@@ -212,8 +212,20 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
           windowsHide: true,
         }).unref()
 
-        // 6. Exit immediately. The detached batch handles everything:
-        //    - Kills all EmbeddedCowork.exe processes (including orphans)
+        // 6. Kill all EmbeddedCowork.exe processes in-process (belt-and-suspenders).
+        //    This serves two purposes:
+        //      (a) Gives the detached batch time to initialize before our exit,
+        //          preventing the Job Object from killing it before it runs.
+        //      (b) Kills EmbeddedCowork.exe processes immediately, so even if
+        //          the batch is killed by the Job Object, the installer can be
+        //          launched manually.
+        spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
+          encoding: "utf8",
+          timeout: 5000,
+        })
+
+        // 7. Exit immediately. The detached batch handles the rest:
+        //    - Kills any remaining EmbeddedCowork.exe processes (should be none)
         //    - Waits for OS cleanup (~9 seconds)
         //    - Runs the installer with zero interference
         process.exit(0)
