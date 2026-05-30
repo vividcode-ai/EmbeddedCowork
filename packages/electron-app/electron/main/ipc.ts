@@ -185,58 +185,95 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
         return { ok: true as const }
       }
 
-      // 4. Write launcher batch file to temp directory.
-      //    The launcher batch immediately kills ALL EmbeddedCowork.exe
-      //    processes (including orphan children) via taskkill,
-      //    waits ~9 seconds for OS cleanup, then runs the installer.
-      //
-      //    The batch is spawned DETACHED — it creates a NEW process
-      //    group OUTSIDE Electron's Job Object. This is CRITICAL:
-      //    if taskkill were spawned from our process (non-detached),
-      //    Windows Job Object would terminate it when our process
-      //    exits, leaving orphan children alive for the installer to
-      //    detect. With detached, the batch and its children survive
-      //    our exit and complete the cleanup.
       const tmpDir = app.getPath("temp")
-      const launcherPath = `${tmpDir}\\ec-update-${Date.now()}.cmd`
-      const batContent =
-        `@echo off\r\ntaskkill /f /im EmbeddedCowork.exe > nul 2>&1\r\nping 127.0.0.1 -n 10 > nul\r\n"${installerPath}" --updated\r\ndel "%~f0"\r\n`
+      const bootId = Date.now()
+      const taskName = `ECUpdate-${bootId}`
+      const helperPath = `${tmpDir}\\ec-update-${bootId}.cmd`
+      const logPath = `${tmpDir}\\ec-update-${bootId}.log`
+
+      // 4. Write a helper batch that runs via Windows Task Scheduler.
+      //    Unlike spawn(..., {detached:true}) which stays in Electron's
+      //    Job Object (CREATE_NEW_PROCESS_GROUP != CREATE_BREAKAWAY_FROM_JOB),
+      //    a scheduled task is created by the Task Scheduler service
+      //    (svchost.exe) — a completely separate process tree outside
+      //    Electron's Job Object. This guarantees the helper survives
+      //    our exit and KILL_ON_JOB_CLOSE.
+      //
+      //    The batch:
+      //      - Waits 20s for our process to fully exit
+      //      - Kills any leftover EmbeddedCowork.exe processes
+      //      - Runs the NSIS installer
+      //      - Cleans up its own task registration and files
+      const helperContent = [
+        `@echo off`,
+        `set LOG="${logPath}"`,
+        `echo [%DATE% %TIME%] Helper started >> %LOG%`,
+        `REM Wait for the main process to fully exit`,
+        `ping 127.0.0.1 -n 20 > nul`,
+        `echo [%DATE% %TIME%] Ping done, cleaning up processes >> %LOG%`,
+        `REM Kill any remaining EmbeddedCowork.exe processes`,
+        `taskkill /f /im EmbeddedCowork.exe > nul 2>&1`,
+        `taskkill /f /im embeddedcowork-server.exe > nul 2>&1`,
+        `echo [%DATE% %TIME%] Killed processes, launching installer >> %LOG%`,
+        `REM Run the installer`,
+        `"${installerPath}" --updated >> %LOG% 2>&1`,
+        `echo [%DATE% %TIME%] Installer exited with code %ERRORLEVEL% >> %LOG%`,
+        `REM Clean up task registration`,
+        `schtasks /delete /tn "${taskName}" /f > nul 2>&1`,
+        `echo [%DATE% %TIME%] Cleanup done >> %LOG%`,
+        `del "%~f0"`,
+      ].join("\r\n")
 
       try {
-        fs.writeFileSync(launcherPath, batContent, "utf8")
+        fs.writeFileSync(helperPath, helperContent, "utf8")
 
-        // 5. Spawn launcher DETACHED — survives our exit
-        spawn(launcherPath, [], {
-          detached: true,
-          stdio: "ignore",
-          windowsHide: true,
-        }).unref()
+        // 5. Create a one-shot scheduled task.
+        //    /ru "" = current user, /rl limited = limited rights,
+        //    /f = force (no confirmation prompt).
+        const createResult = spawnSync("schtasks", [
+          "/create", "/tn", taskName,
+          "/tr", `"${helperPath}"`,
+          "/sc", "once", "/st", "00:00",
+          "/f",
+          "/rl", "limited",
+          "/ru", "",
+        ], { encoding: "utf8", timeout: 10000 })
 
-        // 6. Kill all EmbeddedCowork.exe processes in-process (belt-and-suspenders).
-        //    This serves two purposes:
-        //      (a) Gives the detached batch time to initialize before our exit,
-        //          preventing the Job Object from killing it before it runs.
-        //      (b) Kills EmbeddedCowork.exe processes immediately, so even if
-        //          the batch is killed by the Job Object, the installer can be
-        //          launched manually.
+        if (createResult.status !== 0) {
+          // schtasks might fail if the user lacks permission (group
+          // policy, managed device). Fall back to the standard
+          // electron-updater approach.
+          console.error("[install-update] schtasks /create failed:", createResult.stderr)
+          appAutoUpdater?.installNow()
+          return { ok: true as const }
+        }
+
+        // 6. Run the task immediately. The helper process is spawned by
+        //    Task Scheduler (svchost.exe), OUTSIDE Electron's Job Object.
+        spawnSync("schtasks", ["/run", "/tn", taskName], {
+          encoding: "utf8",
+          timeout: 10000,
+        })
+
+        // 7. Delete the task registration. The running instance is
+        //    independent and continues in the background.
+        spawnSync("schtasks", ["/delete", "/tn", taskName, "/f"], {
+          encoding: "utf8",
+          timeout: 5000,
+        })
+
+        // 8. Kill all EmbeddedCowork.exe in-process immediately so the
+        //    helper won't find any survivors when it wakes up.
         spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
           encoding: "utf8",
           timeout: 5000,
         })
 
-        // 7. Exit immediately using app.exit() (NOT process.exit()).
-        //    app.exit() calls TerminateProcess directly without running
-        //    Node.js exit hooks, avoiding any event-loop processing that
-        //    could allow orphaned child processes to live long enough for
-        //    the NSIS installer to detect them.
-        //
-        //    The detached batch handles the rest:
-        //    - Kills any remaining EmbeddedCowork.exe processes (should be none)
-        //    - Waits for OS cleanup (~9 seconds)
-        //    - Runs the installer with zero interference
+        // 9. Exit. The scheduled helper is outside the Job Object and
+        //    WILL survive this call.
         app.exit(0)
       } catch (err) {
-        console.error("[install-update] launcher failed:", err)
+        console.error("[install-update] failed:", err)
         appAutoUpdater?.installNow()
       }
 
