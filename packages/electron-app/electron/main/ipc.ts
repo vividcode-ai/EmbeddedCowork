@@ -201,23 +201,42 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       //
       //    The batch:
       //      - Waits 20s for our process to fully exit
-      //      - Kills any leftover EmbeddedCowork.exe processes
+      //      - Kills EmbeddedCowork.exe in a retry loop until none remain
       //      - Runs the NSIS installer
       //      - Cleans up its own task registration and files
+      //
+      //    The retry loop is CRITICAL: if a process respawns between
+      //    taskkill and the installer's FIND_PROCESS (e.g. via Chromium
+      //    process management or Windows auto-restart), the loop keeps
+      //    killing until the process table is clean before launching
+      //    the installer.
       const helperContent = [
         `@echo off`,
         `set LOG="${logPath}"`,
         `echo [%DATE% %TIME%] Helper started >> %LOG%`,
         `REM Wait for the main process to fully exit`,
         `ping 127.0.0.1 -n 20 > nul`,
-        `echo [%DATE% %TIME%] Ping done, cleaning up processes >> %LOG%`,
-        `REM Kill any remaining EmbeddedCowork.exe processes`,
+        `echo [%DATE% %TIME%] Ping done >> %LOG%`,
+        `:kill_loop`,
         `taskkill /f /im EmbeddedCowork.exe > nul 2>&1`,
         `taskkill /f /im embeddedcowork-server.exe > nul 2>&1`,
-        `echo [%DATE% %TIME%] Killed processes, launching installer >> %LOG%`,
+        `REM Small delay to let OS cleanup process handles`,
+        `ping 127.0.0.1 -n 3 > nul`,
+        `REM Check if any EmbeddedCowork.exe processes remain`,
+        `tasklist /FI "IMAGENAME eq EmbeddedCowork.exe" 2>nul | find /i "EmbeddedCowork.exe" > nul`,
+        `if not errorlevel 1 goto kill_loop`,
+        `echo [%DATE% %TIME%] All processes killed >> %LOG%`,
+        `REM Log remaining processes for diagnostics`,
+        `echo [%DATE% %TIME%] Final process list: >> %LOG%`,
+        `tasklist /FI "IMAGENAME eq EmbeddedCowork.exe" /FO CSV >> %LOG% 2>&1`,
+        `tasklist /FI "IMAGENAME eq embeddedcowork-server.exe" /FO CSV >> %LOG% 2>&1`,
+        `echo [%DATE% %TIME%] Launching installer: "${installerPath}" --updated >> %LOG%`,
         `REM Run the installer`,
         `"${installerPath}" --updated >> %LOG% 2>&1`,
-        `echo [%DATE% %TIME%] Installer exited with code %ERRORLEVEL% >> %LOG%`,
+        `set INSTALLER_EXIT=%ERRORLEVEL%`,
+        `echo [%DATE% %TIME%] Installer exited with code %INSTALLER_EXIT% >> %LOG%`,
+        `REM If installer failed (non-zero), log it but still clean up`,
+        `if %INSTALLER_EXIT% neq 0 echo [%DATE% %TIME%] INSTALLER FAILED >> %LOG%`,
         `REM Clean up task registration`,
         `schtasks /delete /tn "${taskName}" /f > nul 2>&1`,
         `echo [%DATE% %TIME%] Cleanup done >> %LOG%`,
@@ -225,6 +244,13 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       ].join("\r\n")
 
       try {
+        // Log pre-kill process list for diagnostics
+        const preKillTaskList = spawnSync("tasklist", ["/FI", "IMAGENAME eq EmbeddedCowork.exe", "/FO", "CSV"], {
+          encoding: "utf8",
+          timeout: 5000,
+        })
+        console.log("[install-update] pre-kill EmbeddedCowork.exe processes:", preKillTaskList.stdout)
+
         fs.writeFileSync(helperPath, helperContent, "utf8")
 
         // 5. Create a one-shot scheduled task.
@@ -248,12 +274,19 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
           return { ok: true as const }
         }
 
+        console.log("[install-update] schtasks /create succeeded")
+
         // 6. Run the task immediately. The helper process is spawned by
         //    Task Scheduler (svchost.exe), OUTSIDE Electron's Job Object.
-        spawnSync("schtasks", ["/run", "/tn", taskName], {
+        const runResult = spawnSync("schtasks", ["/run", "/tn", taskName], {
           encoding: "utf8",
           timeout: 10000,
         })
+        if (runResult.status !== 0) {
+          console.error("[install-update] schtasks /run failed:", runResult.stderr)
+        } else {
+          console.log("[install-update] schtasks /run succeeded")
+        }
 
         // 7. Delete the task registration. The running instance is
         //    independent and continues in the background.
