@@ -1,6 +1,6 @@
 {
   "name": "@embeddedcowork/tauri-app",
-  "version": "0.0.79",
+  "version": "0.0.80",
   "private": true,
   "license": "MIT",
   "scripts": {
