@@ -187,23 +187,29 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
 
       const tmpDir = app.getPath("temp")
       const bootId = Date.now()
-      const taskName = `ECUpdate-${bootId}`
       const helperPath = `${tmpDir}\\ec-update-${bootId}.cmd`
       const logPath = `${tmpDir}\\ec-update-${bootId}.log`
 
-      // 4. Write a helper batch that runs via Windows Task Scheduler.
-      //    Unlike spawn(..., {detached:true}) which stays in Electron's
-      //    Job Object (CREATE_NEW_PROCESS_GROUP != CREATE_BREAKAWAY_FROM_JOB),
-      //    a scheduled task is created by the Task Scheduler service
-      //    (svchost.exe) — a completely separate process tree outside
-      //    Electron's Job Object. This guarantees the helper survives
-      //    our exit and KILL_ON_JOB_CLOSE.
+      // 4. Write a helper batch that runs via WMI (Windows Management
+      //    Instrumentation).  Unlike spawn(..., {detached:true}) which
+      //    stays in Electron's Job Object (CREATE_NEW_PROCESS_GROUP !=
+      //    CREATE_BREAKAWAY_FROM_JOB), a process created via WMI is
+      //    spawned by the WMI provider host (WMIPrvSE.exe) — a
+      //    completely separate process tree outside Electron's Job
+      //    Object.  This guarantees the helper survives our exit and
+      //    KILL_ON_JOB_CLOSE.
+      //
+      //    We try three launcher strategies in order:
+      //      (a) PowerShell CIM (Invoke-CimMethod) — preferred, works
+      //          on all modern Windows, no special permissions needed
+      //      (b) schtasks (Task Scheduler) — fallback
+      //      (c) electron-updater quitAndInstall — last resort
       //
       //    The batch:
       //      - Waits 20s for our process to fully exit
       //      - Kills EmbeddedCowork.exe in a retry loop until none remain
       //      - Runs the NSIS installer
-      //      - Cleans up its own task registration and files
+      //      - Cleans up its own files
       //
       //    The retry loop is CRITICAL: if a process respawns between
       //    taskkill and the installer's FIND_PROCESS (e.g. via Chromium
@@ -217,15 +223,21 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
         `REM Wait for the main process to fully exit`,
         `ping 127.0.0.1 -n 20 > nul`,
         `echo [%DATE% %TIME%] Ping done >> %LOG%`,
+        `REM Kill loop with retry limit (60 retries ~= 3 min)`,
+        `set KILL_RETRIES=0`,
         `:kill_loop`,
+        `if %KILL_RETRIES% geq 60 goto kill_done`,
         `taskkill /f /im EmbeddedCowork.exe > nul 2>&1`,
         `taskkill /f /im embeddedcowork-server.exe > nul 2>&1`,
         `REM Small delay to let OS cleanup process handles`,
         `ping 127.0.0.1 -n 3 > nul`,
         `REM Check if any EmbeddedCowork.exe processes remain`,
         `tasklist /FI "IMAGENAME eq EmbeddedCowork.exe" 2>nul | find /i "EmbeddedCowork.exe" > nul`,
-        `if not errorlevel 1 goto kill_loop`,
-        `echo [%DATE% %TIME%] All processes killed >> %LOG%`,
+        `if errorlevel 1 goto kill_done`,
+        `set /a KILL_RETRIES=%KILL_RETRIES% + 1`,
+        `goto kill_loop`,
+        `:kill_done`,
+        `echo [%DATE% %TIME%] Kill loop ended after %KILL_RETRIES% retries >> %LOG%`,
         `REM Log remaining processes for diagnostics`,
         `echo [%DATE% %TIME%] Final process list: >> %LOG%`,
         `tasklist /FI "IMAGENAME eq EmbeddedCowork.exe" /FO CSV >> %LOG% 2>&1`,
@@ -237,25 +249,48 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
         `echo [%DATE% %TIME%] Installer exited with code %INSTALLER_EXIT% >> %LOG%`,
         `REM If installer failed (non-zero), log it but still clean up`,
         `if %INSTALLER_EXIT% neq 0 echo [%DATE% %TIME%] INSTALLER FAILED >> %LOG%`,
-        `REM Clean up task registration`,
-        `schtasks /delete /tn "${taskName}" /f > nul 2>&1`,
         `echo [%DATE% %TIME%] Cleanup done >> %LOG%`,
         `del "%~f0"`,
       ].join("\r\n")
 
+      // Log pre-kill process list for diagnostics
       try {
-        // Log pre-kill process list for diagnostics
         const preKillTaskList = spawnSync("tasklist", ["/FI", "IMAGENAME eq EmbeddedCowork.exe", "/FO", "CSV"], {
           encoding: "utf8",
           timeout: 5000,
         })
         console.log("[install-update] pre-kill EmbeddedCowork.exe processes:", preKillTaskList.stdout)
+      } catch { /* ignore */ }
 
-        fs.writeFileSync(helperPath, helperContent, "utf8")
+      fs.writeFileSync(helperPath, helperContent, "utf8")
 
-        // 5. Create a one-shot scheduled task.
-        //    /ru "" = current user, /rl limited = limited rights,
-        //    /f = force (no confirmation prompt).
+      // Helper: try each launcher strategy.  Returns true if the
+      // helper was successfully started outside the Job Object.
+      function tryLaunchViaPowerShellCIM(): boolean {
+        const psCmd =
+          `Invoke-CimMethod -ClassName Win32_Process -MethodName Create ` +
+          `-Arguments @{CommandLine='cmd.exe /c "${helperPath}"'}`
+        const result = spawnSync(
+          "powershell.exe",
+          ["-NoProfile", "-Command", psCmd],
+          { encoding: "utf8", timeout: 15000 },
+        )
+        if (result.status !== 0) {
+          console.error("[install-update] PowerShell CIM launch failed:", result.stderr)
+          return false
+        }
+        const stdout = (result.stdout ?? "").toLowerCase()
+        const ok = stdout.includes("returnvalue=0") || stdout.includes("returnvalue = 0")
+        if (!ok) {
+          console.error("[install-update] PowerShell CIM launch returned failure:", stdout)
+          return false
+        }
+        console.log("[install-update] PowerShell CIM launch succeeded:", stdout)
+        return true
+      }
+
+      function tryLaunchViaSchtasks(): boolean {
+        const taskName = `ECUpdate-${bootId}`
         const createResult = spawnSync("schtasks", [
           "/create", "/tn", taskName,
           "/tr", `"${helperPath}"`,
@@ -266,49 +301,60 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
         ], { encoding: "utf8", timeout: 10000 })
 
         if (createResult.status !== 0) {
-          // schtasks might fail if the user lacks permission (group
-          // policy, managed device). Fall back to the standard
-          // electron-updater approach.
           console.error("[install-update] schtasks /create failed:", createResult.stderr)
-          appAutoUpdater?.installNow()
-          return { ok: true as const }
+          return false
         }
 
         console.log("[install-update] schtasks /create succeeded")
 
-        // 6. Run the task immediately. The helper process is spawned by
-        //    Task Scheduler (svchost.exe), OUTSIDE Electron's Job Object.
         const runResult = spawnSync("schtasks", ["/run", "/tn", taskName], {
           encoding: "utf8",
           timeout: 10000,
         })
         if (runResult.status !== 0) {
           console.error("[install-update] schtasks /run failed:", runResult.stderr)
-        } else {
-          console.log("[install-update] schtasks /run succeeded")
+          // Clean up the task we just created
+          spawnSync("schtasks", ["/delete", "/tn", taskName, "/f"], { timeout: 5000 })
+          return false
         }
 
-        // 7. Delete the task registration. The running instance is
-        //    independent and continues in the background.
-        spawnSync("schtasks", ["/delete", "/tn", taskName, "/f"], {
-          encoding: "utf8",
-          timeout: 5000,
-        })
+        console.log("[install-update] schtasks /run succeeded")
 
-        // 8. Kill all EmbeddedCowork.exe in-process immediately so the
-        //    helper won't find any survivors when it wakes up.
-        spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
-          encoding: "utf8",
-          timeout: 5000,
-        })
-
-        // 9. Exit. The scheduled helper is outside the Job Object and
-        //    WILL survive this call.
-        app.exit(0)
-      } catch (err) {
-        console.error("[install-update] failed:", err)
-        appAutoUpdater?.installNow()
+        // Delete the registration (the running instance is independent)
+        spawnSync("schtasks", ["/delete", "/tn", taskName, "/f"], { timeout: 5000 })
+        return true
       }
+
+      // 5. Launch the helper via whatever strategy works.
+      let helperLaunched = false
+      try {
+        helperLaunched = tryLaunchViaPowerShellCIM()
+        if (!helperLaunched) {
+          console.log("[install-update] falling back to schtasks...")
+          helperLaunched = tryLaunchViaSchtasks()
+        }
+      } catch (err) {
+        console.error("[install-update] helper launch error:", err)
+      }
+
+      if (!helperLaunched) {
+        console.error("[install-update] all escape strategies failed, falling back to quitAndInstall")
+        appAutoUpdater?.installNow()
+        return { ok: true as const }
+      }
+
+      console.log("[install-update] helper launched, killing processes and exiting")
+
+      // 6. Kill all EmbeddedCowork.exe immediately so the helper
+      //    won't find any survivors when it wakes up.
+      spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
+        encoding: "utf8",
+        timeout: 5000,
+      })
+
+      // 7. Exit. The helper is outside the Job Object and WILL
+      //    survive this call.
+      app.exit(0)
 
       return { ok: true as const }
     }
