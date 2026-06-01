@@ -287,8 +287,8 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
       label: "PowerShell CIM",
       try(): string | null {
         const psCmd =
-          `Invoke-CimMethod -ClassName Win32_Process -MethodName Create ` +
-          `-Arguments @{CommandLine='cmd.exe /c "${helperPath}"'}`
+          `(Invoke-CimMethod -ClassName Win32_Process -MethodName Create ` +
+          `-Arguments @{CommandLine='cmd.exe /c "${helperPath}"'}).ReturnValue`
         const result = spawnSync("powershell.exe", ["-NoProfile", "-Command", psCmd], {
           encoding: "utf8",
           timeout: 15000,
@@ -297,13 +297,12 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
           console.error("[install-update] PowerShell CIM helper launch failed:", result.stderr)
           return null
         }
-        const stdout = (result.stdout ?? "").toLowerCase()
-        const ok = stdout.includes("returnvalue=0") || stdout.includes("returnvalue = 0")
-        if (!ok) {
-          console.error("[install-update] PowerShell CIM helper launch returned failure:", stdout)
+        const returnValue = (result.stdout ?? "").trim()
+        if (returnValue !== "0") {
+          console.error("[install-update] PowerShell CIM helper launch returned (stdout):", result.stdout)
           return null
         }
-        return stdout.trim()
+        return returnValue
       },
     })
 
@@ -342,8 +341,8 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
         // before showing the "can't close" dialog.  Our process should
         // exit within 1–2 s, well within that window.
         const psCmd =
-          `Invoke-CimMethod -ClassName Win32_Process -MethodName Create ` +
-          `-Arguments @{CommandLine='"${installerPath}" --updated'}`
+          `(Invoke-CimMethod -ClassName Win32_Process -MethodName Create ` +
+          `-Arguments @{CommandLine='"${installerPath}" --updated'}).ReturnValue`
         const result = spawnSync("powershell.exe", ["-NoProfile", "-Command", psCmd], {
           encoding: "utf8", timeout: 15000,
         })
@@ -351,13 +350,12 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
           console.error("[install-update] CIM-direct launch failed:", result.stderr)
           return null
         }
-        const stdout = (result.stdout ?? "").toLowerCase()
-        const ok = stdout.includes("returnvalue=0") || stdout.includes("returnvalue = 0")
-        if (!ok) {
-          console.error("[install-update] CIM-direct launch returned failure:", stdout)
+        const returnValue = (result.stdout ?? "").trim()
+        if (returnValue !== "0") {
+          console.error("[install-update] CIM-direct launch returned (stdout):", result.stdout)
           return null
         }
-        return stdout.trim()
+        return returnValue
       },
     })
 
