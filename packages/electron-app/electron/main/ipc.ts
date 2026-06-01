@@ -385,8 +385,9 @@ export function setupCliIPC(mainWindow: BrowserWindow, cliManager: CliProcessMan
     console.log("[install-update] escape launched, killing processes and exiting")
 
     // 6. Kill all EmbeddedCowork.exe so no orphan survives to the
-    //    installer's CHECK_APP_RUNNING scan.
-    spawnSync("taskkill", ["/F", "/IM", "EmbeddedCowork.exe"], {
+    //    installer's CHECK_APP_RUNNING scan.  Exclude our own PID so
+    //    we can reach app.exit(0) cleanly.
+    spawnSync("taskkill", ["/F", "/FI", `PID ne ${process.pid}`, "/IM", "EmbeddedCowork.exe"], {
       encoding: "utf8",
       timeout: 5000,
     })
