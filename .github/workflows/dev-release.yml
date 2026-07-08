@@ -1,9 +1,6 @@
 name: Develop Pre-Release
 
 on:
-  schedule:
-    # Nightly build of dev (only if dev has new commits)
-    - cron: "0 1 * * *"
   workflow_dispatch:
 
 permissions:
